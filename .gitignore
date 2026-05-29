@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Custom ignored files
+scrape_*.js
+extract.js
+parse.js
+dreamteam_*.js
+*.html
+scratch/
+implementation_plan.md
+walkthrough.md
+task.md
+\# Dream Team PH.txt

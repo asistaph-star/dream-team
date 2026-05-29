@@ -1,0 +1,207 @@
+{
+  "anthonydavis": {
+    "playerName": "AnthonyDavis",
+    "isInjured": true,
+    "injuryName": "Finger Dislocation"
+  },
+  "damianlillard": {
+    "playerName": "DamianLillard",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "michaelporterjr": {
+    "playerName": "MichaelPorterJr",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "kyrieirving": {
+    "playerName": "KyrieIrving",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "zachlavine": {
+    "playerName": "ZachLaVine",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "jimmybutler": {
+    "playerName": "JimmyButler",
+    "isInjured": true,
+    "injuryName": "Left Knee Contusion"
+  },
+  "walkerkessler": {
+    "playerName": "WalkerKessler",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "jamorant": {
+    "playerName": "JaMorant",
+    "isInjured": true,
+    "injuryName": "Sprained Right Ankle"
+  },
+  "deandrehunter": {
+    "playerName": "DeAndreHunter",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "tyresehaliburton": {
+    "playerName": "TyreseHaliburton",
+    "isInjured": true,
+    "injuryName": "Sprained Right Ankle"
+  },
+  "kyshawngeorge": {
+    "playerName": "KyshawnGeorge",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "jarenjacksonjr": {
+    "playerName": "JarenJacksonJr",
+    "isInjured": true,
+    "injuryName": "Sprained Right Ankle"
+  },
+  "traeyoung": {
+    "playerName": "TraeYoung",
+    "isInjured": true,
+    "injuryName": "Sprained Left Wrist"
+  },
+  "domantassabonis": {
+    "playerName": "DomantasSabonis",
+    "isInjured": true,
+    "injuryName": "Left Knee Contusion"
+  },
+  "ivicazubac": {
+    "playerName": "IvicaZubac",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "dontedivincenzo": {
+    "playerName": "DonteDiVincenzo",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "santialdama": {
+    "playerName": "SantiAldama",
+    "isInjured": true,
+    "injuryName": "Calf Tightness"
+  },
+  "mosesmoody": {
+    "playerName": "MosesMoody",
+    "isInjured": true,
+    "injuryName": "Finger Dislocation"
+  },
+  "fredvanvleet": {
+    "playerName": "FredVanVleet",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "jusufnurkic": {
+    "playerName": "JusufNurkic",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "jalensmith": {
+    "playerName": "JalenSmith",
+    "isInjured": true,
+    "injuryName": "Knee Tendonitis"
+  },
+  "stevenadams": {
+    "playerName": "StevenAdams",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "jaylenwells": {
+    "playerName": "JaylenWells",
+    "isInjured": true,
+    "injuryName": "Shoulder Soreness"
+  },
+  "camwhitmore": {
+    "playerName": "CamWhitmore",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "kentaviouscaldwellpope": {
+    "playerName": "KentaviousCaldwellPope",
+    "isInjured": true,
+    "injuryName": "Shoulder Soreness"
+  },
+  "dayronsharpe": {
+    "playerName": "DayRonSharpe",
+    "isInjured": true,
+    "injuryName": "Sprained Left Wrist"
+  },
+  "egordemin": {
+    "playerName": "EgorDemin",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "zachedey": {
+    "playerName": "ZachEdey",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "dreweubanks": {
+    "playerName": "DrewEubanks",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "scottypippenjr": {
+    "playerName": "ScottyPippenJr",
+    "isInjured": true,
+    "injuryName": "Sprained Left Wrist"
+  },
+  "bradleybeal": {
+    "playerName": "BradleyBeal",
+    "isInjured": true,
+    "injuryName": "Sprained Right Ankle"
+  },
+  "derecklivelyii": {
+    "playerName": "DereckLivelyII",
+    "isInjured": true,
+    "injuryName": "Lower Back Soreness"
+  },
+  "zachcollins": {
+    "playerName": "ZachCollins",
+    "isInjured": true,
+    "injuryName": "Finger Dislocation"
+  },
+  "yanickonanniederhauser": {
+    "playerName": "YanicKonanNiederhauser",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "pjhall": {
+    "playerName": "PJHall",
+    "isInjured": true,
+    "injuryName": "Shoulder Soreness"
+  },
+  "johnnyfurphy": {
+    "playerName": "JohnnyFurphy",
+    "isInjured": true,
+    "injuryName": "Sprained Left Wrist"
+  },
+  "kevinporterjr": {
+    "playerName": "KevinPorterJr",
+    "isInjured": true,
+    "injuryName": "Calf Tightness"
+  },
+  "davidjonesgarcia": {
+    "playerName": "DavidJonesGarcia",
+    "isInjured": true,
+    "injuryName": "Hamstring Strain"
+  },
+  "dannywolf": {
+    "playerName": "DannyWolf",
+    "isInjured": true,
+    "injuryName": "Groin Strain"
+  },
+  "noaessengue": {
+    "playerName": "NoaEssengue",
+    "isInjured": true,
+    "injuryName": "Shoulder Soreness"
+  },
+  "thomassorber": {
+    "playerName": "ThomasSorber",
+    "isInjured": true,
+    "injuryName": "Hamstring Strain"
+  }
+}
