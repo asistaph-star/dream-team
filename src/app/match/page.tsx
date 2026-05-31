@@ -28,6 +28,7 @@ import { PlayerStatusIcons } from "@/features/match/components/PlayerStatusIcons
 import { PlayerAvailabilityOverlay } from "@/features/match/components/PlayerAvailabilityOverlay";
 import { BlockCourtAnimation } from "@/features/match/components/BlockCourtAnimation";
 import { ClutchFrame } from "@/features/match/components/ClutchFrame";
+import { MatchPlayerUnit } from "@/features/match/components/MatchPlayerUnit";
 
 
 
@@ -897,9 +898,9 @@ export default function MatchPage() {
       : '';
 
     return (
-      <div 
-        key={p.id} 
-        data-slot-id={!isAi ? p.id : undefined}
+      <MatchPlayerUnit
+        player={p}
+        dataSlotId={!isAi ? p.id : undefined}
         className={`player-unit ${posClass} ${dragClass} ${!isAi && !draggingPlayerId ? 'cursor-grab active:cursor-grabbing' : ''}`}
         style={{ transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)', transformOrigin: 'bottom center', ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) }}
         onPointerDown={(e) => {
@@ -910,74 +911,36 @@ export default function MatchPage() {
             setPointerPos({ x: e.clientX, y: e.clientY });
           }
         }}
-      >
-        <PlayerStatusIcons 
-          isHot={Boolean(matchState.hotPlayers[p.id])} 
-          isCold={!matchState.hotPlayers[p.id] && (matchState.formRating[p.id] ?? 1.0) <= 0.90} 
-        />
-        {/* ═══ PREMIUM SLANTED BANNERS ═══ */}
-        <PlayerEventBanner
-          showFtPopup={!!showFtPopup}
-          ftOutcome={matchState.ftSequence ? matchState.ftSequence.results[activeFtIndex] : undefined}
-          justScored={justScored}
-          lastPointsScored={matchState.lastPointsScored}
-          eventText={matchState.events[0]?.text || ''}
-          justMissed={justMissed}
-          lastEventIndicator={matchState.lastEventIndicator ?? null}
-          playerId={p.id}
-        />
-
-        <BlockCourtAnimation 
-          show={blockAnimationType === 'court' && !justScored && matchState.lastEventIndicator?.type === 'BLK' && matchState.lastEventIndicator?.targetId === p.id} 
-        />
-
-         {matchState.ftSequence && matchState.ftSequence.shooterId === p.id && (
-          <FreeThrowPopup
-            ftSequence={matchState.ftSequence}
-            activeFtIndex={activeFtIndex}
-            activeFtStatus={activeFtStatus}
-          />
-        )}
-        
-        <div className="relative pointer-events-none flex flex-col items-center justify-center w-full z-30" style={{ transform: 'scale(1.05)' }}>
-          <ClutchFrame show={isClutchActive && p.rarity === 'Mythic'} />
-          
-          <PlayerCard 
-            player={{ ...p, imageUrl: bgImage, stamina: stam, isInjured: (matchState.fouledOut ?? []).includes(p.id) }} 
-            tooltipDirection="none" 
-            staminaMax={getPlayerMaxStamina(p)}
-            showPositionBox={true}
-            positionBoxLabel={`${displayPos}${isOutOfPosition ? ' (OOP)' : ''}`}
-          />
-          <PlayerAvailabilityOverlay 
-            isOutOfPosition={isOutOfPosition} 
-            isFouledOut={(matchState.fouledOut ?? []).includes(p.id)} 
-          />
-        </div>
-
-        {/* FOUL PIPS */}
-        <FoulPips fouls={getDisplayStats(p.id).FOL ?? 0} />
-
-        {/* DTPH-Style Hover Tooltip */}
-        <PlayerTooltip
-          player={p}
-          stamina={stam}
-          tier={tier}
-          tierColor={tierColor}
-          playerStats={pStats}
-          formRating={matchState.formRating[p.id]}
-        />
-
-        {/* ═══ NBA 2K-STYLE SHOT METER OVERLAY ═══ */}
-        {matchState.activeShotMeter && matchState.activeShotMeter.playerId === p.id && (
-          <ShotMeter
-            activeShotMeter={matchState.activeShotMeter}
-            shotMeterProgress={shotMeterProgress}
-            shotMeterStatus={shotMeterStatus}
-            shotMeterFeedback={shotMeterFeedback}
-          />
-        )}
-      </div>
+        isHot={Boolean(matchState.hotPlayers[p.id])}
+        isCold={!matchState.hotPlayers[p.id] && (matchState.formRating[p.id] ?? 1.0) <= 0.90}
+        showFtPopup={!!showFtPopup}
+        ftOutcome={matchState.ftSequence ? matchState.ftSequence.results[activeFtIndex] : undefined}
+        justScored={justScored}
+        lastPointsScored={matchState.lastPointsScored}
+        eventText={matchState.events[0]?.text || ''}
+        justMissed={justMissed}
+        lastEventIndicator={matchState.lastEventIndicator ?? null}
+        showBlockAnimation={blockAnimationType === 'court' && !justScored && matchState.lastEventIndicator?.type === 'BLK' && matchState.lastEventIndicator?.targetId === p.id}
+        ftSequence={matchState.ftSequence}
+        activeFtIndex={activeFtIndex}
+        activeFtStatus={activeFtStatus}
+        showClutchFrame={isClutchActive && p.rarity === 'Mythic'}
+        bgImage={bgImage}
+        stam={stam}
+        isFouledOut={(matchState.fouledOut ?? []).includes(p.id)}
+        staminaMax={getPlayerMaxStamina(p)}
+        displayPos={displayPos}
+        isOutOfPosition={isOutOfPosition}
+        fouls={getDisplayStats(p.id).FOL ?? 0}
+        tier={tier}
+        tierColor={tierColor}
+        pStats={pStats}
+        formRating={matchState.formRating[p.id]}
+        activeShotMeter={matchState.activeShotMeter}
+        shotMeterProgress={shotMeterProgress}
+        shotMeterStatus={shotMeterStatus}
+        shotMeterFeedback={shotMeterFeedback}
+      />
     );
   };
 
