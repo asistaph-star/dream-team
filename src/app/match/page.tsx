@@ -26,6 +26,8 @@ import { FoulPips } from "@/features/match/components/FoulPips";
 import { PlayerTooltip } from "@/features/match/components/PlayerTooltip";
 import { PlayerStatusIcons } from "@/features/match/components/PlayerStatusIcons";
 import { PlayerAvailabilityOverlay } from "@/features/match/components/PlayerAvailabilityOverlay";
+import { BlockCourtAnimation } from "@/features/match/components/BlockCourtAnimation";
+import { ClutchFrame } from "@/features/match/components/ClutchFrame";
 
 
 
@@ -925,11 +927,9 @@ export default function MatchPage() {
           playerId={p.id}
         />
 
-        {blockAnimationType === 'court' && !justScored && matchState.lastEventIndicator?.type === 'BLK' && matchState.lastEventIndicator?.targetId === p.id && (
-          <div className="absolute -top-24 -left-12 z-[100] w-48 h-48 pointer-events-none drop-shadow-[0_0_15px_white]" style={{animation: 'block-court-pop 1s forwards'}}>
-            <img src="/block_anim.png" alt="block" className="w-full h-full object-contain" style={{ filter: 'invert(1)' }} />
-          </div>
-        )}
+        <BlockCourtAnimation 
+          show={blockAnimationType === 'court' && !justScored && matchState.lastEventIndicator?.type === 'BLK' && matchState.lastEventIndicator?.targetId === p.id} 
+        />
 
          {matchState.ftSequence && matchState.ftSequence.shooterId === p.id && (
           <FreeThrowPopup
@@ -940,9 +940,7 @@ export default function MatchPage() {
         )}
         
         <div className="relative pointer-events-none flex flex-col items-center justify-center w-full z-30" style={{ transform: 'scale(1.05)' }}>
-          {isClutchActive && p.rarity === 'Mythic' && (
-            <div className="absolute inset-0 rounded border-2 border-yellow-400 animate-pulse pointer-events-none z-[60]" style={{ boxShadow: '0 0 12px rgba(250,204,21,0.6)' }} />
-          )}
+          <ClutchFrame show={isClutchActive && p.rarity === 'Mythic'} />
           
           <PlayerCard 
             player={{ ...p, imageUrl: bgImage, stamina: stam, isInjured: (matchState.fouledOut ?? []).includes(p.id) }} 
