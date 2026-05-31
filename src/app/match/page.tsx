@@ -10,8 +10,12 @@ import { mockAiTeams, Difficulty, MatchState, MatchEvent, PlayerMatchStats, crea
 import { Swords, Flame, Snowflake } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { SeasonMap } from "@/components/season/SeasonMap";
-
-type ViewState = 'SEASON_MAP' | 'PRE_MATCH' | 'SIMULATING' | 'HALFTIME' | 'POST_GAME';
+import { ViewState } from "@/features/match/types";
+import { MATCH_STAMINA_UI_CONFIG, SLOT_POSITIONS } from "@/features/match/constants/matchConfig";
+import { calculateTS } from "@/features/match/utils/calculateTS";
+import { getPlayerImage } from "@/features/match/utils/playerImages";
+import { getRarityColor } from "@/features/match/utils/rarityColor";
+import { getPositionClass } from "@/features/match/utils/positionUtils";
 
 const MythicEnergyAura = () => (
     <div className="absolute top-[-50px] bottom-[30px] inset-x-0 z-[20] pointer-events-none">
@@ -52,20 +56,7 @@ const MythicEnergyAura = () => (
     </div>
 );
 
-const calculateTS = (s: PlayerMatchStats): string => {
-  const fga = s.FGA ?? 0;
-  const fta = s.FTA ?? 0;
-  const pts = s.PTS ?? 0;
-  const attempts = fga + 0.44 * fta;
-  if (attempts < 1.0) return "—"; // Not enough attempts (volume) for meaningful TS%
-  return ((pts / (2 * attempts)) * 100).toFixed(1);
-};
 
-const MATCH_STAMINA_UI_CONFIG = {
-  energyDrinkRecovery: 20,
-  energyDrinkLockSeconds: 5,
-  timeoutRecovery: 5,
-} as const;
 
 export default function MatchPage() {
   const router = useRouter();
@@ -805,17 +796,7 @@ export default function MatchPage() {
   const userBarPct = (userTotal / maxOvr) * 100;
   const aiBarPct = (aiTotal / maxOvr) * 100;
 
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'Mythic': return 'text-red-500';
-      case 'Legendary': return 'text-yellow-500';
-      case 'Epic': return 'text-purple-500';
-      case 'Rare': return 'text-blue-500';
-      default: return 'text-gray-400';
-    }
-  };
 
-  const SLOT_POSITIONS = ['PG', 'SG', 'SF', 'PF', 'C'] as const;
 
   // ═══ DERIVED DISPLAY STATE (Hides FT results until revealed) ═══
   let displayUserScore = matchState.userScore;
@@ -894,10 +875,7 @@ export default function MatchPage() {
     return s;
   };
 
-  const getPositionClass = (pos: string, isAi: boolean) => {
-    const prefix = isAi ? 'a-' : 'h-';
-    return `${prefix}${pos.toLowerCase()}`;
-  };
+
 
   const handleSwapCourtPlayers = (player1Id: string, player2Id: string) => {
     const idx1 = currentLineup.findIndex(p => p.id === player1Id);
@@ -922,19 +900,10 @@ export default function MatchPage() {
     const isOutOfPosition = slotPos ? p.position !== slotPos : false;
     const rarityColor = getRarityColor(p.rarity);
     
-    // Provide a default image based on position if none provided to avoid empty boxes
-    const defaultImages: Record<string, string> = {
-      'PG': 'https://www.dreamteamph.com/players/newplayers/hornets/treymann.webp',
-      'SG': 'https://www.dreamteamph.com/players/newplayers/timberwolves/anthonyedwards.webp',
-      'SF': 'https://www.dreamteamph.com/players/newplayers/knicks/juliusrandle.webp',
-      'PF': 'https://www.dreamteamph.com/players/newx/stoudemire.webp',
-      'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp'
-    };
-    
     const stam = Math.floor(matchState.playerStamina[p.id] ?? 100);
     const tier = getTierRating(p.ovr);
     const tierColor = getTierColor(tier);
-    const bgImage = p.imageUrl ? p.imageUrl : defaultImages[p.position] || defaultImages['SF'];
+    const bgImage = getPlayerImage(p);
     const pStats = getDisplayStats(p.id);
 
     const ftActive = matchState.ftSequence && matchState.ftSequence.shooterId === p.id;
@@ -1778,14 +1747,7 @@ export default function MatchPage() {
           const dragP = matchRoster.find(p => p.id === draggingPlayerId) || roster.find(p => p.id === draggingPlayerId);
           if (!dragP) return null;
           
-          const defaultImages: Record<string, string> = {
-            'PG': 'https://www.dreamteamph.com/players/newplayers/hornets/treymann.webp',
-            'SG': 'https://www.dreamteamph.com/players/newplayers/timberwolves/anthonyedwards.webp',
-            'SF': 'https://www.dreamteamph.com/players/newplayers/knicks/juliusrandle.webp',
-            'PF': 'https://www.dreamteamph.com/players/newx/stoudemire.webp',
-            'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp'
-          };
-          const bgImg = dragP.imageUrl ? dragP.imageUrl : defaultImages[dragP.position] || defaultImages['SF'];
+          const bgImg = getPlayerImage(dragP);
           
           return (
             <div 
@@ -2588,14 +2550,7 @@ export default function MatchPage() {
             {showSubModal && (() => {
               const benchPlayers = matchRoster.filter(p => !currentLineup.find(lp => lp.id === p.id));
               
-              const defaultImages: Record<string, string> = {
-                'PG': 'https://www.dreamteamph.com/players/newplayers/hornets/treymann.webp',
-                'SG': 'https://www.dreamteamph.com/players/newplayers/timberwolves/anthonyedwards.webp',
-                'SF': 'https://www.dreamteamph.com/players/newplayers/knicks/juliusrandle.webp',
-                'PF': 'https://www.dreamteamph.com/players/newx/stoudemire.webp',
-                'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp'
-              };
-              const getPlayerImage = (p: Player) => p.imageUrl || defaultImages[p.position] || defaultImages['SF'];
+
 
               // Compute Offense and Defense exactly as the match engine does
               let curEff = computeEffective(currentLineup, matchState.playerStamina, matchState.userOffStrategy, matchState.userDefStrategy);
@@ -2950,18 +2905,7 @@ export default function MatchPage() {
 
     const qs = matchState.quarterScores;
 
-    // Provide a default image based on position if none provided to avoid empty boxes
-    const defaultImages: Record<string, string> = {
-      'PG': 'https://www.dreamteamph.com/players/newplayers/hornets/treymann.webp',
-      'SG': 'https://www.dreamteamph.com/players/newplayers/timberwolves/anthonyedwards.webp',
-      'SF': 'https://www.dreamteamph.com/players/newplayers/knicks/juliusrandle.webp',
-      'PF': 'https://www.dreamteamph.com/players/newx/stoudemire.webp',
-      'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp'
-    };
-    const getPlayerImage = (p: Player | undefined) => {
-      if (!p) return '';
-      return p.imageUrl || defaultImages[p.position] || defaultImages['SF'];
-    };
+
 
     return (
       <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center font-sans overflow-hidden">
