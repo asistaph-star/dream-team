@@ -1164,6 +1164,9 @@ export default function MatchPage() {
   if (viewState === 'SIMULATING' || viewState === 'HALFTIME') {
     return (
       <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
+        {/* Blurred stadium background to replace black letterbox bars */}
+        <div className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" style={{ backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")' }} />
+        
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
         {draggingPlayerId && (
