@@ -22,6 +22,8 @@ import { RunOverlay } from "@/features/match/components/RunOverlay";
 import { PlayerEventBanner } from "@/features/match/components/PlayerEventBanner";
 import { FreeThrowPopup } from "@/features/match/components/FreeThrowPopup";
 import { ShotMeter } from "@/features/match/components/ShotMeter";
+import { FoulPips } from "@/features/match/components/FoulPips";
+import { PlayerTooltip } from "@/features/match/components/PlayerTooltip";
 
 
 
@@ -959,54 +961,17 @@ export default function MatchPage() {
         </div>
 
         {/* FOUL PIPS */}
-        {(() => {
-          const fouls = getDisplayStats(p.id).FOL ?? 0;
-          if (fouls === 0) return null;
-          return <div style={{ position: 'absolute', bottom: -10, left: 0, width: '100%', display: 'flex', justifyContent: 'center', gap: 2 }}>
-            {[0,1,2,3,4].map(i => <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: i < fouls ? (fouls >= 4 ? '#ef4444' : fouls >= 3 ? '#eab308' : '#f97316') : '#374151',
-              border: '1px solid #1f2937',
-              animation: fouls >= 4 && i < fouls ? 'pulse 1s infinite' : 'none',
-            }} />)}
-          </div>;
-        })()}
+        <FoulPips fouls={getDisplayStats(p.id).FOL ?? 0} />
+
         {/* DTPH-Style Hover Tooltip */}
-        <div className="player-tooltip">
-            <div className="tt-header">
-                <span className="tt-name">{p.name}</span>
-                <span className="tt-pos">{p.position}</span>
-            </div>
-            <div className="tt-body">
-                <div className="tt-row"><span>Rating: <b style={{ color: tierColor }}>{tier}</b></span><span>Stamina: <b>{stam}</b></span></div>
-                <div className="tt-row"><span>Offense: <b style={{ color: '#fb923c' }}>{p.offense}</b></span><span>Defense: <b style={{ color: '#22d3ee' }}>{p.defense}</b></span></div>
-                <div className="tt-row flex justify-between gap-1 mt-1 border-t border-white/10 pt-1">
-                    <span className="text-[10px] text-gray-400">SHO <b className="text-white">{p.shooting ?? 80}</b></span>
-                    <span className="text-[10px] text-gray-400">SPD <b className="text-white">{p.speed ?? 80}</b></span>
-                    <span className="text-[10px] text-gray-400">STR <b className="text-white">{p.strength ?? 80}</b></span>
-                    <span className="text-[10px] text-gray-400">PLY <b className="text-white">{p.playmaking ?? 80}</b></span>
-                </div>
-            </div>
-            <div className="tt-stats">
-                <span><b>{pStats.PTS}</b> PTS</span>
-                <span><b>{pStats.REB}</b> REB ({pStats.OREB ?? 0}o / {pStats.DREB ?? 0}d)</span>
-                <span><b>{pStats.AST}</b> AST</span>
-                <span><b>{pStats.STL}</b> STL</span>
-                <span><b>{pStats.TOV}</b> TOV</span>
-                <span><b>{pStats.BLK}</b> BLK</span>
-                <span><b>{pStats.FTM ?? 0}/{pStats.FTA ?? 0}</b> FT</span>
-                <span><b>{pStats.FOL ?? 0}</b>/5 FOL</span>
-            </div>
-            {(() => {
-              const f = matchState.formRating[p.id] ?? 1.0;
-              if (f >= 1.10) return <div className="tt-hot">On Fire - Carrying the game!</div>;
-              if (f >= 1.05) return <div style={{ textAlign: 'center', fontSize: 10, color: '#22c55e', padding: 4, background: 'rgba(34,197,94,0.1)', fontWeight: 'bold' }}>Hot Streak</div>;
-              if (f <= 0.90) return <div style={{ textAlign: 'center', fontSize: 10, color: '#60a5fa', padding: 4, background: 'rgba(96,165,250,0.1)', fontWeight: 'bold' }}>Ice Cold</div>;
-              if (f <= 0.95) return <div style={{ textAlign: 'center', fontSize: 10, color: '#94a3b8', padding: 4, background: 'rgba(148,163,184,0.1)', fontWeight: 'bold' }}>Cold</div>;
-              return null;
-            })()}
-            <div className="tt-rarity" style={{ color: tierColor }}>[{p.rarity} — {tier}]</div>
-        </div>
+        <PlayerTooltip
+          player={p}
+          stamina={stam}
+          tier={tier}
+          tierColor={tierColor}
+          playerStats={pStats}
+          formRating={matchState.formRating[p.id]}
+        />
 
         {/* ═══ NBA 2K-STYLE SHOT METER OVERLAY ═══ */}
         {matchState.activeShotMeter && matchState.activeShotMeter.playerId === p.id && (
