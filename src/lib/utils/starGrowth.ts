@@ -11,6 +11,7 @@ type StarTier = "None" | "Silver" | "Blue" | "Violet" | "Orange" | "Red";
 const capDetailed = (value: number) => Math.max(25, Math.round(value));
 const capCore = (value: number) => Math.max(1, Math.round(value));
 const capSub = (value: number) => Math.max(1, Math.round(value));
+const capStamina = (value: number) => Math.max(1, Math.round(value));
 
 const scaled = (value: number, fallback = 75): number => {
   const safe = Number.isFinite(value) ? value : fallback;
@@ -40,14 +41,6 @@ export const getDetailedAttributes = (player: Player): DetailedAttributes => {
   };
 };
 
-const tierMultiplier = (tier: StarTier): number => {
-  if (tier === "Blue") return 1.18;
-  if (tier === "Violet") return 1.38;
-  if (tier === "Orange") return 1.62;
-  if (tier === "Red") return 1.90;
-  return 1.0;
-};
-
 const getStarTier = (starLevel: number): StarTier => {
   if (!starLevel || starLevel <= 0) return "None";
   const index = starLevel - 1;
@@ -57,67 +50,154 @@ const getStarTier = (starLevel: number): StarTier => {
 
 const getStarLevelInTier = (starLevel: number): number => ((Math.max(1, starLevel) - 1) % 5) + 1;
 
-const getGrowthWeights = (player: Player): DetailedAttributes => {
-  if (player.position === "PG") {
-    return { threePt: 2, twoPt: 1, freeThrow: 1, handle: 4, assist: 4, steal: 2, block: 0, rebound: 0, onBall: 2, calm: 3 };
+const STAR_ATTRIBUTE_GAIN: Record<StarTier, number> = {
+  None: 0,
+  Silver: 1,
+  Blue: 1,
+  Violet: 2,
+  Orange: 3,
+  Red: 4,
+};
+
+export const getStarGrowthGain = (targetStarLevel: number): {
+  tier: StarTier;
+  levelInTier: number;
+  attributeGain: number;
+  staminaGain: number;
+} => {
+  const tier = getStarTier(targetStarLevel);
+  return {
+    tier,
+    levelInTier: tier === "None" ? 0 : getStarLevelInTier(targetStarLevel),
+    attributeGain: STAR_ATTRIBUTE_GAIN[tier],
+    staminaGain: tier === "None" ? 0 : 2,
+  };
+};
+
+export const getCumulativeStarGrowthGain = (starLevel: number): {
+  attributeGain: number;
+  staminaGain: number;
+} => {
+  let attributeGain = 0;
+  let staminaGain = 0;
+  for (let star = 1; star <= Math.max(0, starLevel); star++) {
+    const gain = getStarGrowthGain(star);
+    attributeGain += gain.attributeGain;
+    staminaGain += gain.staminaGain;
   }
-  if (player.position === "SG") {
-    return { threePt: 4, twoPt: 2, freeThrow: 2, handle: 3, assist: 2, steal: 2, block: 0, rebound: 1, onBall: 2, calm: 2 };
-  }
-  if (player.position === "SF") {
-    return { threePt: 3, twoPt: 3, freeThrow: 1, handle: 2, assist: 2, steal: 2, block: 1, rebound: 2, onBall: 3, calm: 2 };
-  }
-  if (player.position === "PF") {
-    return { threePt: 1, twoPt: 4, freeThrow: 1, handle: 1, assist: 2, steal: 1, block: 3, rebound: 4, onBall: 2, calm: 2 };
-  }
-  return { threePt: 0, twoPt: 4, freeThrow: 1, handle: 0, assist: 1, steal: 0, block: 4, rebound: 4, onBall: 2, calm: 2 };
+  return { attributeGain, staminaGain };
+};
+
+export const deriveOffenseDefenseFromAttributes = (attributes: DetailedAttributes): { offense: number; defense: number } => {
+  const offense = (
+    attributes.threePt * 0.20 +
+    attributes.twoPt * 0.24 +
+    attributes.freeThrow * 0.06 +
+    attributes.handle * 0.18 +
+    attributes.assist * 0.20 +
+    attributes.calm * 0.12
+  );
+
+  const defense = (
+    attributes.steal * 0.20 +
+    attributes.block * 0.20 +
+    attributes.rebound * 0.16 +
+    attributes.onBall * 0.30 +
+    attributes.calm * 0.14
+  );
+
+  return {
+    offense: capCore(offense),
+    defense: capCore(defense),
+  };
+};
+
+export const getDerivedOffenseDefense = (player: Player): { offense: number; defense: number } => {
+  return deriveOffenseDefenseFromAttributes(getDetailedAttributes(player));
 };
 
 export const applyStarGrowth = (player: Player, targetStarLevel: number): Player => {
-  const tier = getStarTier(targetStarLevel);
-  const levelInTier = getStarLevelInTier(targetStarLevel);
-  const multiplier = tierMultiplier(tier);
-  const milestoneBoost = levelInTier === 5 ? 1.35 : levelInTier === 3 ? 1.15 : 1.0;
-  const weights = getGrowthWeights(player);
+  const currentAppliedLevel = Math.max(0, Math.min(player.starGrowthAppliedLevel ?? (player.starLevel ?? 0), targetStarLevel));
+  const currentTotalGrowth = getCumulativeStarGrowthGain(currentAppliedLevel);
+  const targetTotalGrowth = getCumulativeStarGrowthGain(targetStarLevel);
+  const attributeGain = targetTotalGrowth.attributeGain - currentTotalGrowth.attributeGain;
+  const staminaGain = targetTotalGrowth.staminaGain - currentTotalGrowth.staminaGain;
   const current = getDetailedAttributes(player);
 
-  const gains = Object.fromEntries(
-    Object.entries(weights).map(([key, weight]) => [
-      key,
-      Math.max(1, Math.round((1 + weight * 0.55) * multiplier * milestoneBoost)),
-    ])
-  ) as DetailedAttributes;
-
   const next: DetailedAttributes = {
-    threePt: capDetailed(current.threePt + gains.threePt),
-    twoPt: capDetailed(current.twoPt + gains.twoPt),
-    freeThrow: capDetailed(current.freeThrow + gains.freeThrow),
-    handle: capDetailed(current.handle + gains.handle),
-    assist: capDetailed(current.assist + gains.assist),
-    steal: capDetailed(current.steal + gains.steal),
-    block: capDetailed(current.block + gains.block),
-    rebound: capDetailed(current.rebound + gains.rebound),
-    onBall: capDetailed(current.onBall + gains.onBall),
-    calm: capDetailed(current.calm + gains.calm),
+    threePt: capDetailed(current.threePt + attributeGain),
+    twoPt: capDetailed(current.twoPt + attributeGain),
+    freeThrow: capDetailed(current.freeThrow + attributeGain),
+    handle: capDetailed(current.handle + attributeGain),
+    assist: capDetailed(current.assist + attributeGain),
+    steal: capDetailed(current.steal + attributeGain),
+    block: capDetailed(current.block + attributeGain),
+    rebound: capDetailed(current.rebound + attributeGain),
+    onBall: capDetailed(current.onBall + attributeGain),
+    calm: capDetailed(current.calm + attributeGain),
   };
-
-  const offenseGain = Math.ceil((gains.threePt + gains.twoPt + gains.handle + gains.assist) / 4);
-  const defenseGain = Math.ceil((gains.steal + gains.block + gains.rebound + gains.onBall) / 4);
-  const shootingGain = Math.ceil((gains.threePt + gains.twoPt + gains.freeThrow) / 8);
-  const playmakingGain = Math.ceil((gains.handle + gains.assist + gains.calm) / 8);
-  const speedGain = player.position === "PG" || player.position === "SG" || player.position === "SF" ? Math.ceil((gains.handle + gains.steal) / 14) : 0;
-  const strengthGain = player.position === "PF" || player.position === "C" ? Math.ceil((gains.twoPt + gains.block + gains.rebound) / 14) : 0;
+  const derived = deriveOffenseDefenseFromAttributes(next);
 
   return {
     ...player,
     starLevel: targetStarLevel,
     ...next,
-    offense: capCore(player.offense + offenseGain),
-    defense: capCore(player.defense + defenseGain),
-    shooting: capSub(player.shooting + shootingGain),
-    playmaking: capSub(player.playmaking + playmakingGain),
-    speed: capSub(player.speed + speedGain),
-    strength: capSub(player.strength + strengthGain),
+    offense: derived.offense,
+    defense: derived.defense,
+    shooting: capSub((player.shooting ?? 1) + attributeGain),
+    playmaking: capSub((player.playmaking ?? 1) + attributeGain),
+    speed: capSub((player.speed ?? 1) + attributeGain),
+    strength: capSub((player.strength ?? 1) + attributeGain),
+    stamina: capStamina((player.stamina ?? 100) + staminaGain),
+    starGrowthAppliedLevel: targetStarLevel,
     ovr: player.ovr,
+  };
+};
+
+export const repairStarGrowth = (player: Player, baseline?: Player): Player => {
+  const targetStarLevel = player.starLevel ?? 0;
+  if (targetStarLevel <= 0) {
+    const derived = getDerivedOffenseDefense(baseline ?? player);
+    return { ...player, ...derived, starGrowthAppliedLevel: 0 };
+  }
+
+  const targetGrowth = getCumulativeStarGrowthGain(targetStarLevel);
+  const expectedStamina = (baseline?.stamina ?? 100) + targetGrowth.staminaGain;
+  if (!baseline && player.starGrowthAppliedLevel !== undefined && player.stamina === expectedStamina) return player;
+  const repairBase = baseline
+    ? {
+        ...player,
+        offense: baseline.offense,
+        defense: baseline.defense,
+        shooting: baseline.shooting,
+        speed: baseline.speed,
+        strength: baseline.strength,
+        playmaking: baseline.playmaking,
+        threePt: baseline.threePt,
+        twoPt: baseline.twoPt,
+        freeThrow: baseline.freeThrow,
+        handle: baseline.handle,
+        assist: baseline.assist,
+        steal: baseline.steal,
+        block: baseline.block,
+        rebound: baseline.rebound,
+        onBall: baseline.onBall,
+        calm: baseline.calm,
+        stamina: baseline.stamina ?? 100,
+        starGrowthAppliedLevel: 0,
+      }
+    : {
+        ...player,
+        stamina: Math.min(player.stamina ?? 100, 100),
+        starGrowthAppliedLevel: 0,
+      };
+
+  const repaired = applyStarGrowth(repairBase, targetStarLevel);
+
+  return {
+    ...player,
+    ...repaired,
+    stamina: expectedStamina,
+    starGrowthAppliedLevel: targetStarLevel,
   };
 };

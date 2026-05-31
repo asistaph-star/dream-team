@@ -26,7 +26,8 @@ export function generateShot(player: Player, formRating: number, is3PTBaseCheck?
     C:  { catchAndShoot: 60, cornerThree: 40, pullUpThree: 5, stepBackThree: 2 }
   };
 
-  const is3PT = is3PTBaseCheck ?? (Math.random() < (player.shooting / 200)); 
+  const threePointTendency = Math.max(0.12, Math.min(0.42, player.shooting / 260));
+  const is3PT = is3PTBaseCheck ?? (Math.random() < threePointTendency);
   const pool = is3PT ? { ...base3PT[player.position] } : { ...base2PT[player.position] };
 
   // Determine top 3 shots to exclude from outlier boost

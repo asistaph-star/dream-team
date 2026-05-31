@@ -273,6 +273,36 @@ const baseMockPlayers: Player[] = [
     quantity: 1,
     starLevel: 0
   },
+  {
+    id: "p_christie",
+    name: "Max Christie",
+    position: "SG",
+    rarity: "Common",
+    level: 1,
+    maxLevel: 20,
+    exp: 0,
+    ovr: 58,
+    offense: 45,
+    defense: 48,
+    shooting: 55,
+    speed: 70,
+    strength: 50,
+    playmaking: 45,
+    imageUrl: "players/newplayers/lakers/maxchristie.webp",
+    stamina: 100,
+    salary: 50,
+    price: 50,
+    priceTrend: 'down',
+    ppg: 4.2,
+    rpg: 2.1,
+    apg: 0.9,
+    spg: 0.3,
+    bpg: 0.2,
+    topg: 0.4,
+    pfpg: 1.1,
+    quantity: 1,
+    starLevel: 0
+  },
   // ─── #1 GENERATIONAL (SSS+) ───
   {
     id: "p_001",
@@ -762,6 +792,8 @@ const baseMockPlayers: Player[] = [
 
 import injuriesData from "./injuries.json";
 import updatesData from "./players_update.json";
+import { deriveAttributesFromNbaStats } from "../utils/nbaAttributeMapper";
+import { deriveOffenseDefenseFromAttributes } from "../utils/starGrowth";
 
 export const mockPlayers: Player[] = baseMockPlayers.map(p => {
   const key = p.name.replace(/[^a-zA-Z]/g, '').toLowerCase();
@@ -774,12 +806,14 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
   let salary = p.salary;
   let priceTrend = p.priceTrend;
   let rarity = p.rarity;
+  let currentSeasonStats = p.currentSeasonStats;
 
   if (update) {
     ovr = update.ovr;
     price = update.price;
     salary = update.salary;
     priceTrend = update.priceTrend;
+    currentSeasonStats = update.currentSeasonStats ?? currentSeasonStats;
     
     // Dynamically align rarity tier with newly calculated dynamic OVR
     if (ovr >= 95) rarity = "Mythic";
@@ -789,6 +823,11 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
     else rarity = "Common";
   }
 
+  const nbaAttributes = currentSeasonStats
+    ? deriveAttributesFromNbaStats({ ...p, ovr, price, salary, priceTrend, rarity, currentSeasonStats })
+    : null;
+  const derivedCore = nbaAttributes ? deriveOffenseDefenseFromAttributes(nbaAttributes) : null;
+
   const updatedPlayer = {
     ...p,
     ovr,
@@ -797,9 +836,50 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
     salary,
     priceTrend,
     rarity,
+    currentSeasonStats,
+    ...(nbaAttributes
+      ? {
+          threePt: nbaAttributes.threePt,
+          twoPt: nbaAttributes.twoPt,
+          freeThrow: nbaAttributes.freeThrow,
+          handle: nbaAttributes.handle,
+          assist: nbaAttributes.assist,
+          steal: nbaAttributes.steal,
+          block: nbaAttributes.block,
+          rebound: nbaAttributes.rebound,
+          onBall: nbaAttributes.onBall,
+          calm: nbaAttributes.calm,
+          offense: derivedCore!.offense,
+          defense: derivedCore!.defense,
+        }
+      : {}),
     quantity: p.quantity ?? 1,
     starLevel: p.starLevel ?? 0,
-    baseSkills: p.baseSkills ?? assignBaseSkillsFromStats({ ...p, ovr, price, salary, priceTrend, rarity }),
+    baseSkills: p.baseSkills ?? assignBaseSkillsFromStats({
+      ...p,
+      ovr,
+      price,
+      salary,
+      priceTrend,
+      rarity,
+      currentSeasonStats,
+      ...(nbaAttributes
+        ? {
+            threePt: nbaAttributes.threePt,
+            twoPt: nbaAttributes.twoPt,
+            freeThrow: nbaAttributes.freeThrow,
+            handle: nbaAttributes.handle,
+            assist: nbaAttributes.assist,
+            steal: nbaAttributes.steal,
+            block: nbaAttributes.block,
+            rebound: nbaAttributes.rebound,
+            onBall: nbaAttributes.onBall,
+            calm: nbaAttributes.calm,
+            offense: derivedCore!.offense,
+            defense: derivedCore!.defense,
+          }
+        : {}),
+    }),
     specialSkillSlots: p.specialSkillSlots ?? [null, null]
   };
 

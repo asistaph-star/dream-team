@@ -96,7 +96,11 @@ export const decayMarks = (marks: SkillMarks): SkillMarks => {
 };
 
 export const getTriggerBoost = (lineup: Player[], stamina: Record<string, number>): number => {
-  const holder = lineup.find(p => hasBaseSkill(p, "Complete Engine") && (stamina[p.id] ?? 100) >= 40);
+  const holder = lineup.find(p => {
+    const maxStamina = Math.max(100, Math.round(p.stamina ?? 100));
+    const staminaPct = ((stamina[p.id] ?? maxStamina) / maxStamina) * 100;
+    return hasBaseSkill(p, "Complete Engine") && staminaPct >= 40;
+  });
   return holder ? 1.04 : 1.0;
 };
 
@@ -138,7 +142,9 @@ export const drainStamina = (
   targetLineup: Player[],
   amount: number
 ): number => {
-  const actual = Math.round(amount * getDrainMultiplier(target, targetLineup));
+  const maxStamina = Math.max(100, Math.round(target.stamina ?? 100));
+  const staminaScale = Math.min(1.25, Math.max(1, Math.sqrt(maxStamina / 100)));
+  const actual = Math.round(amount * staminaScale * getDrainMultiplier(target, targetLineup));
   stamina[target.id] = Math.max(0, (stamina[target.id] ?? 100) - actual);
   return actual;
 };

@@ -18,6 +18,11 @@ export interface NbaSeasonStats {
   turnoversPerGame?: number;
   foulsPerGame?: number;
   fgPct?: number;
+  fieldGoalsMadePerGame?: number;
+  fieldGoalsAttemptedPerGame?: number;
+  twoPct?: number;
+  twoMadePerGame?: number;
+  twoAttemptedPerGame?: number;
   threePct?: number;
   threeMadePerGame?: number;
   threeAttemptedPerGame?: number;
@@ -63,6 +68,7 @@ export interface Player {
   equipped?: Partial<Record<EquipmentSlot, Equipment>>; // Equipped gear
   imageUrl?: string;
   // Stats & Economy details (from screenshot)
+  team?: string;
   stamina?: number;
   baseSalary?: number;
   salary?: number;
@@ -80,6 +86,7 @@ export interface Player {
   injuryName?: string;
   quantity?: number;    // default 1 — copies owned
   starLevel?: number;   // default 0 — ascension rank (0 to 5)
+  starGrowthAppliedLevel?: number; // migration guard for applied star-up stat bonuses
   
   // Skill system (Phase 0a)
   baseSkills?: [string, string, string];

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:players": "node scripts/run-player-sync.mjs",
+    "report:players": "node scripts/report-player-updates.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.14.0",

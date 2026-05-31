@@ -60,6 +60,11 @@ export const getPlayerNbaSeasonStats = (player: Player): NbaSeasonStats => ({
   turnoversPerGame: player.currentSeasonStats?.turnoversPerGame ?? player.topg,
   foulsPerGame: player.currentSeasonStats?.foulsPerGame ?? player.pfpg,
   fgPct: player.currentSeasonStats?.fgPct,
+  fieldGoalsMadePerGame: player.currentSeasonStats?.fieldGoalsMadePerGame,
+  fieldGoalsAttemptedPerGame: player.currentSeasonStats?.fieldGoalsAttemptedPerGame,
+  twoPct: player.currentSeasonStats?.twoPct,
+  twoMadePerGame: player.currentSeasonStats?.twoMadePerGame,
+  twoAttemptedPerGame: player.currentSeasonStats?.twoAttemptedPerGame,
   threePct: player.currentSeasonStats?.threePct,
   threeMadePerGame: player.currentSeasonStats?.threeMadePerGame,
   threeAttemptedPerGame: player.currentSeasonStats?.threeAttemptedPerGame,
@@ -88,6 +93,7 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
   const pfpg = perGame(stats.foulsPerGame, 2.2);
   const mpg = perGame(stats.minutesPerGame, 28);
   const fgPct = pct(stats.fgPct) ?? Math.max(40, Math.min(65, 42 + ppg * 0.45));
+  const twoPct = pct(stats.twoPct) ?? fgPct;
   const threePct = pct(stats.threePct) ?? Math.max(25, Math.min(45, 29 + (player.shooting ?? 75) * 0.12));
   const threeMakes = perGame(stats.threeMadePerGame, Math.max(0, ((player.shooting ?? 75) - 65) / 12));
   const threeAttempts = perGame(stats.threeAttemptedPerGame, threeMakes * 2.7);
@@ -115,7 +121,7 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
 
   return {
     threePt: clamp(blend([threeVolume, 0.45], [threeEfficiency, 0.45], [rating(tsPct, 67, 40, 170), 0.10])),
-    twoPt: clamp(blend([twoVolume, 0.40], [rimPressure, 0.35], [rating(fgPct, 65, 40, 180), 0.25])),
+    twoPt: clamp(blend([twoVolume, 0.38], [rimPressure, 0.32], [rating(twoPct, 68, 40, 185), 0.22], [rating(fgPct, 62, 40, 170), 0.08])),
     freeThrow: clamp(blend([rating(ftPct, 92, 45, 185), 0.80], [rating(usagePct, 34, 40, 170), 0.20])),
     handle: clamp(blend([rating(apg, 10, 45, 180), 0.30], [playSecurity, 0.45], [rating(fastBreak, 6, 40, 170), 0.25])),
     assist: clamp(blend([rating(apg, 10, 45, 190), 0.72], [playSecurity, 0.28])),
@@ -136,7 +142,7 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
         NBA_STATS_SOURCES.hustle,
       ],
       fieldsUsed: [
-        "PTS", "REB", "AST", "STL", "BLK", "TOV", "PF", "FG%", "3P%", "3PM", "3PA", "FT%",
+        "PTS", "REB", "AST", "STL", "BLK", "TOV", "PF", "FGM", "FGA", "FG%", "2P%", "3P%", "3PM", "3PA", "FT%",
         "USG%", "TS%", "OREB%", "DREB%", "Paint PTS", "2nd Chance PTS", "Fast Break PTS",
         "Deflections", "Contested Shots", "Loose Balls Recovered",
       ],

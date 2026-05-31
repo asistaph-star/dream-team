@@ -181,12 +181,26 @@ export const emptyStats = (): PlayerMatchStats => ({ PTS: 0, REB: 0, AST: 0, STL
 export const clampForm = (v: number): number => Math.max(0.85, Math.min(1.15, v));
 
 export const getStaminaMod = (stamina: number): number => {
-  // Pillar 5: Stamina penalty starts at 70% (real NBA fatigue curve)
-  if (stamina >= 70) return 1.0;
-  if (stamina >= 50) return 0.90; // -10% multiplicative [DESIGN PARAMETER]
-  if (stamina >= 30) return 0.75; // -25% multiplicative [DESIGN PARAMETER]
-  if (stamina >= 15) return 0.55;
-  return 0.40;
+  if (stamina >= 85) return 1.0;
+  if (stamina >= 70) return 0.96;
+  if (stamina >= 55) return 0.90;
+  if (stamina >= 40) return 0.86;
+  if (stamina >= 25) return 0.74;
+  if (stamina >= 10) return 0.58;
+  return 0.42;
+};
+
+export const getPlayerMaxStamina = (player: Player | undefined): number => {
+  return Math.max(100, Math.round(player?.stamina ?? 100));
+};
+
+export const getStaminaPercent = (player: Player | undefined, stamina: number | undefined): number => {
+  const maxStamina = getPlayerMaxStamina(player);
+  return Math.max(0, Math.min(100, ((stamina ?? maxStamina) / maxStamina) * 100));
+};
+
+export const getPlayerStaminaMod = (player: Player, stamina: number | undefined): number => {
+  return getStaminaMod(getStaminaPercent(player, stamina));
 };
 
 /** Zone/Press shot-level modifier — applied PER SHOT TYPE, on top of strategy weights.
@@ -331,7 +345,7 @@ export const computeEffective = (
   const defMods = DEFENSIVE_STRATEGIES[defStrategy] || DEFENSIVE_STRATEGIES["Man-to-Man"];
   let off = 0, def = 0;
   lineup.forEach((p, idx) => {
-    const sm = getStaminaMod(stamina[p.id] ?? 100);
+    const sm = getPlayerStaminaMod(p, stamina[p.id]);
     const slotPos = SLOT_ORDER[idx] || p.position;
     const oopMult = getOopMult(p.position, slotPos);
     // Strategy mod uses the SLOT position (what role they're filling)
@@ -343,7 +357,7 @@ export const computeEffective = (
 
 export const avgStamina = (lineup: Player[], stamina: Record<string, number>): number => {
   if (lineup.length === 0) return 100;
-  return lineup.reduce((s, p) => s + (stamina[p.id] ?? 100), 0) / lineup.length;
+  return lineup.reduce((s, p) => s + getStaminaPercent(p, stamina[p.id]), 0) / lineup.length;
 };
 
 export const computeTeamScore = (

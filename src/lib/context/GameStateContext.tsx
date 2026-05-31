@@ -5,7 +5,7 @@ import { Player, PlayerPosition } from "@/lib/types/player";
 import { mockPlayers } from "@/lib/data/mockPlayers";
 import { Equipment, EquipmentSlot, Inventory, MaterialId } from "@/lib/types/item";
 import { craftingRecipes } from "@/lib/data/mockItems";
-import { applyStarGrowth } from "@/lib/utils/starGrowth";
+import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
 
@@ -42,6 +42,8 @@ interface GameState {
   cash: number;
   accountLevel: number;
   accountExp: number;
+  campaignStage: number;
+  setCampaignStage: (stage: number) => void;
   roster: Player[];
   inventory: Inventory;
   activeLineup: Player[];
@@ -54,13 +56,14 @@ interface GameState {
   stadiumLevels: StadiumLevels;
   passiveStoreCash: number;
   draftPlayer: (isPremium: boolean) => { success: boolean; player?: Player; error?: string };
-  finishMatch: (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string) => MatchResult;
+  finishMatch: (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string, isWin?: boolean) => MatchResult;
   craftEquipment: (slot: EquipmentSlot) => Equipment | null;
   upgradeEquipment: (equipmentId: string) => { success: boolean; newLevel?: number; error?: string };
   upgradeFacility: (facility: keyof StadiumLevels) => { success: boolean; error?: string };
   claimStoreRevenue: () => number;
   autoLineup: () => void;
   setLineupSlot: (position: string, playerId: string) => { success: boolean; error?: string };
+  clearLineupSlot: (position: string) => void;
   firePlayer: (playerId: string) => { success: boolean; refundAmount?: number; error?: string };
   addCash: (amount: number) => void;
   addTk: (amount: number) => void;
@@ -82,7 +85,7 @@ const normalizeInventory = (inventory: Inventory): Inventory => ({
   ...inventory,
   materials: {
     mat_crafting: inventory.materials.mat_crafting ?? 0,
-    mat_upgrade: inventory.materials.mat_upgrade ?? 0,
+    mat_upgrade: Math.max(inventory.materials.mat_upgrade ?? 0, 5000),
     skill_tape: Math.max(inventory.materials.skill_tape ?? 0, 99999),
   },
 });
@@ -91,6 +94,33 @@ const getSpecialSlotUnlockStar = (specialSlotIndex: 0 | 1): number => specialSlo
 
 const rollSpecialSkillName = (): SpecialSkillName => {
   return SPECIAL_SKILL_NAMES[Math.floor(Math.random() * SPECIAL_SKILL_NAMES.length)];
+};
+
+const normalizeRoster = (players: Player[]): Player[] => {
+  // Inject Max Christie if he doesn't exist so the user has a Common SG for testing
+  const rosterArray = [...players];
+  if (!rosterArray.some(p => p.id === 'p_christie')) {
+    const christie = mockPlayers.find(p => p.id === 'p_christie');
+    if (christie) {
+      rosterArray.push({ ...christie, id: 'p_christie', starLevel: 25 });
+    }
+  }
+
+  return rosterArray.map(player => {
+    const baseline = mockPlayers.find(p => p.id === player.id) ?? mockPlayers.find(p => p.name === player.name && p.position === player.position);
+    
+    let targetStarLevel = player.starLevel ?? 0;
+    let targetRarity = player.rarity;
+
+    // Inject MAX STARS for testing Common PG and Common SG
+    if (player.id === "p_vincent" || player.id === "p_christie") {
+      targetStarLevel = 25;
+      targetRarity = "Common";
+    }
+    
+    const updatedPlayer = { ...player, starLevel: targetStarLevel, rarity: targetRarity };
+    return unlockSpecialSkillQualities(repairStarGrowth(updatedPlayer, baseline), targetStarLevel);
+  });
 };
 
 const unlockSpecialSkillQualities = (player: Player, targetStars: number): Player => {
@@ -111,11 +141,13 @@ const unlockSpecialSkillQualities = (player: Player, targetStars: number): Playe
 const GameStateContext = createContext<GameState | undefined>(undefined);
 
 export function GameStateProvider({ children }: { children: React.ReactNode }) {
+  const [isLoaded, setIsLoaded] = useState(false);
   const [tk, setTk] = useState(9999); // Premium currency
   const [cash, setCash] = useState(9999999999); // 9.9 Billion Cash / Team Funds!
   
   const [accountLevel, setAccountLevel] = useState(1);
   const [accountExp, setAccountExp] = useState(0);
+  const [campaignStage, setCampaignStage] = useState(1);
   
   const [stadiumLevels, setStadiumLevels] = useState<StadiumLevels>({
     arena: 1,
@@ -285,8 +317,9 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           if (data.cash !== undefined) setCash(data.cash);
           if (data.accountLevel !== undefined) setAccountLevel(data.accountLevel);
           if (data.accountExp !== undefined) setAccountExp(data.accountExp);
+          if (data.campaignStage !== undefined) setCampaignStage(data.campaignStage);
           if (data.stadiumLevels !== undefined) setStadiumLevels(data.stadiumLevels);
-          if (data.roster !== undefined) setRoster(data.roster);
+          if (data.roster !== undefined) setRoster(normalizeRoster(data.roster));
           if (data.inventory !== undefined) setInventory(normalizeInventory(data.inventory));
           if (data.lineupOverride !== undefined) setLineupOverride(data.lineupOverride);
           if (data.strategyLevels !== undefined) setStrategyLevels(data.strategyLevels);
@@ -294,12 +327,23 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.error("Failed to load saved Dream Team progression:", err);
+      } finally {
+        setIsLoaded(true);
       }
+    } else {
+      setIsLoaded(true);
     }
   }, []);
 
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!roster.some(player => (player.starLevel ?? 0) > 0 || player.starGrowthAppliedLevel === undefined)) return;
+    setRoster(prev => normalizeRoster(prev));
+  }, [isLoaded]);
+
   // Save state dynamically when mutated
   useEffect(() => {
+    if (!isLoaded) return;
     if (typeof window !== "undefined") {
       try {
         const stateToSave = {
@@ -307,6 +351,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           cash,
           accountLevel,
           accountExp,
+          campaignStage,
           stadiumLevels,
           roster,
           inventory,
@@ -319,24 +364,51 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to save Dream Team progression:", err);
       }
     }
-  }, [tk, cash, accountLevel, accountExp, stadiumLevels, roster, inventory, lineupOverride, strategyLevels, playerStorageLimit]);
+  }, [isLoaded, tk, cash, accountLevel, accountExp, campaignStage, stadiumLevels, roster, inventory, lineupOverride, strategyLevels, playerStorageLimit]);
 
-  // Derived state: active lineup picks manually swapped or explicitly assigned via autoLineup
-  const activeLineup = (['PG', 'SG', 'SF', 'PF', 'C'] as const).map(pos => {
+  // Derived state: active lineup and reserves
+  // Ensure that no two players with the exact same NAME can be in the lineup at the same time!
+  const usedLineupNames = new Set<string>();
+  
+  // 1. Process Court Overrides first
+  const courtOverrides = (['PG', 'SG', 'SF', 'PF', 'C'] as const).map(pos => {
     const overrideId = lineupOverride[pos];
     if (overrideId) {
       const p = roster.find(player => player.id === overrideId);
-      if (p) return p;
+      if (p && !usedLineupNames.has(p.name)) {
+        usedLineupNames.add(p.name);
+        return { pos, p };
+      }
     }
     return null;
-  }).filter(Boolean) as Player[];
+  });
 
-  // Explicit active bench (no auto-fill, purely manual)
+  // 2. Process Explicit Bench Overrides
   const activeReserves = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'].map(pos => {
     const overrideId = lineupOverride[pos];
     if (overrideId) {
       const p = roster.find(player => player.id === overrideId);
-      if (p) return p;
+      if (p && !usedLineupNames.has(p.name)) {
+        usedLineupNames.add(p.name);
+        return p;
+      }
+    }
+    return null;
+  }).filter(Boolean) as Player[];
+
+  // 3. Process Court Fallbacks for empty slots
+  const activeLineup = (['PG', 'SG', 'SF', 'PF', 'C'] as const).map(pos => {
+    const overrideMatch = courtOverrides.find(co => co?.pos === pos);
+    if (overrideMatch) return overrideMatch.p;
+
+    // Fallback: if no override, find the best player for this position
+    const fallback = [...roster]
+      .filter(p => p.position === pos && !p.isInjured && !usedLineupNames.has(p.name))
+      .sort((a, b) => b.ovr - a.ovr)[0];
+    
+    if (fallback) {
+      usedLineupNames.add(fallback.name);
+      return fallback;
     }
     return null;
   }).filter(Boolean) as Player[];
@@ -392,7 +464,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     return { success: true, player: newPlayer };
   };
 
-  const finishMatch = (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string): MatchResult => {
+  const finishMatch = (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string, isWin?: boolean): MatchResult => {
     let multiplier = 1;
     if (difficulty === 'NORMAL') multiplier = 2;
     if (difficulty === 'HARD') multiplier = 3.5;
@@ -415,6 +487,9 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     setAccountLevel(newLevel);
     setAccountExp(newExp);
     setCash(prev => prev + gainedCash);
+    if (isWin) {
+      setCampaignStage(prev => Math.min(prev + 1, 30)); // max 30 stages
+    }
 
     // Give EXP to Roster (simplified: all players get EXP)
     setRoster(prev => prev.map(p => {
@@ -580,21 +655,31 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   };
 
   const autoLineup = () => {
-    setLineupOverride(prev => {
-      const copy = { ...prev };
-      const benchIds = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'].map(b => copy[b]).filter(Boolean) as string[];
-      const usedIds = new Set<string>(benchIds);
+    setLineupOverride(() => {
+      const copy: Record<string, string> = {};
+      const usedNames = new Set<string>();
 
+      // 1. Fill Court first
       (['PG', 'SG', 'SF', 'PF', 'C'] as PlayerPosition[]).forEach(pos => {
         const bestPlayer = [...roster]
-          .filter(p => p.position === pos && !p.isInjured && !usedIds.has(p.id))
+          .filter(p => p.position === pos && !p.isInjured && !usedNames.has(p.name))
           .sort((a, b) => b.ovr - a.ovr)[0];
         
         if (bestPlayer) {
           copy[pos] = bestPlayer.id;
-          usedIds.add(bestPlayer.id);
-        } else {
-          delete copy[pos];
+          usedNames.add(bestPlayer.name);
+        }
+      });
+
+      // 2. Fill Bench with the highest OVR remaining players (regardless of position)
+      const remainingPlayers = [...roster]
+        .filter(p => !p.isInjured && !usedNames.has(p.name))
+        .sort((a, b) => b.ovr - a.ovr);
+
+      ['B1', 'B2', 'B3', 'B4', 'B5', 'B6'].forEach((benchSlot, index) => {
+        if (remainingPlayers[index]) {
+          copy[benchSlot] = remainingPlayers[index].id;
+          usedNames.add(remainingPlayers[index].name);
         }
       });
 
@@ -602,7 +687,15 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const setLineupSlot = (position: PlayerPosition, playerId: string): { success: boolean; error?: string } => {
+  // Auto-fill lineup on fresh start if it is completely empty
+  useEffect(() => {
+    if (isLoaded && roster.length > 0 && Object.keys(lineupOverride).length === 0) {
+      autoLineup();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, roster.length, Object.keys(lineupOverride).length]);
+
+  const setLineupSlot = (position: string, playerId: string): { success: boolean; error?: string } => {
     const p = roster.find(player => player.id === playerId);
     if (p && p.isInjured) {
       return { success: false, error: `Cannot slot ${p.name} into the lineup: Player is injured!` };
@@ -620,7 +713,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         }
       }
       if (!oldPos && p) {
-        oldPos = p.position; // fallback to their native position
+        // Check if they were on the court implicitly via fallback
+        const isOnCourtFallback = activeLineup.some(al => al.id === playerId);
+        if (isOnCourtFallback) {
+          oldPos = p.position; // Fallback logic always places them in their native position
+        }
       }
 
       // Determine who is currently in the target slot explicitly
@@ -637,12 +734,17 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         }
       }
       
-      // Optional cleanup: If a player is assigned to their native court position, we could delete the override.
-      // But keeping it is safe and ensures they are locked there.
-      
       return copy;
     });
     return { success: true };
+  };
+
+  const clearLineupSlot = (position: string) => {
+    setLineupOverride(prev => {
+      const copy = { ...prev };
+      delete copy[position];
+      return copy;
+    });
   };
 
   const firePlayer = (playerId: string): { success: boolean; refundAmount?: number; error?: string } => {
@@ -914,6 +1016,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       cash, 
       accountLevel, 
       accountExp, 
+      campaignStage,
       roster, 
       inventory, 
       activeLineup, 
@@ -933,6 +1036,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       claimStoreRevenue, 
       autoLineup, 
       setLineupSlot,
+      clearLineupSlot,
       firePlayer,
       addCash,
       addTk,
@@ -947,7 +1051,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       ascendPlayer,
       rollSpecialLearnSkill,
       rerollSpecialLearnSkill,
-      resetRosterProgress
+      resetRosterProgress,
+      setCampaignStage
     }}>
       {children}
     </GameStateContext.Provider>

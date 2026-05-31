@@ -1,16 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { Player } from "@/lib/types/player";
-import { Shield, Sword, Zap, Activity } from "lucide-react";
-import { getDetailedAttributes } from "@/lib/utils/starGrowth";
+import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRight } from "lucide-react";
+import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain } from "@/lib/utils/starGrowth";
+import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
+import { SkillBadge } from "@/components/skills/SkillBadge";
+import { isSkillQuality } from "@/lib/skills/skillCatalog";
+import { useGameState } from "@/lib/context/GameStateContext";
 
 interface PlayerHexProfileModalProps {
   player: Player;
   onClose: () => void;
-  onStarUp: () => void;
+  onStarUp: () => Promise<any> | void;
   isAscending: boolean;
 }
 
-export function PlayerHexProfileModal({ player, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
+export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
+  const { inventory, roster, activeLineup } = useGameState();
+  
+  // Ensure the modal always reads the absolute latest player state from the roster,
+  // fixing the issue where the modal wouldn't update after a successful Star Up.
+  const player = roster.find(p => p.id === initialPlayer.id) || initialPlayer;
+
+  const [showStarUpConfirm, setShowStarUpConfirm] = useState(false);
+  const [showSystemNotification, setShowSystemNotification] = useState(false);
+  const [isProcessingStarUp, setIsProcessingStarUp] = useState(false);
+  const [ascendOutcome, setAscendOutcome] = useState<{ 
+    status: 'success' | 'failed', 
+    oldStars: number, 
+    newStars: number, 
+    oldPower: number, 
+    newPower: number 
+  } | null>(null);
+  
   if (!player) return null;
   const details = getDetailedAttributes(player);
   const attributeRows = [
@@ -27,155 +48,675 @@ export function PlayerHexProfileModal({ player, onClose, onStarUp, isAscending }
   ];
   const attributeVisualMax = Math.max(180, ...attributeRows.map(stat => stat.val));
 
-  return (
-    <div 
-      className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 perspective-1000"
-      onClick={(e) => {
-        // Only close if clicking exactly on the backdrop wrapper
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      
-      {/* Background glow behind modal */}
-      <div className="absolute w-[800px] h-[500px] bg-red-900/10 blur-[100px] pointer-events-none rounded-full" />
+  // Extract skills (fallback to placeholders if undefined in mock data)
+  const baseSkills = player.baseSkills || ['Shoot', 'Pass', 'Defend'];
+  const specialSkills = player.specialSkillSlots || [null, null];
 
-      {/* Main Container - Premium Tech Frame */}
+  return (
+    <>
+      <style>{`#global-bottom-nav { display: none !important; }`}</style>
       <div 
-        className="w-[850px] h-[500px] relative bg-zinc-950/95 border border-white/10 rounded-2xl overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] flex transform-gpu transition-all duration-500 scale-100 pointer-events-auto"
+        className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 perspective-1000"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+      {/* The Floating Box Container */}
+      <div 
+        className="w-[1050px] h-[650px] bg-zinc-950 border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] relative pointer-events-auto transform-gpu transition-all duration-300 scale-100" 
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Close Button - Brought back inside the box */}
-        <button 
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onClose();
-          }} 
-          className="absolute top-4 right-4 z-[99999] w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-red-500/90 border border-white/20 hover:border-white rounded-full text-white/70 hover:text-white transition-all backdrop-blur-md cursor-pointer shadow-lg pointer-events-auto"
-          title="Close Profile"
-        >
-          <span className="text-lg leading-none font-light -mt-0.5">✕</span>
-        </button>
-
         {/* CRT Scanline overlay */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-screen" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
 
-        {/* Left Side: 3D Hologram Card Area */}
-        <div className="w-[300px] h-full relative flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900/80 to-black p-6 border-r border-white/5">
-          {/* Subtle grid pattern */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, white 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-
-          <div className="absolute top-6 left-6 z-20 flex items-center gap-2">
-            <span className="text-4xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)] leading-none italic">{player.ovr}</span>
-            <div className="flex flex-col border-l border-red-500/50 pl-2">
-              <span className="text-[10px] text-white/70 font-black uppercase tracking-widest">{player.position}</span>
-              <span className="text-[9px] text-red-400 font-bold uppercase tracking-[0.2em]">{player.rarity}</span>
-            </div>
+        {/* Modal Header */}
+        <div className="h-[50px] border-b border-white/5 flex items-center justify-between px-6 bg-black/40 shrink-0 relative z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-white/80 font-black italic tracking-[0.2em] uppercase text-[14px]">Player Profile</span>
           </div>
-          
-          <div className="relative w-52 h-64 mt-8 perspective-1000">
-            {/* Holographic glowing base */}
-            <div className="absolute bottom-[-15px] left-1/2 -translate-x-1/2 w-40 h-6 bg-red-600/30 blur-xl rounded-[100%] pointer-events-none" />
-            
-            <div className="w-full h-full relative transition-transform duration-500 hover:scale-105 hover:rotate-y-6">
-              {player.imageUrl ? (
-                <img src={player.imageUrl} alt={player.name} className="w-full h-full object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.8)]" />
-              ) : (
-                <div className="w-full h-full bg-zinc-800 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
-                  <span className="text-white/20 text-6xl font-black">{player.position}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-6 text-center relative z-20 pointer-events-none">
-            <h2 className="text-xl font-black text-white italic tracking-[0.1em] uppercase drop-shadow-md">{player.name}</h2>
-            <div className="flex justify-center gap-1 mt-1.5 text-red-500">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className={`relative ${i < (player.starLevel || 0) ? 'scale-110' : 'scale-90 opacity-20'}`}>
-                  <div className={`absolute inset-0 blur-sm ${i < (player.starLevel || 0) ? 'bg-red-500' : 'bg-transparent'}`} />
-                  <span className="relative text-lg drop-shadow-[0_0_2px_black]">♦</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <button 
+            onClick={onClose} 
+            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors cursor-pointer"
+          >
+            <X size={18} strokeWidth={3} />
+          </button>
         </div>
 
-        {/* Right Side: Data & Hex Menu */}
-        <div className="flex-1 h-full relative flex flex-col pointer-events-none">
-          
-          {/* Top Attributes Panel */}
-          <div className="p-8 pb-0">
-            <div className="flex items-center gap-2 mb-6 border-b border-white/5 pb-3">
-              <Activity className="text-cyan-400 w-4 h-4" />
-              <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
+        {/* Content Wrapper */}
+        <div className="flex-1 flex relative">
+          {/* Animated Glowing Edge Dots */}
+          <div 
+            className="absolute inset-0 opacity-40 pointer-events-none animate-pulse z-0" 
+            style={{ 
+              backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 2px)', 
+              backgroundSize: '14px 14px', 
+              backgroundPosition: '0 0',
+              maskImage: 'radial-gradient(ellipse at center, transparent 30%, black 90%)',
+              WebkitMaskImage: 'radial-gradient(ellipse at center, transparent 30%, black 90%)'
+            }} 
+          />
+
+          {/* Left: Player Art */}
+          <div className="w-[400px] h-full relative flex flex-col items-center justify-center border-r border-white/5 bg-black/20 z-10">
+            <div className="absolute top-6 left-6 z-20 flex items-center gap-3">
+              <span className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.6)] leading-none italic font-[family-name:var(--font-outfit)]">{player.ovr}</span>
+              <div className="flex flex-col border-l border-red-500/50 pl-3">
+                <span className="text-[12px] text-white/70 font-black uppercase tracking-widest">{player.position}</span>
+                <span className="text-[11px] text-red-400 font-bold uppercase tracking-[0.2em]">{player.rarity}</span>
+              </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-              {attributeRows.map(stat => (
-                <div key={stat.label} className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{stat.label}</span>
-                    <span className="text-xs font-black text-white font-mono">{stat.val}</span>
+            <div className="relative w-72 h-80 mt-12 perspective-1000">
+              <div className="absolute bottom-[-30px] left-1/2 -translate-x-1/2 w-64 h-10 bg-red-600/30 blur-3xl rounded-[100%] pointer-events-none" />
+              <div className="w-full h-full relative transition-transform duration-500 hover:scale-105 hover:rotate-y-6">
+                {player.imageUrl ? (
+                  <img src={player.imageUrl} alt={player.name} className="w-full h-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.8)]" />
+                ) : (
+                  <div className="w-full h-full bg-zinc-800 rounded-xl flex items-center justify-center border border-white/10 shadow-inner">
+                    <span className="text-white/20 text-7xl font-black">{player.position}</span>
                   </div>
-                  <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                    <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                  </div>
-                </div>
-              ))}
+                )}
+              </div>
+            </div>
+            
+            <div className="mt-8 text-center relative z-20 pointer-events-none">
+              <h2 className="text-3xl font-black text-white italic tracking-[0.1em] uppercase drop-shadow-md font-[family-name:var(--font-outfit)]">{player.name}</h2>
+              <div className="flex justify-center gap-[12px] mt-6 items-center">
+                {[1, 2, 3, 4, 5].map((lvl) => {
+                  const starInfo = getStarTierAndLevel(player.starLevel ?? 0);
+                  const isActive = starInfo.level >= lvl;
+                  return (
+                    <div
+                      key={lvl}
+                      className={`w-[16px] h-[16px] rotate-45 border-2 transition-all duration-300 shadow-[0_0_10px_rgba(0,0,0,0.8)] ${
+                        isActive
+                          ? starInfo.colorClass
+                          : "border-gray-800 bg-black/85 opacity-50"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* Hexagonal Button Cluster */}
-          <div className="mt-auto p-8 relative pointer-events-auto">
-            {/* Hex connecting lines graphic */}
-            <div className="absolute bottom-8 left-8 right-8 h-[1px] bg-white/5 pointer-events-none" />
+          {/* Right: Attributes, Skills & Actions */}
+          <div className="flex-1 h-full relative flex flex-col p-8 z-10">
             
-            <div className="flex items-end justify-center gap-4 relative z-10">
+            {/* Top Attributes Panel */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-3">
+                <Activity className="text-cyan-400 w-4 h-4" />
+                <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
+              </div>
               
-              {/* Enhance Hex */}
-              <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50">
-                <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
-                <Shield className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
-                <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Enhance</span>
-              </button>
-
-              {/* Core Hex */}
-              <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50 mt-8">
-                <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
-                <Sword className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
-                <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Core</span>
-              </button>
-
-              {/* Star Up Hex */}
-              <button 
-                onClick={onStarUp}
-                disabled={isAscending}
-                className={`group relative w-24 h-28 flex flex-col items-center justify-center transition-all ${isAscending ? 'opacity-50 cursor-wait' : 'hover:-translate-y-2 cursor-pointer'} mt-4`}
-              >
-                {/* Outer Glow */}
-                <div className="absolute -inset-3 bg-red-600/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                
-                {/* Hex Shape */}
-                <div className="absolute inset-0 bg-gradient-to-b from-red-900 via-red-950 to-black border-2 border-red-500 shadow-[inset_0_0_20px_rgba(220,38,38,0.3)] transition-all pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
-                  <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 45%, transparent 50%)', backgroundSize: '200% 200%' }} />
-                </div>
-                
-                <Zap className={`relative text-white w-6 h-6 mb-1.5 z-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${isAscending ? 'animate-bounce' : 'group-hover:animate-pulse'}`} />
-                <span className="relative text-[9px] font-black text-white uppercase tracking-[0.2em] z-10 drop-shadow-[0_2px_4px_black]">
-                  {isAscending ? 'Upgrading' : 'Star Up'}
-                </span>
-              </button>
-
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+                {attributeRows.map(stat => (
+                  <div key={stat.label} className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
+                      <span className="text-[12px] font-black text-white font-mono">{stat.val}</span>
+                    </div>
+                    <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                      <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          
-        </div>
 
+            {/* 5-Box Skill System */}
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+                <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Player Skills</h3>
+              </div>
+              
+              <div className="flex gap-6 pl-2 pt-2">
+                {/* 3 Base Skills */}
+                {baseSkills.map((skill, idx) => (
+                  <div key={`base-${idx}`} className="transform scale-[1.35] origin-center">
+                    <SkillBadge 
+                      name={skill} 
+                      color={idx === 0 ? "red" : idx === 1 ? "blue" : "green"} 
+                      locked={idx === 2 && player.ovr < 85} 
+                    />
+                  </div>
+                ))}
+                
+                {/* Divider */}
+                <div className="w-[1px] h-[50px] bg-white/10 mx-3" />
+
+                {/* 2 Special/Learnable Skills */}
+                {specialSkills.map((skill, idx) => {
+                  const unlockStar = idx === 0 ? 1 : 5;
+                  const isStarLocked = (player.starLevel || 0) < unlockStar;
+                  const skillName = skill ?? "Learn";
+                  const locked = isStarLocked;
+                  const savedQuality = player.skillRarities?.[skillName];
+                  const quality = isSkillQuality(savedQuality) ? savedQuality : "Common";
+
+                  return (
+                    <div key={`spec-${idx}`} className="transform scale-[1.35] origin-center">
+                      <SkillBadge
+                        name={skillName}
+                        color="special"
+                        locked={locked}
+                        unlockText={`Star ${unlockStar}`}
+                        quality={quality}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Hexagonal Button Cluster */}
+            <div className="mt-auto relative pointer-events-auto">
+              <div className="flex items-end justify-end gap-5 relative z-10 pr-2">
+                
+                {/* Enhance Hex */}
+                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50">
+                  <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+                  <Shield className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
+                  <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Enhance</span>
+                </button>
+
+                {/* Core Hex */}
+                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50 mb-5">
+                  <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+                  <Sword className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
+                  <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Core</span>
+                </button>
+
+                {/* Star Up Hex */}
+                <button 
+                  onClick={() => setShowStarUpConfirm(true)}
+                  disabled={isAscending || (player.starLevel ?? 0) >= 25}
+                  className={`group relative w-28 h-32 flex flex-col items-center justify-center transition-all ${isAscending ? 'opacity-50 cursor-wait' : ((player.starLevel ?? 0) >= 25 ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-2 cursor-pointer active:scale-90 active:translate-y-0 duration-150')}`}
+                >
+                  {/* Outer Glow */}
+                  <div className="absolute -inset-3 bg-red-600/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  
+                  {/* Hex Shape */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-red-900 via-red-950 to-black border-2 border-red-500 shadow-[inset_0_0_25px_rgba(220,38,38,0.3)] transition-all pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                    <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 45%, transparent 50%)', backgroundSize: '200% 200%' }} />
+                  </div>
+                  
+                  <Zap className={`relative text-white w-7 h-7 mb-1.5 z-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${isAscending ? 'animate-bounce' : 'group-hover:animate-pulse'}`} />
+                  <span className="relative text-[10px] font-black text-white uppercase tracking-[0.2em] z-10 drop-shadow-[0_2px_4px_black]">
+                    {isAscending ? 'Upgrading' : ((player.starLevel ?? 0) >= 25 ? 'Max Star' : 'Star Up')}
+                  </span>
+                </button>
+
+              </div>
+            </div>
+            
+            {/* Ascension Overlay */}
+            {showStarUpConfirm && (player.starLevel ?? 0) < 25 && (() => {
+              const currentStars = player.starLevel ?? 0;
+              const targetStars = currentStars + 1;
+              const targetInfo = getStarTierAndLevel(targetStars);
+              
+              let tierMult = 1.0;
+              if (targetInfo.tier === "Blue") tierMult = 1.5;
+              else if (targetInfo.tier === "Violet") tierMult = 2.0;
+              else if (targetInfo.tier === "Orange") tierMult = 2.5;
+              else if (targetInfo.tier === "Red") tierMult = 3.0;
+              
+              const matCost = Math.floor(20 * targetInfo.level * tierMult);
+              const ownedMats = inventory?.materials?.mat_upgrade ?? 0;
+              const hasEnoughMats = ownedMats >= matCost;
+
+              let needsDuplicate = false;
+              if (targetInfo.tier === "Silver" && (targetInfo.level === 1 || targetInfo.level === 5)) needsDuplicate = true;
+              else if (targetInfo.tier === "Blue" && targetInfo.level === 5) needsDuplicate = true;
+              else if (targetInfo.tier === "Violet" && (targetInfo.level === 3 || targetInfo.level === 5)) needsDuplicate = true;
+              else if (targetInfo.tier === "Orange" && (targetInfo.level === 3 || targetInfo.level === 4 || targetInfo.level === 5)) needsDuplicate = true;
+              else if (targetInfo.tier === "Red" && (targetInfo.level === 1 || targetInfo.level === 3 || targetInfo.level === 5)) needsDuplicate = true;
+
+              const dupCandidates = roster.filter(
+                p => p.name === player.name && 
+                p.id !== player.id && 
+                !activeLineup.some(al => al.id === p.id)
+              );
+              const hasDuplicate = dupCandidates.length > 0;
+              const canAscend = hasEnoughMats && (!needsDuplicate || hasDuplicate);
+
+              // Calculate projected player attributes for Effect Preview
+              const projectedPlayer = applyStarGrowth(player, targetStars);
+
+              // Success rate calculation
+              let baseChance = 1.0;
+              let decayRate = 0.10;
+              if (targetInfo.tier === "Silver") { baseChance = 1.0; } 
+              else if (targetInfo.tier === "Blue") { baseChance = 0.50; } 
+              else if (targetInfo.tier === "Violet") { baseChance = 0.25; } 
+              else if (targetInfo.tier === "Orange") { baseChance = 0.12; } 
+              else if (targetInfo.tier === "Red") { baseChance = 0.083333; }
+              const starFactor = 1.0 - (targetInfo.level - 1) * decayRate;
+              const ratePercent = Math.max(1, Math.floor((baseChance * starFactor) * 100));
+
+              const executeStarUp = async () => {
+                if (isProcessingStarUp) return;
+                setIsProcessingStarUp(true);
+                
+                const oldStars = currentStars;
+                const newStars = targetStars;
+                const oldDetails = getDetailedAttributes(player);
+                const newDetails = getDetailedAttributes(projectedPlayer);
+                const oldPower = Math.floor(Object.values(oldDetails).reduce((a:any,b:any)=>a+b,0)*1.5 + (player.stamina??100)*2);
+                const newPower = Math.floor(Object.values(newDetails).reduce((a:any,b:any)=>a+b,0)*1.5 + (projectedPlayer.stamina??100)*2);
+                
+                const res = await onStarUp();
+                setIsProcessingStarUp(false);
+                
+                if (res && typeof res.success !== 'undefined') {
+                  setAscendOutcome({
+                    status: res.success ? 'success' : 'failed',
+                    oldStars, newStars, oldPower, newPower
+                  });
+                } else {
+                  setAscendOutcome({ status: 'success', oldStars, newStars, oldPower, newPower });
+                }
+              };
+
+              const lowPolyBg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400" preserveAspectRatio="none"><polygon points="0,0 200,0 100,150" fill="%23303136"/><polygon points="0,0 100,150 0,250" fill="%2326272b"/><polygon points="200,0 200,200 100,150" fill="%232c2d31"/><polygon points="0,250 100,150 200,200" fill="%2328292d"/><polygon points="200,200 100,150 150,400" fill="%232a2b2f"/><polygon points="0,250 200,200 0,400" fill="%2325262a"/><polygon points="0,400 200,200 200,400" fill="%232e2f33"/></svg>`;
+
+              return (
+                <>
+                  <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 rounded-r-2xl border-l border-white/5 animate-[fadeIn_0.15s_ease-out]">
+                  <div 
+                    className="w-full h-full border border-white/10 rounded-xl p-5 flex flex-col relative overflow-hidden shadow-2xl"
+                    style={{ 
+                      backgroundImage: `url('${lowPolyBg}')`, 
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    
+                    <div className="relative z-10 flex flex-col h-full gap-3">
+                      
+                      {/* Header: Effect Preview */}
+                      <div className="bg-white/5 border-l-[4px] border-emerald-500 px-4 py-2 flex items-center shadow-inner rounded-r">
+                        <span className="text-white text-[14px] font-black tracking-widest uppercase drop-shadow-sm">Effect Preview</span>
+                      </div>
+
+                      {/* Stats List */}
+                      <div className="bg-black/40 px-5 py-4 border border-white/5 rounded-lg flex flex-col gap-4 shadow-inner">
+                        {(() => {
+                          const currentGrowth = getCumulativeStarGrowthGain(currentStars);
+                          const targetGrowth = getCumulativeStarGrowthGain(targetStars);
+
+                          let row3Label = "Star Level";
+                          let row3Cur = `Lv ${currentStars}`;
+                          let row3Proj = `Lv ${targetStars}`;
+
+                          if (targetStars === 1) {
+                            row3Label = "Special Skill 1";
+                            row3Cur = "Locked";
+                            row3Proj = "Unlocked";
+                          } else if (targetStars === 5) {
+                            row3Label = "Special Skill 2";
+                            row3Cur = "Locked";
+                            row3Proj = "Unlocked";
+                          }
+
+                          return (
+                            <>
+                              <div className="flex justify-between items-center relative">
+                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">All Attributes</span>
+                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                  <span className="text-white">{currentGrowth.attributeGain}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.attributeGain}</span>
+                                </div>
+                              </div>
+                              <div className="w-full h-[1px] bg-white/5" />
+
+                              <div className="flex justify-between items-center relative">
+                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">Stamina</span>
+                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                  <span className="text-white">{currentGrowth.staminaGain}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.staminaGain}</span>
+                                </div>
+                              </div>
+                              <div className="w-full h-[1px] bg-white/5" />
+
+                              <div className="flex justify-between items-center relative">
+                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">{row3Label}</span>
+                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                  <span className="text-white">{row3Cur}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{row3Proj}</span>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Cost Material Header */}
+                      <div className="bg-white/5 border-l-[4px] border-amber-500 px-4 py-2 flex items-center justify-between shadow-inner rounded-r mt-1">
+                        <span className="text-white text-[14px] font-black tracking-widest uppercase drop-shadow-sm">Cost Material</span>
+                        <span className="text-zinc-500 text-[9px] uppercase tracking-widest font-bold">Failed attempts only consume MATs</span>
+                      </div>
+
+                      {/* Material Boxes */}
+                      <div className="bg-black/40 border border-white/5 rounded-lg flex justify-center gap-10 p-5 shadow-inner">
+                        
+                        {/* MAT Box */}
+                        <div className="flex flex-col items-center w-[100px]">
+                          <div className="w-[85px] h-[85px] bg-zinc-900 border border-white/10 rounded-lg shadow-inner relative flex items-center justify-center overflow-hidden mb-3">
+                            <Activity className="w-10 h-10 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] z-10" />
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 text-center z-20 border-t border-white/5">
+                              <span className="text-white text-[10px] font-bold font-mono tracking-wider">{ownedMats}/{matCost}</span>
+                            </div>
+                          </div>
+                          <span className="text-zinc-400 text-[10px] font-black tracking-widest uppercase">Upgrade MAT</span>
+                        </div>
+
+                        {/* Duplicate Box */}
+                        {needsDuplicate && (
+                          <div className="flex flex-col items-center w-[100px]">
+                            <div className="w-[85px] h-[85px] bg-zinc-900 border border-white/10 rounded-lg shadow-inner relative overflow-hidden flex items-center justify-center mb-3">
+                              <img src={player.imageUrl || "/players/placeholder.png"} className={`w-full h-full object-cover object-top opacity-80`} />
+                              <div className="absolute top-0 right-0 bg-amber-500 px-1.5 py-0.5 rounded-bl text-[8px] font-black text-black z-20 uppercase tracking-widest shadow-md">
+                                Req
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 text-center z-20 border-t border-white/5">
+                                <span className="text-white text-[10px] font-bold font-mono tracking-wider">
+                                  <span className={hasDuplicate ? "text-white" : "text-red-500"}>{dupCandidates.length}/1</span>
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-zinc-400 text-[10px] font-black tracking-widest uppercase text-center leading-tight">Duplicate Asset</span>
+                          </div>
+                        )}
+
+                      </div>
+
+                      {/* Rate & Actions */}
+                      <div className="mt-auto flex flex-col items-center gap-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="text-red-500/90 text-[18px] font-oswald tracking-tight">Rate:</span>
+                          <span className="text-red-500/90 text-[18px] font-oswald font-medium tracking-tight">{ratePercent}%</span>
+                        </div>
+                        
+                        <button 
+                          onClick={() => {
+                            if (isProcessingStarUp) return;
+                            if (sessionStorage.getItem('skipStarUpConfirm') === 'true') {
+                              executeStarUp();
+                            } else {
+                              setShowSystemNotification(true);
+                            }
+                          }}
+                          disabled={!canAscend || isProcessingStarUp}
+                          className={`relative w-[200px] h-[44px] flex items-center justify-center group overflow-hidden transition-all duration-150 ${
+                            canAscend && !isProcessingStarUp
+                              ? 'bg-[#d61e38] hover:bg-[#eb233f] cursor-pointer shadow-[0_0_15px_rgba(214,30,56,0.4)] active:scale-95 active:brightness-90' 
+                              : 'bg-[#d61e38] opacity-50 cursor-not-allowed grayscale-[30%]'
+                          }`}
+                          style={{
+                            clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)'
+                          }}
+                        >
+                          {/* Halftone Dots on Left */}
+                          <div 
+                            className="absolute left-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none"
+                            style={{
+                              backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
+                              backgroundSize: '5px 5px',
+                              maskImage: 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,0))',
+                              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,0))'
+                            }}
+                          />
+                          
+                          {/* Shine Effect on Right */}
+                          {canAscend && (
+                            <div className="absolute right-[-20%] top-0 bottom-0 w-[40px] bg-white/10 -skew-x-[25deg] pointer-events-none" />
+                          )}
+
+                          <span className={`relative z-10 text-[18px] font-oswald tracking-wide ${canAscend ? 'text-white' : 'text-white/70'}`}>
+                            Star Up
+                          </span>
+                        </button>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Notification Confirm Modal */}
+                {showSystemNotification && (
+                  <div className="fixed inset-0 z-[20000] bg-black/80 flex items-center justify-center animate-[fadeIn_0.15s_ease-out]">
+                    <style>{`
+                      @keyframes modalPopIn {
+                        0% { transform: scale(0.95); opacity: 0; }
+                        100% { transform: scale(1); opacity: 1; }
+                      }
+                    `}</style>
+                    <div 
+                      className="w-[500px] bg-[#313338] rounded-sm overflow-hidden flex flex-col shadow-[0_0_30px_rgba(0,0,0,0.8)] border border-white/10 relative"
+                      style={{ 
+                        backgroundImage: `url('${lowPolyBg}')`, 
+                        backgroundSize: '100% 400px',
+                        animation: 'modalPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards'
+                      }}
+                    >
+                      
+                      {/* Header */}
+                      <div className="px-4 py-2.5 bg-[#4b555d] flex items-center justify-between relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
+                        <span className="text-[14px] font-bold text-gray-200 uppercase tracking-wider">System Notification</span>
+                        <button 
+                          onClick={() => setShowSystemNotification(false)}
+                          className="text-gray-400 hover:text-white transition-colors mr-1"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Body */}
+                      <div className="p-8 flex flex-col items-center gap-6 relative z-10">
+                        <p className="text-gray-300 font-medium text-[15px] text-center max-w-[80%] leading-relaxed">
+                          Player Star up in progress. Current Star up success rate is <span className="text-[#d61e38] font-bold">{ratePercent}%</span>, Confirm?
+                        </p>
+
+                        <label className="flex items-center gap-2 cursor-pointer mt-2 group">
+                          <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded-sm border-gray-500 text-[#d61e38] focus:ring-[#d61e38] focus:ring-offset-0 bg-[#242426] cursor-pointer"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                sessionStorage.setItem('skipStarUpConfirm', 'true');
+                              } else {
+                                sessionStorage.removeItem('skipStarUpConfirm');
+                              }
+                            }}
+                          />
+                          <span className="text-gray-400 font-medium text-[13px] group-hover:text-gray-200 transition-colors">
+                            Don't Show it Again for This Login
+                          </span>
+                        </label>
+
+                        <button 
+                          onClick={() => {
+                            if (isProcessingStarUp) return;
+                            setShowSystemNotification(false);
+                            executeStarUp();
+                          }}
+                          disabled={isProcessingStarUp}
+                          className={`relative w-[180px] h-[44px] flex items-center justify-center group overflow-hidden mt-2 shadow-md transition-all duration-150 ${isProcessingStarUp ? 'bg-[#d61e38] opacity-50 cursor-not-allowed grayscale-[30%]' : 'bg-[#d61e38] hover:bg-[#eb233f] cursor-pointer active:scale-95 active:brightness-90'}`}
+                          style={{
+                            clipPath: 'polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)'
+                          }}
+                        >
+                          {/* Halftone Dots on Left */}
+                          <div 
+                            className="absolute left-0 top-0 bottom-0 w-1/2 opacity-20 pointer-events-none"
+                            style={{
+                              backgroundImage: 'radial-gradient(white 1px, transparent 1px)',
+                              backgroundSize: '5px 5px',
+                              maskImage: 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,0))',
+                              WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1), rgba(0,0,0,0))'
+                            }}
+                          />
+                          <span className="relative z-10 text-white text-[16px] font-oswald tracking-wide">
+                            Confirm Rank-Up
+                          </span>
+                        </button>
+
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Result Banner Overlay */}
+                {ascendOutcome && (
+                  <div className="fixed inset-0 z-[30000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" onClick={() => setAscendOutcome(null)}>
+                    <style>{`
+                      @keyframes bannerReveal {
+                        0% { transform: scaleY(0); opacity: 0; }
+                        100% { transform: scaleY(1); opacity: 1; }
+                      }
+                      @keyframes slideContent {
+                        0% { transform: translateX(50px); opacity: 0; }
+                        100% { transform: translateX(0); opacity: 1; }
+                      }
+                      @keyframes popCard {
+                        0% { transform: translateY(-30%) scale(0.5); opacity: 0; }
+                        70% { transform: translateY(-50%) scale(1.25); opacity: 1; }
+                        100% { transform: translateY(-50%) scale(1.15); opacity: 1; }
+                      }
+                    `}</style>
+
+                    {/* Background Container for clipping */}
+                    <div className="relative w-full h-[260px] border-y-[4px] border-[#d61e38] shadow-[0_0_50px_rgba(214,30,56,0.2)]" style={{ animation: 'bannerReveal 0.3s cubic-bezier(0.175, 0.885, 0.32, 1) forwards' }} onClick={e => e.stopPropagation()}>
+                       {/* Background Layer with Overflow Hidden */}
+                       <div 
+                         className="absolute inset-0 overflow-hidden bg-[#313338]"
+                         style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: '100% 400px' }}
+                       >
+                         {/* Big Red Skewed poly on Left */}
+                         <div className="absolute left-0 top-0 bottom-0 w-[450px] bg-[#d61e38]" style={{ clipPath: 'polygon(0 0, 100% 0, 75% 100%, 0% 100%)' }}>
+                            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(white 3px, transparent 3px)', backgroundSize: '24px 24px', backgroundPosition: '0 0, 12px 12px' }} />
+                         </div>
+                       </div>
+
+                       {/* Content Layer (NO Overflow Hidden) */}
+                       <div className="absolute inset-0 pointer-events-none">
+                         {/* Floating Title */}
+                         <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 text-white font-oswald text-[36px] font-bold drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] z-20 whitespace-nowrap tracking-wide flex items-center gap-4" style={{ animation: 'slideContent 0.4s ease-out 0.1s forwards', opacity: 0 }}>
+                            {ascendOutcome.status === 'success' ? 'Star Up Success' : 'Star Up Failed'}
+                         </div>
+                         
+                         {/* Player Card */}
+                         <div className="absolute left-[110px] top-1/2 z-20 flex items-center justify-center origin-center drop-shadow-[20px_0_20px_rgba(0,0,0,0.5)] pointer-events-none" style={{ animation: 'popCard 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.1) 0.1s forwards', opacity: 0, transform: 'translateY(-50%)' }}>
+                            <PlayerCard 
+                              player={{ ...player, starLevel: ascendOutcome.status === 'success' ? ascendOutcome.newStars : player.starLevel }} 
+                              tooltipDirection="none" 
+                              scale={1.15}
+                            />
+                         </div>
+
+                         {/* Content (Right Side) */}
+                         <div className="ml-[450px] flex flex-col justify-center items-start h-full z-10 w-[600px] pl-10 pointer-events-auto" style={{ animation: 'slideContent 0.4s ease-out 0.2s forwards', opacity: 0 }}>
+                            {ascendOutcome.status === 'failed' && (
+                               <p className="text-gray-200 font-oswald text-[24px] tracking-wide font-medium">
+                                 Unfortunately, the Star Up did not succeed. Keep trying!
+                               </p>
+                            )}
+                            {ascendOutcome.status === 'success' && (
+                               <div className="flex flex-col gap-6 w-full max-w-[500px]">
+                                  {/* Star Level Changes */}
+                                  <div className="flex items-center gap-6">
+                                     {/* Render Old Stars */}
+                                     <div className="flex items-center">
+                                        {Array(5).fill(0).map((_, i) => {
+                                          const info = getStarTierAndLevel(ascendOutcome.oldStars);
+                                          const colorClass = 
+                                            info.tier === 'Red' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' :
+                                            info.tier === 'Orange' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]' :
+                                            info.tier === 'Violet' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]' :
+                                            info.tier === 'Blue' ? 'bg-[#0066ff] shadow-[0_0_8px_rgba(0,102,255,0.8)]' :
+                                            'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+                                            
+                                          return (
+                                            <div key={`old-${i}`} className={`w-[18px] h-[18px] rotate-45 mx-1 transition-all ${i < info.level ? `${colorClass} border border-white/50` : 'bg-[#4b555d] border border-gray-400'}`} />
+                                          );
+                                        })}
+                                     </div>
+
+                                     <div className="flex items-center text-[#d61e38] drop-shadow-[0_0_12px_rgba(214,30,56,0.8)] mx-2">
+                                        <ChevronsRight className="w-9 h-9 animate-[pulse_2s_ease-in-out_infinite]" strokeWidth={3} />
+                                     </div>
+
+                                     {/* Render New Stars */}
+                                     <div className="flex items-center">
+                                        {Array(5).fill(0).map((_, i) => {
+                                          const info = getStarTierAndLevel(ascendOutcome.newStars);
+                                          const colorClass = 
+                                            info.tier === 'Red' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' :
+                                            info.tier === 'Orange' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]' :
+                                            info.tier === 'Violet' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]' :
+                                            info.tier === 'Blue' ? 'bg-[#0066ff] shadow-[0_0_8px_rgba(0,102,255,0.8)]' :
+                                            'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+
+                                          return (
+                                            <div key={`new-${i}`} className={`w-[18px] h-[18px] rotate-45 mx-1 transition-all ${i < info.level ? `${colorClass} border border-white/50` : 'bg-[#4b555d] border border-gray-400'}`} />
+                                          );
+                                        })}
+                                     </div>
+                                  </div>
+
+                                  {/* Stats Changes */}
+                                  <div className="flex flex-col gap-3 font-oswald text-[24px] text-gray-400 w-[400px]">
+                                     {(() => {
+                                       const oldGain = getCumulativeStarGrowthGain(ascendOutcome.oldStars);
+                                       const newGain = getCumulativeStarGrowthGain(ascendOutcome.newStars);
+                                       return (
+                                         <>
+                                     <div className="flex items-center justify-between">
+                                        <span>All Attributes <span className="text-gray-200 ml-2 font-bold">+{oldGain.attributeGain}</span></span>
+                                        <div className="flex items-center text-[#d61e38] drop-shadow-[0_0_8px_rgba(214,30,56,0.6)]">
+                                           <ChevronsRight className="w-7 h-7" strokeWidth={3} />
+                                        </div>
+                                        <span className="text-[#10b981] font-bold">+{newGain.attributeGain}</span>
+                                     </div>
+                                     <div className="flex items-center justify-between">
+                                        <span>Stamina <span className="text-gray-200 ml-2 font-bold">+{oldGain.staminaGain}</span></span>
+                                        <div className="flex items-center text-[#d61e38] drop-shadow-[0_0_8px_rgba(214,30,56,0.6)]">
+                                           <ChevronsRight className="w-7 h-7" strokeWidth={3} />
+                                        </div>
+                                        <span className="text-[#10b981] font-bold">+{newGain.staminaGain}</span>
+                                     </div>
+                                         </>
+                                       );
+                                     })()}
+                                  </div>
+                               </div>
+                            )}
+                         </div>
+
+                         {/* Tap to close text */}
+                         <div className="absolute bottom-[10px] left-[55%] -translate-x-1/2 text-gray-400 text-[14px] font-medium tracking-wide" style={{ animation: 'slideContent 0.4s ease-out 0.4s forwards', opacity: 0 }}>
+                            Tap any blank area to close
+                         </div>
+                       </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          </div>
+        </div>
       </div>
     </div>
+    </>
   );
 }

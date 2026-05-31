@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useGameState, MatchResult } from "@/lib/context/GameStateContext";
 import { mockMaterials } from "@/lib/data/mockItems";
 import { getTierRating, getTierColor } from "@/lib/data/mockPlayers";
 import { Player } from "@/lib/types/player";
-import { mockAiTeams, Difficulty, MatchState, MatchEvent, PlayerMatchStats, createInitialMatchState, simulateTick, computeTeamScore, computeEffective, avgStamina, getStaminaMod, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, emptyStats, generatePreMatchInjuries, calibrateLineupForInjuries } from "@/lib/utils/matchEngine";
+import { mockAiTeams, Difficulty, MatchState, MatchEvent, PlayerMatchStats, createInitialMatchState, simulateTick, computeTeamScore, computeEffective, avgStamina, getStaminaMod, getPlayerMaxStamina, getStaminaPercent, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, emptyStats, generatePreMatchInjuries, calibrateLineupForInjuries } from "@/lib/utils/matchEngine";
 import { Swords, Flame, Snowflake } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
+import { SeasonMap } from "@/components/season/SeasonMap";
 
-type ViewState = 'LOBBY' | 'PRE_MATCH' | 'SIMULATING' | 'HALFTIME' | 'POST_GAME';
+type ViewState = 'SEASON_MAP' | 'PRE_MATCH' | 'SIMULATING' | 'HALFTIME' | 'POST_GAME';
 
 const MythicEnergyAura = () => (
     <div className="absolute top-[-50px] bottom-[30px] inset-x-0 z-[20] pointer-events-none">
@@ -59,12 +61,20 @@ const calculateTS = (s: PlayerMatchStats): string => {
   return ((pts / (2 * attempts)) * 100).toFixed(1);
 };
 
+const MATCH_STAMINA_UI_CONFIG = {
+  energyDrinkRecovery: 20,
+  energyDrinkLockSeconds: 5,
+  timeoutRecovery: 5,
+} as const;
+
 export default function MatchPage() {
-  const { finishMatch, activeLineup, roster, teamOffense, teamDefense, strategyLevels } = useGameState();
+  const router = useRouter();
+  const { finishMatch, activeLineup, activeReserves, roster, teamOffense, teamDefense, strategyLevels } = useGameState();
+  const matchRoster = useMemo(() => [...activeLineup, ...activeReserves], [activeLineup, activeReserves]);
   const injuredStarters = activeLineup.filter(p => p.isInjured);
   const hasInjuredStarters = injuredStarters.length > 0;
 
-  const [viewState, setViewState] = useState<ViewState>('LOBBY');
+  const [viewState, setViewState] = useState<ViewState>('SEASON_MAP');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('NORMAL');
   
   const [matchState, setMatchState] = useState<MatchState>(createInitialMatchState());
@@ -80,14 +90,33 @@ export default function MatchPage() {
   const [cooldownNow, setCooldownNow] = useState(Date.now());
   const [subCourtPick, setSubCourtPick] = useState<string | null>(null);
   const [subBenchPick, setSubBenchPick] = useState<string | null>(null);
-  
   // Pointer-based drag and drop state
   const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
   const [potentialDragPlayerId, setPotentialDragPlayerId] = useState<string | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
   const [dragHoverSlotId, setDragHoverSlotId] = useState<string | null>(null);
-  const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
+  const [pointerPos, setPointerPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pointerPosRef = useRef({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
+
+  // Custom Court Layout State
+  // Custom Court Layout State (Positions preserved from GTooL)
+  const [courtPositions, setCourtPositions] = useState<Record<string, {x: number, y: number}>>({
+    'SF': { x: 15, y: 10 },
+    'PF': { x: 85, y: 10 },
+    'C':  { x: 50, y: 35 },
+    'SG': { x: 28, y: 60 },
+    'PG': { x: 72, y: 60 }
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('dream_team_court_layout');
+    if (saved) {
+      try {
+        setCourtPositions(JSON.parse(saved));
+      } catch (e) {}
+    }
+  }, []);
 
   const [liveLineup, setLiveLineup] = useState<Player[]>([]);
   const [halftimeCountdown, setHalftimeCountdown] = useState(20);
@@ -113,6 +142,91 @@ export default function MatchPage() {
   const [shotMeterProgress, setShotMeterProgress] = useState(0);
   const [shotMeterStatus, setShotMeterStatus] = useState<'idle' | 'filling' | 'release' | 'done'>('idle');
   const [shotMeterFeedback, setShotMeterFeedback] = useState('');
+
+  useEffect(() => {
+    if (!draggingPlayerId && !potentialDragPlayerId) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      pointerPosRef.current = { x: e.clientX, y: e.clientY };
+      setPointerPos({ x: e.clientX, y: e.clientY });
+
+      if (potentialDragPlayerId && !draggingPlayerId && dragStartPos) {
+        const dist = Math.hypot(e.clientX - dragStartPos.x, e.clientY - dragStartPos.y);
+        if (dist > 10) {
+          hasDraggedRef.current = true;
+          setDraggingPlayerId(potentialDragPlayerId);
+          setPotentialDragPlayerId(null);
+        }
+      }
+
+      if (draggingPlayerId) {
+        
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const slotEl = el?.closest('[data-drag-id]');
+        if (slotEl) {
+          const slot = slotEl.getAttribute('data-drag-id');
+          if (dragHoverSlotId !== slot) setDragHoverSlotId(slot);
+        } else {
+          if (dragHoverSlotId !== null) setDragHoverSlotId(null);
+        }
+      }
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (draggingPlayerId) {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const slotEl = el?.closest('[data-drag-id]');
+        const targetId = slotEl ? slotEl.getAttribute('data-drag-id') : null;
+        
+        if (targetId && targetId !== draggingPlayerId) {
+           const lineup = liveLineup.length > 0 ? liveLineup : activeLineup;
+           const draggedIsCourt = lineup.some(p => p.id === draggingPlayerId);
+           const targetIsCourt = lineup.some(p => p.id === targetId);
+           
+           if (draggedIsCourt !== targetIsCourt) { 
+              const courtPlayerId = draggedIsCourt ? draggingPlayerId : targetId;
+              const benchPlayerId = draggedIsCourt ? targetId : draggingPlayerId;
+              
+              const stam = matchState.playerStamina[benchPlayerId] ?? 100;
+              const isFouledOut = (matchState.fouledOut ?? []).includes(benchPlayerId);
+              const statusObj = matchState.injuries[benchPlayerId];
+              const isDNP = statusObj && (statusObj.status === 'OUT' || statusObj.status === 'DNP');
+              const isCooldownActive = cooldownNow < subCooldownEnd;
+
+              if (!isFouledOut && !isDNP && !isCooldownActive) {
+                const courtPlayer = lineup.find(p => p.id === courtPlayerId);
+                const benchPlayer = matchRoster.find(p => p.id === benchPlayerId);
+                if (courtPlayer && benchPlayer) {
+                  const newLineup = lineup.map(p => p.id === courtPlayerId ? benchPlayer : p);
+                  setLiveLineup(newLineup);
+                  addEvent(`${courtPlayer.name} heads to the bench, ${benchPlayer.name} checks in!`);
+                  const outgoingStamina = matchState.playerStamina[courtPlayer.id] ?? 100;
+                  setMatchState(prev => ({
+                    ...prev,
+                    subsMade: prev.subsMade + 1,
+                    goodSubsMade: prev.goodSubsMade + ((outgoingStamina < 50) ? 1 : 0),
+                  }));
+                  setSubCooldownEnd(Date.now() + 5000);
+                }
+              }
+           }
+        }
+      }
+      
+      setTimeout(() => { hasDraggedRef.current = false; }, 50);
+      setDraggingPlayerId(null);
+      setPotentialDragPlayerId(null);
+      setDragHoverSlotId(null);
+      setDragStartPos(null);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, [draggingPlayerId, dragHoverSlotId, potentialDragPlayerId, dragStartPos, liveLineup, activeLineup, matchRoster, matchState, subCooldownEnd, cooldownNow]);
 
   // Smooth clock animation states
   const [displayClock, setDisplayClock] = useState<number>(720);
@@ -289,72 +403,6 @@ export default function MatchPage() {
 
   const currentLineup = liveLineup.length > 0 ? liveLineup : activeLineup;
 
-  // Global PointerEvent Drag & Drop
-  useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      setPointerPos({ x: e.clientX, y: e.clientY });
-
-      if (potentialDragPlayerId && !draggingPlayerId) {
-        if (dragStartPos) {
-          const dx = e.clientX - dragStartPos.x;
-          const dy = e.clientY - dragStartPos.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist > 10) {
-            setDraggingPlayerId(potentialDragPlayerId);
-            setPotentialDragPlayerId(null);
-            hasDraggedRef.current = true;
-          }
-        }
-      }
-
-      if (draggingPlayerId || potentialDragPlayerId) {
-        let hoverSlot: string | null = null;
-        const elements = document.elementsFromPoint(e.clientX, e.clientY);
-        for (const el of elements) {
-          const slotId = el.getAttribute('data-slot-id');
-          if (slotId) {
-            hoverSlot = slotId;
-            break;
-          }
-        }
-        setDragHoverSlotId(hoverSlot);
-      }
-    };
-
-    const handlePointerUp = (e: PointerEvent) => {
-      if (draggingPlayerId && dragHoverSlotId) {
-        const targetPlayer = currentLineup.find(p => p.id === dragHoverSlotId);
-        
-        if (targetPlayer && targetPlayer.id !== draggingPlayerId) {
-          if (showSubModal) {
-            setSubBenchPick(draggingPlayerId);
-            setSubCourtPick(targetPlayer.id);
-          } else {
-            handleSwapCourtPlayers(draggingPlayerId, targetPlayer.id);
-          }
-        }
-      }
-      setDraggingPlayerId(null);
-      setPotentialDragPlayerId(null);
-      setDragStartPos(null);
-      setDragHoverSlotId(null);
-
-      setTimeout(() => {
-        hasDraggedRef.current = false;
-      }, 50);
-    };
-
-    if (potentialDragPlayerId || draggingPlayerId) {
-      window.addEventListener('pointermove', handlePointerMove);
-      window.addEventListener('pointerup', handlePointerUp);
-    }
-    return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [potentialDragPlayerId, draggingPlayerId, dragStartPos, dragHoverSlotId, currentLineup, showSubModal]);
-
   // Sync liveLineup with activeLineup on match start (only once)
   useEffect(() => {
     if (viewState === 'SIMULATING' && liveLineup.length === 0) {
@@ -377,8 +425,8 @@ export default function MatchPage() {
     const initFormNarrativeFired: MatchState['formNarrativeFired'] = {};
 
     // 1. Initialize user roster:
-    roster.forEach(p => {
-      initStamina[p.id] = 100;
+    matchRoster.forEach(p => {
+      initStamina[p.id] = getPlayerMaxStamina(p);
       initStats[p.id] = emptyStats();
       initFormRating[p.id] = 1.0;
       initFormNarrativeFired[p.id] = { hot108: false, hot112: false, cold092: false, cold088: false, recovered: true };
@@ -387,18 +435,18 @@ export default function MatchPage() {
     // 2. Initialize all 10 AI team players:
     const aiTeam = mockAiTeams[diff];
     [...aiTeam.roster].forEach(p => {
-      initStamina[p.id] = 100;
+      initStamina[p.id] = getPlayerMaxStamina(p);
       initStats[p.id] = emptyStats();
       initFormRating[p.id] = 1.0;
       initFormNarrativeFired[p.id] = { hot108: false, hot112: false, cold092: false, cold088: false, recovered: true };
     });
 
     // Roll injuries
-    const rolledInjuries = generatePreMatchInjuries(roster, aiTeam.roster);
+    const rolledInjuries = generatePreMatchInjuries(matchRoster, aiTeam.roster);
     initState.injuries = rolledInjuries;
 
     // Calibrate starting lineups based on rolled injuries
-    const calibratedLineup = calibrateLineupForInjuries(activeLineup, roster, rolledInjuries);
+    const calibratedLineup = calibrateLineupForInjuries(activeLineup, matchRoster, rolledInjuries);
     const calibratedAiLineup = calibrateLineupForInjuries(aiTeam.roster.slice(0, 5), aiTeam.roster, rolledInjuries);
 
     // Initial coach decision notifications in logs
@@ -437,7 +485,7 @@ export default function MatchPage() {
     initState.playerStats = initStats;
     initState.formRating = initFormRating;
     initState.formNarrativeFired = initFormNarrativeFired;
-    initState.userPlayerIds = roster.map(p => p.id);
+    initState.userPlayerIds = matchRoster.map(p => p.id);
     initState.aiPlayerIds = aiTeam.roster.map(p => p.id);
     initState.aiLineupIds = calibratedAiLineup.map(p => p.id);
 
@@ -455,7 +503,7 @@ export default function MatchPage() {
       interval = setInterval(() => {
         setMatchState(prev => {
           const ai = mockAiTeams[selectedDifficulty];
-          const next = simulateTick(prev, teamOffense, teamDefense, ai, currentLineup, roster);
+          const next = simulateTick(prev, teamOffense, teamDefense, ai, currentLineup, matchRoster);
           
           // Halftime trigger — pause for 20s
           if (next.halftimeShown && !halftimeTriggered) {
@@ -470,13 +518,14 @@ export default function MatchPage() {
       }, 1500); 
     }
     return () => clearInterval(interval);
-  }, [viewState, matchState.isFinished, selectedDifficulty, teamOffense, teamDefense, currentLineup, roster, isPaused, matchState.ftSequence, matchState.activeShotMeter]);
+  }, [viewState, matchState.isFinished, selectedDifficulty, teamOffense, teamDefense, currentLineup, matchRoster, isPaused, matchState.ftSequence, matchState.activeShotMeter]);
 
   // ═══ MATCH FINISH — runs AFTER state settles to avoid cross-component update error ═══
   useEffect(() => {
     if (matchState.isFinished && !matchState.shootoutSequence && !matchFinishedRef.current) {
       matchFinishedRef.current = true;
-      const result = finishMatch(selectedDifficulty, matchState.userOffStrategy, matchState.userDefStrategy);
+      const isWin = matchState.userScore > matchState.aiScore;
+      const result = finishMatch(selectedDifficulty, matchState.userOffStrategy, matchState.userDefStrategy, isWin);
       setReward(result);
       setViewState('POST_GAME');
     }
@@ -543,7 +592,8 @@ export default function MatchPage() {
     }
     const clearTimer = setTimeout(() => {
       setMatchState(s => ({ ...s, shootoutSequence: null }));
-      const result = finishMatch(selectedDifficulty, matchState.userOffStrategy, matchState.userDefStrategy);
+      const isWin = matchState.userScore > matchState.aiScore;
+      const result = finishMatch(selectedDifficulty, matchState.userOffStrategy, matchState.userDefStrategy, isWin);
       setReward(result);
       setViewState('POST_GAME');
     }, totalRounds * perRoundMs + 3000);
@@ -554,12 +604,12 @@ export default function MatchPage() {
   useEffect(() => {
     if (!matchState.pendingAutoSub) return;
     const { outId, inId } = matchState.pendingAutoSub;
-    const benchPlayer = roster.find(p => p.id === inId);
+    const benchPlayer = matchRoster.find(p => p.id === inId);
     if (benchPlayer) {
       setLiveLineup(prev => prev.map(p => p.id === outId ? benchPlayer : p));
     }
     setMatchState(s => ({ ...s, pendingAutoSub: null }));
-  }, [matchState.pendingAutoSub, roster]);
+  }, [matchState.pendingAutoSub, matchRoster]);
 
   // Halftime auto-resume countdown
   useEffect(() => {
@@ -583,34 +633,15 @@ export default function MatchPage() {
   }, [viewState, halftimeCountdown]);
 
   const handleHalftimeResume = () => {
-    const newStamina = { ...matchState.playerStamina };
-    // +15% to active 5 (user)
-    currentLineup.forEach(p => {
-      newStamina[p.id] = Math.min(100, (newStamina[p.id] ?? 100) + 15);
-    });
-    // +5% to bench (user)
-    const benchIds = roster.filter(p => !currentLineup.find(lp => lp.id === p.id)).map(p => p.id);
-    benchIds.forEach(id => {
-      newStamina[id] = Math.min(100, (newStamina[id] ?? 100) + 5);
-    });
-    // +15% to active 5 (AI), +5% to bench (AI)
-    const aiTeam = mockAiTeams[matchState.difficulty];
-    const activeAiIds = new Set(matchState.aiLineupIds);
-    aiTeam.roster.forEach(p => {
-      if (activeAiIds.has(p.id)) {
-        newStamina[p.id] = Math.min(100, (newStamina[p.id] ?? 100) + 15);
-      } else {
-        newStamina[p.id] = Math.min(100, (newStamina[p.id] ?? 100) + 5);
-      }
-    });
-    // Recalculate effective stats
-    const eff = computeEffective(currentLineup, newStamina, matchState.userOffStrategy, matchState.userDefStrategy);
+    // Quarter-break stamina recovery is handled by the match engine. Keep this
+    // resume handler as UI/narrative only so halftime cannot double-recover.
+    const eff = computeEffective(currentLineup, matchState.playerStamina, matchState.userOffStrategy, matchState.userDefStrategy);
     // Resume narrative
     const diff = matchState.userScore - matchState.aiScore;
     const narrative = diff > 0 ? `We're back for the second half - My Team leads by ${diff}` : diff < 0 ? `We're back for the second half - My Team trails by ${Math.abs(diff)}` : "All square at halftime - everything to play for in the second half";
     const resumeEvent = { id: Date.now().toString() + '_' + Math.random().toString(36).slice(2), time: '[Q3 12:00]', text: narrative, isUserTeam: true, pointsScored: 0 };
     setMatchState(prev => ({
-      ...prev, playerStamina: newStamina,
+      ...prev,
       effectiveUserOff: eff.off, effectiveUserDef: eff.def,
       events: [resumeEvent, ...prev.events].slice(0, 50),
     }));
@@ -621,7 +652,7 @@ export default function MatchPage() {
     setReward(null);
     setLiveLineup([]);
     setIsPaused(false);
-    setViewState('LOBBY');
+    setViewState('SEASON_MAP');
   };
 
   const openModal = (type: 'strategy' | 'sub' | 'energydrink') => {
@@ -651,7 +682,7 @@ export default function MatchPage() {
     if (!player) return;
     const currentStam = matchState.playerStamina[player.id] ?? 100;
     const isGoodUse = currentStam < 40;
-    const newStam = Math.min(100, currentStam + 20);
+    const newStam = Math.min(getPlayerMaxStamina(player), currentStam + MATCH_STAMINA_UI_CONFIG.energyDrinkRecovery);
     const gts = (matchState.quarter - 1) * 720 + (720 - matchState.clock);
     const isHighClutch = matchState.quarter === 4 && matchState.clock <= 60 && Math.abs(matchState.userScore - matchState.aiScore) <= 5;
     const isISO = matchState.userOffStrategy === 'Isolation (ISO)';
@@ -660,15 +691,15 @@ export default function MatchPage() {
       ...prev,
       playerStamina: { ...prev.playerStamina, [player.id]: newStam },
       energyDrinksLeft: prev.energyDrinksLeft - 1,
-      energyDrinkLocked: { ...prev.energyDrinkLocked, [player.id]: gts + 5 },
+      energyDrinkLocked: { ...prev.energyDrinkLocked, [player.id]: gts + MATCH_STAMINA_UI_CONFIG.energyDrinkLockSeconds },
       energyDrinkGoodUses: prev.energyDrinkGoodUses + (isGoodUse ? 1 : 0),
       energyDrinkPendingForm: player.id,
     }));
     const baseMsg = isHighClutch
       ? `CLUTCH BOOST: ${player.name} locked in for the final stretch!`
       : isoStar?.id === player.id
-      ? `${player.name} gets the boost — ISO stays alive a little longer!`
-      : `${player.name} gets the energy boost — stamina restored to ${newStam}%`;
+      ? `${player.name} gets the boost - ISO stays alive a little longer!`
+      : `${player.name} gets the energy boost - stamina restored to ${Math.floor(newStam)}`;
     addEvent(baseMsg);
     if (isGoodUse) addEvent(`Smart call — ${player.name} was running on empty`);
     setEnergyDrinkPick(null);
@@ -693,12 +724,12 @@ export default function MatchPage() {
     if (matchState.timeoutsLeft <= 0 || timeoutCountdown > 0) return;
     const newStamina = { ...matchState.playerStamina };
     currentLineup.forEach(p => {
-      newStamina[p.id] = Math.min(100, (newStamina[p.id] ?? 100) + 5);
+      newStamina[p.id] = Math.min(getPlayerMaxStamina(p), (newStamina[p.id] ?? getPlayerMaxStamina(p)) + MATCH_STAMINA_UI_CONFIG.timeoutRecovery);
     });
     setMatchState(prev => ({
       ...prev, playerStamina: newStamina, timeoutsLeft: prev.timeoutsLeft - 1, lastPlayCategory: 'made_shot'
     }));
-    addEvent("Timeout called! Players catch their breath. (+5% stamina)");
+    addEvent(`Timeout called! Players catch their breath. (+${MATCH_STAMINA_UI_CONFIG.timeoutRecovery} stamina)`);
     setIsPaused(true);
     setTimeoutCountdown(5);
     const t = setInterval(() => {
@@ -725,7 +756,7 @@ export default function MatchPage() {
     if (cooldownNow < offCooldownEnd) { addEvent("Too soon to change strategy! Let the players adjust first."); return; }
     if (name === "Isolation (ISO)") {
       const star = [...currentLineup].sort((a, b) => b.ovr - a.ovr)[0];
-      if ((matchState.playerStamina[star.id] ?? 100) < 40) {
+      if (getStaminaPercent(star, matchState.playerStamina[star.id]) < 40) {
         addEvent(`${star.name} is too tired to ISO! Switch to a different offense.`); return;
       }
     }
@@ -746,7 +777,7 @@ export default function MatchPage() {
     if (!subCourtPick || !subBenchPick) return;
     const lineup = liveLineup.length > 0 ? liveLineup : [...activeLineup];
     const courtPlayer = lineup.find(p => p.id === subCourtPick);
-    const benchPlayer = roster.find(p => p.id === subBenchPick);
+    const benchPlayer = matchRoster.find(p => p.id === subBenchPick);
     if (!courtPlayer || !benchPlayer) return;
     // Verify bench player is not already on court
     if (lineup.find(p => p.id === subBenchPick)) return;
@@ -1308,14 +1339,10 @@ export default function MatchPage() {
           <PlayerCard 
             player={{ ...p, imageUrl: bgImage, stamina: stam, isInjured: (matchState.fouledOut ?? []).includes(p.id) }} 
             tooltipDirection="none" 
+            staminaMax={getPlayerMaxStamina(p)}
+            showPositionBox={true}
+            positionBoxLabel={`${displayPos}${isOutOfPosition ? ' (OOP)' : ''}`}
           />
-          
-          {/* Authentic Lobby style STADIUM SLOT label */}
-          <div className="absolute -bottom-[14px] left-[50%] -translate-x-[50%] w-[75px] h-[20px] text-white text-[10px] tracking-wider text-center font-black py-0.5 rounded-full border border-white/40 z-[70] shadow-[0_4px_10px_rgba(0,0,0,0.8)] pointer-events-none flex items-center justify-center" style={{ background: "linear-gradient(to bottom, rgba(207, 160, 48, 0.8), rgba(143, 101, 20, 0.95))" }}>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a] to-[#333] opacity-20 blur-[2px] rounded-full"></div>
-            <span className={`relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,1)] uppercase ${isOutOfPosition ? 'text-red-400' : 'text-[#e8f1ff]'}`}>{displayPos}{isOutOfPosition ? ' (OOP)' : ''}</span>
-          </div>
-
           {isOutOfPosition && (
             <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-lg z-[60]">
               OOP
@@ -1748,7 +1775,7 @@ export default function MatchPage() {
         
         {/* Global Ghost Drag Image */}
         {draggingPlayerId && (() => {
-          const dragP = roster.find(p => p.id === draggingPlayerId);
+          const dragP = matchRoster.find(p => p.id === draggingPlayerId) || roster.find(p => p.id === draggingPlayerId);
           if (!dragP) return null;
           
           const defaultImages: Record<string, string> = {
@@ -1762,16 +1789,17 @@ export default function MatchPage() {
           
           return (
             <div 
-              className="fixed pointer-events-none z-[300]"
+              id="drag-clone"
+              className="fixed pointer-events-none z-[9999] w-[120px] h-[124px]"
               style={{
-                left: pointerPos.x - 50,
-                top: pointerPos.y - 55,
-                transform: `scale(${matchScale * 0.9})`,
+                left: pointerPos.x,
+                top: pointerPos.y,
+                transform: `translate(-50%, -50%) scale(${matchScale * (showSubModal ? 0.70 : 0.9)})`,
                 opacity: 0.9,
                 filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.5))'
               }}
             >
-              <PlayerCard player={{ ...dragP, imageUrl: bgImg, stamina: matchState.playerStamina[dragP.id] ?? 100 }} tooltipDirection="none" />
+              <PlayerCard player={{ ...dragP, imageUrl: bgImg, stamina: matchState.playerStamina[dragP.id] ?? 100 }} tooltipDirection="none" staminaMax={getPlayerMaxStamina(dragP)} />
             </div>
           );
         })()}
@@ -2285,6 +2313,8 @@ export default function MatchPage() {
                               {players.map((p, i) => {
                                 const s = gs(p.id);
                                 const st = stam(p.id);
+                                const stMax = getPlayerMaxStamina(p);
+                                const stPct = getStaminaPercent(p, st);
                                 const hot = isHot(p.id);
                                 const isLeadPts = s.PTS === maxPts && maxPts > 0;
                                 const isLeadReb = s.REB === maxReb && maxReb > 0;
@@ -2309,10 +2339,10 @@ export default function MatchPage() {
                                     {/* Energy bar */}
                                     <td className="px-1 py-1.5">
                                       <div className="flex items-center gap-1">
-                                        <div className="w-10 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-                                          <div className="h-full rounded-full transition-all" style={{width:`${st}%`, background: stamColor(st)}} />
+                                          <div className="w-10 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                                          <div className="h-full rounded-full transition-all" style={{width:`${stPct}%`, background: stamColor(stPct)}} />
                                         </div>
-                                        <span className="text-[9px] font-bold" style={{color: stamColor(st)}}>{st}</span>
+                                        <span className="text-[9px] font-bold tabular-nums" style={{color: stamColor(stPct)}} title={`${Math.floor(stPct)}% stamina`}>{st}/{stMax}</span>
                                       </div>
                                     </td>
                                     <td className="px-2 py-1.5 text-center text-gray-300">{s.FGM ?? 0}/{s.FGA ?? 0}</td>
@@ -2427,8 +2457,8 @@ export default function MatchPage() {
             {showEnergyDrinkModal && (() => {
               const staminaColor = (val: number) => val > 60 ? 'bg-green-500' : val > 30 ? 'bg-yellow-500' : 'bg-red-500';
               const gts = (matchState.quarter - 1) * 720 + (720 - matchState.clock);
-              const anyLow = currentLineup.some(p => (matchState.playerStamina[p.id] ?? 100) < 40);
-              const allFresh = currentLineup.every(p => (matchState.playerStamina[p.id] ?? 100) > 60);
+              const anyLow = currentLineup.some(p => getStaminaPercent(p, matchState.playerStamina[p.id]) < 40);
+              const allFresh = currentLineup.every(p => getStaminaPercent(p, matchState.playerStamina[p.id]) > 60);
               const selectedLocked = energyDrinkPick ? (() => { const lu = matchState.energyDrinkLocked[energyDrinkPick]; return !!lu && gts < lu; })() : false;
               return (
                 <div className="absolute inset-0 bg-black/45 backdrop-blur-md z-[200] flex items-center justify-center transition-all">
@@ -2437,16 +2467,17 @@ export default function MatchPage() {
                       <h2 className="text-xl font-black text-white tracking-widest">ENERGY BOOST</h2>
                       <button onClick={closeModal} className="text-white text-2xl hover:text-red-400 cursor-pointer">✕</button>
                     </div>
-                    <p className="text-gray-400 text-xs mb-1">{matchState.energyDrinksLeft} remaining — Choose a player to restore +20% stamina</p>
-                    {anyLow && <p className="text-yellow-400 text-[10px] mb-3 font-bold">Best use: target players below 40% stamina</p>}
+                    <p className="text-gray-400 text-xs mb-1">{matchState.energyDrinksLeft} remaining - Choose a player to restore +{MATCH_STAMINA_UI_CONFIG.energyDrinkRecovery} stamina</p>
+                    {anyLow && <p className="text-yellow-400 text-[10px] mb-3 font-bold">Best use: target players below 40 stamina</p>}
                     {allFresh && <p className="text-amber-500 text-[10px] mb-3 font-bold">All players fresh — consider saving boosts for Q4</p>}
                     <div className="space-y-2 mb-4">
                       {currentLineup.map(p => {
                         const stam = matchState.playerStamina[p.id] ?? 100;
+                        const stamPct = getStaminaPercent(p, stam);
                         const lockedUntil = matchState.energyDrinkLocked[p.id];
                         const isLocked = !!lockedUntil && gts < lockedUntil;
                         const lockRem = isLocked ? Math.max(0, lockedUntil - gts) : 0;
-                        const isLow = stam < 40;
+                        const isLow = stamPct < 40;
                         return (
                           <button key={p.id}
                             onClick={() => !isLocked && setEnergyDrinkPick(p.id)}
@@ -2464,10 +2495,10 @@ export default function MatchPage() {
                               </div>
                               <div className="flex gap-2 text-[10px] mt-0.5">
                                 <span className="text-gray-400">OVR <b className="text-white">{p.ovr}</b></span>
-                                <span className={`font-bold ${stam < 40 ? 'text-red-400' : stam < 60 ? 'text-yellow-400' : 'text-green-400'}`}>{Math.floor(stam)}% STA</span>
+                                <span className={`font-bold ${stamPct < 40 ? 'text-red-400' : stamPct < 60 ? 'text-yellow-400' : 'text-green-400'}`}>{Math.floor(stam)} STA</span>
                               </div>
                               <div className="w-full h-2 bg-gray-800 rounded-full mt-1 overflow-hidden">
-                                <div className={`h-full rounded-full transition-all ${staminaColor(stam)}`} style={{ width: `${stam}%` }} />
+                                <div className={`h-full rounded-full transition-all ${staminaColor(stamPct)}`} style={{ width: `${stamPct}%` }} />
                               </div>
                             </div>
                           </button>
@@ -2553,11 +2584,9 @@ export default function MatchPage() {
               </div>
             )}
 
-            {/* SUBSTITUTION MODAL */}
+            {/* SUBSTITUTION MODAL (Redesigned) */}
             {showSubModal && (() => {
-              const benchPlayers = roster.filter(p => !currentLineup.find(lp => lp.id === p.id));
-              const avgBenchStamina = benchPlayers.length > 0 ? benchPlayers.reduce((s, p) => s + (matchState.playerStamina[p.id] ?? 100), 0) / benchPlayers.length : 100;
-              const staminaColor = (val: number) => val > 60 ? 'bg-green-500' : val > 30 ? 'bg-yellow-500' : 'bg-red-500';
+              const benchPlayers = matchRoster.filter(p => !currentLineup.find(lp => lp.id === p.id));
               
               const defaultImages: Record<string, string> = {
                 'PG': 'https://www.dreamteamph.com/players/newplayers/hornets/treymann.webp',
@@ -2568,291 +2597,244 @@ export default function MatchPage() {
               };
               const getPlayerImage = (p: Player) => p.imageUrl || defaultImages[p.position] || defaultImages['SF'];
 
-              // Live preview computations
-              const activeBenchP = draggingPlayerId ? roster.find(p => p.id === draggingPlayerId) : subBenchPick ? roster.find(p => p.id === subBenchPick) : null;
-              const activeCourtP = dragHoverSlotId ? currentLineup.find(p => p.id === dragHoverSlotId) : subCourtPick ? currentLineup.find(p => p.id === subCourtPick) : null;
-
+              // Compute Offense and Defense exactly as the match engine does
               let curEff = computeEffective(currentLineup, matchState.playerStamina, matchState.userOffStrategy, matchState.userDefStrategy);
-              let newEff = curEff;
-              let offDelta = 0;
-              let defDelta = 0;
-              let curOopCount = currentLineup.filter((p, i) => p.position !== SLOT_POSITIONS[i]).length;
-              let newOopCount = curOopCount;
-              let isOOP = false;
+              
+              // Calculate Salary for active lineup + reserves
+              const currentSalary = [...activeLineup, ...activeReserves].reduce((sum, p) => sum + Math.round(p.salary ?? p.ovr * 12.5), 0);
+              const maxSalary = 15000;
+              
+              const isCooldownActive = cooldownNow < subCooldownEnd;
+              const remainingSec = Math.ceil((subCooldownEnd - cooldownNow) / 1000);
 
-              if (activeBenchP && activeCourtP) {
-                const targetIdx = currentLineup.findIndex(p => p.id === activeCourtP.id);
-                if (targetIdx !== -1) {
-                  const simLineup = currentLineup.map(p => p.id === activeCourtP.id ? activeBenchP : p);
-                  newEff = computeEffective(simLineup, matchState.playerStamina, matchState.userOffStrategy, matchState.userDefStrategy);
-                  offDelta = newEff.off - curEff.off;
-                  defDelta = newEff.def - curEff.def;
-                  newOopCount = simLineup.filter((p, i) => p.position !== SLOT_POSITIONS[i]).length;
-                  isOOP = activeBenchP.position !== SLOT_POSITIONS[targetIdx];
+              const handleSwap = () => {
+                if (!isCooldownActive && subCourtPick && subBenchPick) {
+                  handleSubConfirm();
                 }
+              };
+
+              // Ensure exactly 6 bench slots
+              const paddedBench = [...benchPlayers];
+              while (paddedBench.length < 6) {
+                paddedBench.push(null as any);
               }
 
-              const curChem = Math.max(0, 100 - curOopCount * 20);
-              const newChem = Math.max(0, 100 - newOopCount * 20);
-              const chemDelta = newChem - curChem;
-
               return (
-                <div className="absolute inset-0 bg-black/45 backdrop-blur-md z-[200] flex items-center justify-center transition-all">
-                  {/* Outer container matching reference */}
-                  <div className="bg-[#244296] border-2 border-white rounded-lg w-[850px] max-h-[600px] overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.8)] flex flex-col relative">
-                      
-                      {/* Header */}
-                      <div className="flex justify-between items-center p-3 px-4 bg-[#244296] border-b border-white/20">
-                          <h2 className="text-xl font-black text-white tracking-wide uppercase" style={{ textShadow: '1px 1px 2px black' }}>Substitution</h2>
-                          <button onClick={closeModal} className="bg-[#e43434] hover:bg-[#ff4040] border-2 border-white text-white rounded w-8 h-8 flex items-center justify-center text-xl font-bold cursor-pointer shadow-md transition-transform hover:scale-105">✕</button>
+                <div className="fixed inset-0 z-[300] bg-[#1c1d21] flex flex-col font-sans select-none overflow-hidden">
+                  {/* Global Stone Wall Texture Overlay */}
+                  <div 
+                    className="absolute inset-0 z-0 pointer-events-none opacity-[0.25] mix-blend-overlay"
+                    style={{ backgroundImage: 'url(/textures/stone_bg.png)', backgroundSize: 'cover' }}
+                  />
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/5 to-transparent z-0" />
+
+                  {/* Header */}
+                  <div className="relative z-20 flex items-center justify-between h-[60px] bg-transparent shrink-0 pr-4 w-full mt-2">
+                    <div className="absolute bottom-0 left-0 w-[60%] h-[1px] bg-gradient-to-r from-white/40 via-white/5 to-transparent pointer-events-none" />
+                    
+                    <div className="flex items-center gap-3 pl-4 cursor-pointer hover:text-gray-300 transition-colors" onClick={closeModal}>
+                      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white drop-shadow-md">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                      </svg>
+                      <span className="text-[18px] font-bold text-white drop-shadow-md tracking-wide">Starting Lineup</span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center absolute left-1/2 -translate-x-1/2">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-red-400 font-black text-lg tracking-wider drop-shadow-lg">{curEff.off}</span>
+                          <span className="text-gray-500 text-[10px] font-bold uppercase">OFF</span>
+                        </div>
+                        <div className="h-4 w-[1px] bg-white/20"></div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 text-[10px] font-bold uppercase">DEF</span>
+                          <span className="text-blue-400 font-black text-lg tracking-wider drop-shadow-lg">{curEff.def}</span>
+                        </div>
                       </div>
+                    </div>
 
-                      {/* Content Area */}
-                      <div className="p-4 overflow-y-auto flex-1">
-                          
-                          {avgBenchStamina < 35 && (
-                              <div className="bg-amber-600/90 border border-amber-300 text-white text-xs p-2 rounded mb-4 font-bold shadow-md">
-                                  Low bench energy — substituting may not help much. Consider calling a Timeout instead.
-                              </div>
-                          )}
-
-                          {/* LIVE TEAM IMPACT PREVIEW PANEL */}
-                          <div className="bg-slate-950/60 border border-white/10 rounded-xl p-3 mb-4 shadow-inner backdrop-blur-md">
-                              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                                  <div className="flex flex-col text-left">
-                                      <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest leading-none mb-1">Live Team Impact Preview</span>
-                                      {activeBenchP && activeCourtP ? (
-                                          <div className="text-white text-xs font-medium">
-                                              Preview: replacing <span className="text-yellow-400 font-bold">{activeCourtP.name.split(' ').pop()}</span> with <span className="text-green-400 font-bold">{activeBenchP.name.split(' ').pop()}</span>
-                                              {isOOP && <span className="ml-2 inline-block bg-red-500/20 text-red-400 border border-red-500/30 text-[9px] px-1.5 py-0.2 rounded font-black uppercase">OOP Warning</span>}
-                                          </div>
-                                      ) : (
-                                          <div className="text-gray-400 text-xs italic animate-pulse">
-                                              {draggingPlayerId ? "👉 Drag over a player card on court to preview impact..." : "💡 Drag a bench player onto a court card, or click them to preview."}
-                                          </div>
-                                      )}
-                                  </div>
-                                  <div className="flex items-center gap-6">
-                                      {/* OFFENSE */}
-                                      <div className="flex flex-col items-center">
-                                          <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-1">Offense</span>
-                                          <div className="flex items-center gap-1.5">
-                                              <span className="text-sm font-black text-white font-mono">{curEff.off}</span>
-                                              {activeBenchP && activeCourtP && offDelta !== 0 && (
-                                                  <span className={`text-xs font-extrabold font-mono ${offDelta > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                      → {newEff.off} ({offDelta > 0 ? '+' : ''}{offDelta})
-                                                  </span>
-                                              )}
-                                          </div>
-                                      </div>
-                                      {/* DEFENSE */}
-                                      <div className="flex flex-col items-center">
-                                          <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-1">Defense</span>
-                                          <div className="flex items-center gap-1.5">
-                                              <span className="text-sm font-black text-white font-mono">{curEff.def}</span>
-                                              {activeBenchP && activeCourtP && defDelta !== 0 && (
-                                                  <span className={`text-xs font-extrabold font-mono ${defDelta > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                      → {newEff.def} ({defDelta > 0 ? '+' : ''}{defDelta})
-                                                  </span>
-                                              )}
-                                          </div>
-                                      </div>
-                                      {/* CHEMISTRY */}
-                                      <div className="flex flex-col items-center">
-                                          <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-1">Chemistry</span>
-                                          <div className="flex items-center gap-1.5">
-                                              <span className={`text-sm font-black font-mono ${curChem >= 80 ? 'text-green-400' : curChem >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>{curChem}%</span>
-                                              {activeBenchP && activeCourtP && chemDelta !== 0 && (
-                                                  <span className={`text-xs font-extrabold font-mono ${newChem >= 80 ? 'text-green-400' : newChem >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                                      → {newChem}% ({chemDelta > 0 ? '+' : ''}{chemDelta}%)
-                                                  </span>
-                                              )}
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-
-                          {/* ON COURT TACTICAL BOARD */}
-                          <div className="mb-4">
-                              <h3 className="text-white font-bold text-xs mb-2 uppercase tracking-widest px-2 text-center" style={{ textShadow: '1px 1px 2px black' }}>TACTICAL COURT DISPLAY</h3>
-                              
-                              <div className="relative w-full max-w-[620px] mx-auto h-[190px] bg-gradient-to-br from-[#0c1e3d] to-[#070f20] border border-white/10 rounded-xl shadow-2xl flex items-center justify-center">
-                                  {/* Basketball court markings */}
-                                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.15)_0%,transparent_80%)] pointer-events-none" />
-                                  {/* Center line */}
-                                  <div className="absolute inset-y-0 right-0 w-[2%] border-l border-white/10" />
-                                  {/* Center Circle */}
-                                  <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[22%] h-[110px] border-y border-l border-white/10 rounded-l-full" />
-                                  {/* Three-point arc from left rim */}
-                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[55%] h-[174px] border-y border-r border-white/10 rounded-r-full" />
-                                  {/* Lane/paint */}
-                                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[35%] h-[95px] border-y border-r border-white/10 bg-white/3" />
-                                  {/* Free Throw circle */}
-                                  <div className="absolute left-[25%] top-1/2 -translate-y-1/2 w-[20%] h-[95px] border border-white/10 rounded-full" />
-                                  {/* Rim & Backboard left */}
-                                  <div className="absolute left-[7.5%] top-1/2 -translate-y-1/2 w-1 h-12 bg-red-500/20 rounded-full" />
-                                  <div className="absolute left-[8.5%] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border border-orange-500/30" />
-                                  <div className="absolute left-[4%] top-1/2 -translate-y-1/2 w-[3.5%] h-0.5 bg-white/20" />
-
-                                  {draggingPlayerId && (
-                                      <div className="absolute top-1 right-2 bg-cyan-500/20 border border-cyan-400/30 text-cyan-300 font-bold text-[8px] px-1.5 py-0.5 rounded animate-pulse uppercase tracking-wider z-20">
-                                          Drag & Drop over position slot
-                                      </div>
-                                  )}
-
-                                  {/* Court slots */}
-                                  {(() => {
-                                      const previewLineup = currentLineup.map(p => {
-                                          if (activeCourtP && activeBenchP && p.id === activeCourtP.id) {
-                                              return activeBenchP;
-                                          }
-                                          return p;
-                                      });
-                                      return previewLineup.map((p, idx) => {
-                                          const origP = currentLineup[idx];
-                                          const stam = matchState.playerStamina[p.id] ?? 100;
-                                          const gts = (matchState.quarter - 1) * 720 + (720 - matchState.clock);
-                                          const lockedUntil = matchState.energyDrinkLocked[origP.id];
-                                          const isLocked = !!lockedUntil && gts < lockedUntil;
-                                          const slotPos = SLOT_POSITIONS[idx];
-                                          const isOutOfPosition = p.position !== slotPos;
-                                          
-                                          // Proportional tactical coordination on court
-                                          const posCoords: Record<string, string> = {
-                                              'PG': 'left-[56%] top-[32%] -translate-y-1/2 -translate-x-1/2',
-                                              'SG': 'left-[52%] top-[75%] -translate-y-1/2 -translate-x-1/2',
-                                              'SF': 'left-[32%] top-[75%] -translate-y-1/2 -translate-x-1/2',
-                                              'PF': 'left-[32%] top-[25%] -translate-y-1/2 -translate-x-1/2',
-                                              'C':  'left-[18%] top-[50%] -translate-y-1/2 -translate-x-1/2'
-                                          };
-                                          
-                                          const coord = posCoords[slotPos];
-                                          const isSelected = subCourtPick === origP.id;
-                                          const isHovered = dragHoverSlotId === origP.id && draggingPlayerId && draggingPlayerId !== origP.id;
-                                          const isDropTarget = !!draggingPlayerId && !isLocked;
-
-                                          return (
-                                              <div key={origP.id}
-                                                   data-slot-id={!isLocked ? origP.id : undefined}
-                                                   onClick={() => !isLocked && setSubCourtPick(origP.id)}
-                                               className={`absolute ${coord} w-[84px] p-1.5 rounded-lg bg-slate-950/95 border transition-all duration-200 cursor-pointer flex flex-col items-center shadow-lg select-none z-10
-                                                   ${isSelected || isHovered ? 'border-yellow-400 ring-1 ring-yellow-400 scale-105 z-20 shadow-[0_0_10px_rgba(234,179,8,0.4)]' 
-                                                   : isDropTarget ? 'border-dashed border-cyan-400 bg-cyan-950/30' 
-                                                   : 'border-white/10 hover:border-white/30 hover:bg-slate-900/90'}
-                                                   ${isLocked ? 'opacity-40 grayscale cursor-not-allowed' : ''}`}
-                                          >
-                                              {/* Position badge */}
-                                              <div className={`absolute -top-2 left-1 text-[7px] px-1 py-0.2 rounded font-black text-white ${isOutOfPosition ? 'bg-red-600' : 'bg-orange-500'}`}>
-                                                  {slotPos}{isOutOfPosition ? ' (OOP)' : ''}
-                                              </div>
-
-                                              {/* Circular player avatar */}
-                                              <div className="w-8 h-8 rounded-full border border-orange-500 overflow-hidden bg-slate-800 flex items-center justify-center mt-0.5 relative">
-                                                  <img src={getPlayerImage(p)} alt={p.name} className="w-full h-full object-cover object-top" />
-                                                  {isLocked && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><span className="text-white text-[8px] font-black">🔒</span></div>}
-                                              </div>
-
-                                              <div className="w-full text-center mt-0.5">
-                                                  <div className="text-white text-[8px] font-bold truncate leading-none">{p.name.split(' ').pop()}</div>
-                                                  <div className="flex justify-between items-center text-[7px] text-gray-400 mt-0.5 leading-none">
-                                                      <span>OVR {p.ovr}</span>
-                                                      <span className={stam < 30 ? 'text-red-400 font-bold' : stam < 60 ? 'text-yellow-400' : 'text-green-400'}>{Math.floor(stam)}%</span>
-                                                  </div>
-                                                  {/* Mini stamina progress bar */}
-                                                  <div className="w-full h-0.5 bg-slate-800 rounded-full overflow-hidden mt-0.5">
-                                                      <div className={`h-full rounded-full ${stam < 30 ? 'bg-red-500' : stam < 60 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${stam}%` }} />
-                                                  </div>
-                                              </div>
-                                              
-                                              {isDropTarget && (
-                                                  <div className="absolute inset-0 flex items-center justify-center bg-cyan-950/70 border border-cyan-400 rounded-lg pointer-events-none animate-pulse">
-                                                      <span className="text-cyan-300 font-black text-[7px] tracking-wider text-center px-0.5 uppercase">SUB</span>
-                                                  </div>
-                                              )}
-                                          </div>
-                                      );
-                                  });
-                              })()}
-                              </div>
-                          </div>
-
-                          {/* BENCH SECTION */}
-                          <div>
-                              <h3 className="text-white font-bold text-xs mb-2 uppercase tracking-widest px-2" style={{ textShadow: '1px 1px 2px black' }}>BENCH PLAYER (Drag a player card)</h3>
-                              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 px-1 no-scrollbar">
-                                  {benchPlayers.length === 0 && <p className="text-white/60 text-sm px-2 italic">No bench players available.</p>}
-                                  {benchPlayers.map(p => {
-                                      const stam = matchState.playerStamina[p.id] ?? 100;
-                                      const isFouledOut = (matchState.fouledOut ?? []).includes(p.id);
-                                      const statusObj = matchState.injuries[p.id];
-                                      const isDNP = statusObj && (statusObj.status === 'OUT' || statusObj.status === 'DNP');
-                                      const isSelected = subBenchPick === p.id;
-                                      const isUnavailable = isFouledOut || isDNP;
-
-                                      return (
-                                          <button key={p.id} 
-                                              onClick={() => !isUnavailable && setSubBenchPick(p.id)} 
-                                              disabled={isUnavailable}
-                                              onPointerDown={(e) => {
-                                                  if (!isUnavailable) {
-                                                      e.preventDefault();
-                                                      setPotentialDragPlayerId(p.id);
-                                                      setDragStartPos({ x: e.clientX, y: e.clientY });
-                                                      setPointerPos({ x: e.clientX, y: e.clientY });
-                                                      setSubBenchPick(p.id);
-                                                  }
-                                              }}
-                                              className={`relative shrink-0 w-[110px] h-[125px] transition-all duration-200 flex flex-col items-center justify-center bg-transparent ${!isUnavailable && !draggingPlayerId ? 'cursor-grab active:cursor-grabbing' : ''}
-                                                  ${isSelected ? 'scale-105 z-10' : 'hover:scale-[1.03]'} 
-                                                  ${isUnavailable ? 'opacity-40 grayscale brightness-50 cursor-not-allowed' : ''}`}
-                                          >
-                                              
-                                              <div className={`pointer-events-none scale-90 origin-center w-[120px] h-[124px] rounded-[10px] transition-all flex items-center justify-center ${isSelected ? 'ring-[3px] ring-yellow-400 shadow-[0_0_20px_rgba(234,179,8,0.8)]' : ''}`}>
-                                                  <PlayerCard 
-                                                    player={{ ...p, imageUrl: getPlayerImage(p), stamina: matchState.playerStamina[p.id] ?? 100, isInjured: isUnavailable }} 
-                                                    tooltipDirection="none" 
-                                                  />
-                                              </div>
-                                              {isFouledOut && <div className="absolute bottom-1 right-1 text-red-400 text-[8px] font-bold bg-black/50 px-1 rounded z-30">DQ</div>}
-                                              {isDNP && <div className="absolute bottom-1 right-1 text-red-400 text-[8px] font-bold bg-black/50 px-1 rounded z-30 font-mono">DNP</div>}
-                                          </button>
-                                      );
-                                  })}
-                              </div>
-                          </div>
-
-                          {/* SWAP CONFIRMATION PANEL */}
-                          {subCourtPick && subBenchPick && (() => {
-                              const courtP = currentLineup.find(p => p.id === subCourtPick)!;
-                              const benchP = roster.find(p => p.id === subBenchPick)!;
-                              if (!courtP || !benchP) return null;
-
-                              const isCooldownActive = cooldownNow < subCooldownEnd;
-                              const remainingSec = Math.ceil((subCooldownEnd - cooldownNow) / 1000);
-
-                              return (
-                              <div className="mt-4 flex flex-col items-center gap-2 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-                                  {isCooldownActive && (
-                                      <div className="text-red-400 font-bold text-[11px] tracking-wider uppercase bg-red-950/40 border border-red-500/20 px-4 py-1.5 rounded animate-pulse">
-                                          ⚠️ SUB COOLDOWN ACTIVE: Let the team coordinate first! ({remainingSec} seconds)
-                                      </div>
-                                  )}
-                                  <button 
-                                      onClick={handleSubConfirm} 
-                                      disabled={isCooldownActive}
-                                      className={`text-white font-black text-lg px-12 py-3.5 rounded-lg shadow-lg border transition-transform whitespace-nowrap tracking-widest
-                                          ${isCooldownActive 
-                                              ? 'bg-gray-700 border-gray-600 text-gray-500 cursor-not-allowed opacity-50' 
-                                              : 'bg-gradient-to-b from-[#e43434] to-[#a11c1c] hover:from-[#ff4040] hover:to-[#c22828] border-red-400 hover:scale-105 cursor-pointer'}`}
-                                  >
-                                      CONFIRM SUB
-                                  </button>
-                              </div>
-                              );
-                          })()}
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-end mr-4">
+                        <span className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">Team Salary</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-white text-[14px] font-bold">{currentSalary.toLocaleString()}</span>
+                          <span className="text-gray-500 text-[10px]">/ {maxSalary.toLocaleString()}</span>
+                        </div>
                       </div>
+                    </div>
                   </div>
+
+                  <div className="absolute top-[75px] left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                    <span className="text-[12px] font-medium tracking-wide text-gray-500">
+                      Long press to view player info
+                    </span>
+                  </div>
+
+                  {/* Unified Court and Bench Container */}
+                  <div className="relative z-10 flex flex-col w-full max-w-[1040px] mx-auto mt-6 mb-8 border border-white/10 bg-[#12141a]/60 rounded-sm">
+                    {/* Court Display (Half Court mimicking screenshot) */}
+                    <div className="relative w-full h-[480px] flex items-center justify-center overflow-hidden">
+                    {/* Wireframe Court Lines mimicking drawing */}
+                    <div className="absolute inset-0 top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-[550px] h-[450px] border-[2px] border-white/30 overflow-hidden pointer-events-none opacity-40">
+                      {/* Top center circle */}
+                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-[120px] rounded-full border-[2px] border-white/30" />
+
+                      {/* Outer side marks */}
+                      <div className="absolute top-[140px] left-0 w-[15px] h-[2px] bg-white/30" />
+                      <div className="absolute top-[140px] right-0 w-[15px] h-[2px] bg-white/30" />
+
+                      {/* 3-Point Arc (Center at basket) */}
+                      <div className="absolute bottom-[40px] left-1/2 -translate-x-1/2 translate-y-1/2 w-[640px] h-[640px] rounded-full border-[2px] border-white/30" />
+
+                      {/* Paint (Key) */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[160px] h-[200px] border-[2px] border-white/30 border-b-0" />
+
+                      {/* Free throw circle (Top solid, bottom dashed) */}
+                      <div className="absolute bottom-[120px] left-1/2 -translate-x-1/2 w-[160px] h-[160px]">
+                          <div className="absolute top-0 left-0 w-full h-1/2 border-[2px] border-b-0 border-white/30 rounded-t-full" />
+                          <div className="absolute bottom-0 left-0 w-full h-1/2 border-[2px] border-t-0 border-white/30 border-dashed rounded-b-full" />
+                      </div>
+
+                      {/* Paint hash marks (Left) */}
+                      <div className="absolute bottom-[120px] left-[calc(50%-80px)] w-[10px] h-[2px] bg-white/30 -translate-x-full" />
+                      <div className="absolute bottom-[100px] left-[calc(50%-80px)] w-[10px] h-[2px] bg-white/30 -translate-x-full" />
+                      <div className="absolute bottom-[80px] left-[calc(50%-80px)] w-[10px] h-[2px] bg-white/30 -translate-x-full" />
+                      <div className="absolute bottom-[60px] left-[calc(50%-80px)] w-[10px] h-[2px] bg-white/30 -translate-x-full" />
+                      {/* Paint hash marks (Right) */}
+                      <div className="absolute bottom-[120px] left-[calc(50%+80px)] w-[10px] h-[2px] bg-white/30" />
+                      <div className="absolute bottom-[100px] left-[calc(50%+80px)] w-[10px] h-[2px] bg-white/30" />
+                      <div className="absolute bottom-[80px] left-[calc(50%+80px)] w-[10px] h-[2px] bg-white/30" />
+                      <div className="absolute bottom-[60px] left-[calc(50%+80px)] w-[10px] h-[2px] bg-white/30" />
+
+                      {/* Basket */}
+                      <div className="absolute bottom-[32px] left-1/2 -translate-x-1/2 w-[16px] h-[16px] rounded-full border-[2px] border-white/30" />
+                    </div>
+
+                    {/* Active Lineup Players on Court */}
+                    {currentLineup.map((p, idx) => {
+                      const slotPos = SLOT_POSITIONS[idx];
+                      const stam = matchState.playerStamina[p.id] ?? 100;
+                      
+                      const coords = courtPositions[slotPos] || { x: 50, y: 50 };
+                      
+                      // Hover calculations
+                      const isHovered = dragHoverSlotId === p.id;
+                      const draggingPlayer = draggingPlayerId ? matchRoster.find(r => r.id === draggingPlayerId) : null;
+                      const hoverOffDiff = (isHovered && draggingPlayer) ? draggingPlayer.offense - p.offense : 0;
+                      const hoverDefDiff = (isHovered && draggingPlayer) ? draggingPlayer.defense - p.defense : 0;
+                      
+                      return (
+                        <div key={p.id} 
+                          data-drag-id={p.id}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transform transition-all cursor-grab active:cursor-grabbing ${isHovered ? 'scale-[1.15] z-40' : 'hover:scale-105 z-20'} ${draggingPlayerId === p.id ? 'opacity-0 pointer-events-none' : ''}`}
+                          style={{ left: `${coords.x}%`, top: `${coords.y}%` }}
+                          onPointerDown={(e) => {
+                             e.preventDefault();
+                             if (cooldownNow < subCooldownEnd) return;
+                             setPotentialDragPlayerId(p.id);
+                             setDragStartPos({ x: e.clientX, y: e.clientY });
+                          }}
+                        >
+                          <div className="pointer-events-none relative transition-all">
+                             <PlayerCard 
+                               player={{ ...p, imageUrl: getPlayerImage(p), stamina: stam }} 
+                               tooltipDirection="none" 
+                               staminaMax={getPlayerMaxStamina(p)}
+                               scale={0.80}
+                               selected={isHovered}
+                               showPositionBox={true}
+                               positionBoxLabel={slotPos}
+                             />
+                             {isHovered && draggingPlayer && (
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 bg-[#12141a]/95 border border-white/10 rounded-full px-4 py-1 shadow-[0_0_20px_rgba(0,0,0,0.8)] z-[100] whitespace-nowrap backdrop-blur-sm pointer-events-none">
+                                   <span className={`text-sm font-black ${hoverOffDiff > 0 ? 'text-[#4ade80]' : hoverOffDiff < 0 ? 'text-[#f87171]' : 'text-gray-400'}`}>
+                                     {hoverOffDiff > 0 ? `+${hoverOffDiff}` : hoverOffDiff} <span className="text-[10px] text-gray-400 ml-1 tracking-widest">OFF</span>
+                                   </span>
+                                   <div className="w-px h-3 bg-white/20" />
+                                   <span className={`text-sm font-black ${hoverDefDiff > 0 ? 'text-[#4ade80]' : hoverDefDiff < 0 ? 'text-[#f87171]' : 'text-gray-400'}`}>
+                                     <span className="text-[10px] text-gray-400 mr-1 tracking-widest">DEF</span> {hoverDefDiff > 0 ? `+${hoverDefDiff}` : hoverDefDiff}
+                                   </span>
+                                </div>
+                             )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    </div>
+
+                  {/* Bench Row (Exactly 7 slots matching screenshot) */}
+                  <div className="relative z-20 w-full h-[190px] border-t border-white/10 flex items-center justify-center shrink-0 pb-4">
+                     <div className="flex gap-3 items-end justify-center h-full pt-4 max-w-[1000px] w-full px-8">
+                        {paddedBench.map((p, idx) => {
+                          if (!p) {
+                             return (
+                               <div key={`empty-${idx}`} className="flex-1 max-w-[120px] h-[140px] border border-white/10 bg-white/[0.02] flex flex-col items-center justify-center shadow-inner rounded-sm relative overflow-hidden">
+                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="text-white/80 z-10">
+                                   <path d="M17 11V7A5 5 0 007 7v4H5v10h14V11h-2zm-8-4a3 3 0 116 0v4H9V7z"></path>
+                                 </svg>
+                               </div>
+                             );
+                          }
+
+                          const stam = matchState.playerStamina[p.id] ?? 100;
+                          const isFouledOut = (matchState.fouledOut ?? []).includes(p.id);
+                          const statusObj = matchState.injuries[p.id];
+                          const isDNP = statusObj && (statusObj.status === 'OUT' || statusObj.status === 'DNP');
+                          const isUnavailable = isFouledOut || isDNP;
+                          const isHovered = dragHoverSlotId === p.id;
+                          const draggingPlayer = draggingPlayerId ? matchRoster.find(r => r.id === draggingPlayerId) : null;
+                          const hoverOffDiff = (isHovered && draggingPlayer) ? draggingPlayer.offense - p.offense : 0;
+                          const hoverDefDiff = (isHovered && draggingPlayer) ? draggingPlayer.defense - p.defense : 0;
+
+                           return (
+                            <div key={p.id} 
+                               data-drag-id={p.id}
+                               className={`flex-1 max-w-[120px] h-[140px] border border-white/10 bg-white/[0.02] shadow-inner rounded-sm transition-all cursor-grab active:cursor-grabbing relative flex items-center justify-center overflow-visible ${isHovered ? 'scale-110 z-40 border-white/30 bg-white/5' : 'hover:scale-105 z-20'} ${isUnavailable ? 'opacity-40 grayscale' : draggingPlayerId === p.id ? 'opacity-0 pointer-events-none' : ''}`}
+                               onPointerDown={(e) => {
+                                 if (isUnavailable || cooldownNow < subCooldownEnd) return;
+                                 e.preventDefault();
+                                 setPotentialDragPlayerId(p.id);
+                                 setDragStartPos({ x: e.clientX, y: e.clientY });
+                               }}
+                            >
+                               <div className={`pointer-events-none flex items-center justify-center w-full h-full pb-4 relative`}>
+                                 <PlayerCard 
+                                   player={{ ...p, imageUrl: getPlayerImage(p), stamina: stam, isInjured: isUnavailable }} 
+                                   tooltipDirection="none" 
+                                   staminaMax={getPlayerMaxStamina(p)}
+                                   scale={0.70}
+                                   selected={isHovered}
+                                 />
+                                 {isHovered && draggingPlayer && (
+                                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex items-center justify-center gap-3 bg-[#12141a]/95 border border-white/10 rounded-full px-4 py-1 shadow-[0_0_20px_rgba(0,0,0,0.8)] z-[100] whitespace-nowrap backdrop-blur-sm pointer-events-none">
+                                      <span className={`text-sm font-black ${hoverOffDiff > 0 ? 'text-[#4ade80]' : hoverOffDiff < 0 ? 'text-[#f87171]' : 'text-gray-400'}`}>
+                                        {hoverOffDiff > 0 ? `+${hoverOffDiff}` : hoverOffDiff} <span className="text-[10px] text-gray-400 ml-1 tracking-widest">OFF</span>
+                                      </span>
+                                      <div className="w-px h-3 bg-white/20" />
+                                      <span className={`text-sm font-black ${hoverDefDiff > 0 ? 'text-[#4ade80]' : hoverDefDiff < 0 ? 'text-[#f87171]' : 'text-gray-400'}`}>
+                                        <span className="text-[10px] text-gray-400 mr-1 tracking-widest">DEF</span> {hoverDefDiff > 0 ? `+${hoverDefDiff}` : hoverDefDiff}
+                                      </span>
+                                   </div>
+                                 )}
+                               </div>
+                               {isFouledOut && <div className="absolute bottom-1 right-1 text-red-400 text-[10px] font-bold bg-black/80 px-1 border border-red-500/50 shadow-md">DQ</div>}
+                               {isDNP && <div className="absolute bottom-1 right-1 text-red-400 text-[10px] font-bold bg-black/80 px-1 border border-red-500/50 shadow-md">DNP</div>}
+                            </div>
+                          );
+                        })}
+                     </div>
+                  </div>
+                  </div>
+
+
+                  
+                  {/* Cooldown Timer Overlay for Subs (if active) */}
+                  {cooldownNow < subCooldownEnd && (
+                     <div className="absolute right-8 bottom-[180px] pointer-events-none text-red-400 font-bold text-[12px] tracking-wider uppercase drop-shadow-md bg-black/40 px-3 py-1 rounded-sm border border-red-500/30">
+                        SUB CD: {Math.ceil((subCooldownEnd - cooldownNow) / 1000)}s
+                     </div>
+                  )}
+
                 </div>
               );
             })()}
@@ -2889,6 +2871,7 @@ export default function MatchPage() {
           </thead>
           <tbody>
             {allStats.map(p => {
+              const staminaPct = Math.floor(getStaminaPercent(p, p.stam));
               const isLeader = p.stats.PTS === maxPts && maxPts > 0;
               const isHot = p.stats.PTS >= 20;
               const isLock = p.stats.STL >= 2;
@@ -2933,7 +2916,7 @@ export default function MatchPage() {
                       return `${tsVal}%${tsNum > 100.0 ? ' 🔥' : ''}`;
                     })()}
                   </td>
-                  <td className={`text-center font-bold ${p.stam < 25 ? 'text-red-500 animate-pulse' : p.stam < 50 ? 'text-yellow-400' : 'text-gray-400'}`}>{p.stam}%</td>
+                  <td className={`text-center font-bold ${staminaPct < 25 ? 'text-red-500 animate-pulse' : staminaPct < 50 ? 'text-yellow-400' : 'text-gray-400'}`}>{staminaPct}%</td>
                 </tr>
               );
             })}
@@ -2947,7 +2930,7 @@ export default function MatchPage() {
   // POST GAME VIEW
   if (viewState === 'POST_GAME' && reward) {
     const isWin = matchState.userScore >= matchState.aiScore;
-    const allUserPlayers = roster.filter(p => matchState.userPlayerIds.includes(p.id));
+    const allUserPlayers = matchRoster.filter(p => matchState.userPlayerIds.includes(p.id));
 
     // MVP calculation
     const mvpCalc = allUserPlayers.map(p => {
@@ -3257,63 +3240,16 @@ export default function MatchPage() {
     );
   }
 
-  // LOBBY VIEW
-  return (
-    <div className="flex flex-col h-full w-full p-4 relative z-10 font-sans">
-      <div className="mb-6 relative z-10">
-        <h1 className="text-3xl font-black text-white flex items-center gap-2 drop-shadow-md">
-          <Swords className="text-[#06b6d4]" />
-          MATCH ARENA
-        </h1>
-      </div>
+  // LOBBY / SEASON_MAP VIEW
+  if (viewState === 'SEASON_MAP') {
+    return (
+      <SeasonMap 
+        onStartMatch={(diff) => startMatch(diff)} 
+        onBack={() => router.push('/')} 
+      />
+    );
+  }
 
-      {/* Roster Lockout Warning Banner */}
-      {hasInjuredStarters ? (
-        <div className="max-w-2xl mx-auto w-full mb-6 p-5 bg-rose-950/70 border-2 border-red-500/50 rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.25)] text-center animate-pulse relative z-10 mt-6">
-          <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-1 flex items-center justify-center gap-1.5">
-            ⚠️ ROSTER VIOLATION DETECTED
-          </h3>
-          <p className="text-xs text-gray-200 font-medium leading-relaxed">
-            Your starting lineup contains active injured assets:{" "}
-            <span className="text-white font-black underline">
-              {injuredStarters.map((p) => p.name).join(", ")}
-            </span>.
-            Please swap them with healthy players in your Squad page before starting a simulation!
-          </p>
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-4 mb-8 relative z-10 max-w-2xl mx-auto w-full mt-6">
-        {(['EASY', 'NORMAL', 'HARD'] as Difficulty[]).map((diff) => {
-          const team = mockAiTeams[diff];
-          return (
-            <button
-              key={diff}
-              onClick={() => !hasInjuredStarters && startMatch(diff)}
-              disabled={hasInjuredStarters}
-              className={`relative p-6 rounded-xl border-2 transition-all flex items-center justify-between text-left group
-                ${hasInjuredStarters 
-                  ? 'bg-gray-900/40 border-gray-800 opacity-40 cursor-not-allowed text-gray-600' 
-                  : 'bg-[#1b2b3f]/90 hover:bg-[#2a4569]/90 border-[#1e3047] hover:border-[#06b6d4] cursor-pointer shadow-xl'}`}
-            >
-              <div>
-                <h3 className={`font-black text-2xl ${team.color} drop-shadow`}>{team.name}</h3>
-                <div className="flex gap-4 text-sm mt-2 font-mono">
-                  <span className="bg-[#0b121c] px-3 py-1 rounded text-white border border-[#1e3047] font-bold">OFF {team.off}</span>
-                  <span className="bg-[#0b121c] px-3 py-1 rounded text-white border border-[#1e3047] font-bold">DEF {team.def}</span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-full transition-all duration-300
-                ${hasInjuredStarters 
-                  ? 'bg-gray-800 text-gray-600' 
-                  : 'bg-[#06b6d4] text-[#0d1620] opacity-0 group-hover:opacity-100'}`}
-              >
-                <Swords size={24} />
-              </div>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  );
+  // Fallback (should never be reached)
+  return null;
 }

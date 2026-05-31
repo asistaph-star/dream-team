@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { PlayerHexProfileModal } from "@/components/player/PlayerHexProfileModal";
+import { BenchSelectModal } from "@/components/player/BenchSelectModal";
 import { Player, PlayerPosition } from "@/lib/types/player";
 import Link from "next/link";
 import Image from "next/image";
-import { UserCircle, CircleDollarSign, Ticket, Globe2, Plus, Sparkles, Trophy, ShieldAlert, TrendingUp, TrendingDown, RefreshCw, UserPlus } from 'lucide-react';
+import { UserCircle, CircleDollarSign, Ticket, Globe2, Plus, Sparkles, Trophy, ShieldAlert, TrendingUp, TrendingDown, RefreshCw, UserPlus, X, ChevronLeft } from 'lucide-react';
 import { mockPlayers, getTierColor, getTierRating } from "@/lib/data/mockPlayers";
 
 export default function AuthenticLobby() {
@@ -29,6 +30,7 @@ export default function AuthenticLobby() {
     signPlayerToRoster,
     ascendPlayer,
     setLineupSlot,
+    clearLineupSlot,
     lineupOverride
   } = useGameState();
 
@@ -36,11 +38,13 @@ export default function AuthenticLobby() {
   const [isAscending, setIsAscending] = useState(false);
 
   const [scale, setScale] = useState(1);
+  const [logDim, setLogDim] = useState({ w: 1420, h: 800 });
   const [time, setTime] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [showCoachModal, setShowCoachModal] = useState(false);
   const [coachActiveTab, setCoachActiveTab] = useState<'OFF' | 'DEF'>('OFF');
   const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
+  const [benchSelectSlot, setBenchSelectSlot] = useState<string | null>(null);
   
   // Drag & Drop States
   const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
@@ -49,6 +53,24 @@ export default function AuthenticLobby() {
   const [dragHoverSlot, setDragHoverSlot] = useState<PlayerPosition | null>(null);
   const [pointerPos, setPointerPos] = useState({ x: 0, y: 0 });
   const hasDraggedRef = useRef(false);
+
+  const defaultCoords = {
+    SF: { top: 320, left: 279 },
+    C: { top: 242, left: 451 },
+    PF: { top: 243, left: 661 },
+    SG: { top: 424, left: 515 },
+    PG: { top: 370, left: 816 }
+  };
+  const [customCoords, setCustomCoords] = useState(defaultCoords);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("courtLayout");
+    if (saved) {
+      try {
+        setCustomCoords(JSON.parse(saved));
+      } catch(e) {}
+    }
+  }, []);
 
   useEffect(() => {
     if (!draggingPlayerId && !potentialDragPlayerId) return;
@@ -82,9 +104,14 @@ export default function AuthenticLobby() {
       if (draggingPlayerId) {
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const slotEl = el?.closest('[data-slot]');
-        if (slotEl) {
-          const slot = slotEl.getAttribute('data-slot') as string;
-          setLineupSlot(slot, draggingPlayerId);
+        const originalPlayer = roster.find(p => p.id === draggingPlayerId);
+        
+        const targetSlot = slotEl ? slotEl.getAttribute('data-slot') as PlayerPosition : null;
+        
+        if (originalPlayer && targetSlot) {
+          // Pass the drop action directly to the game engine. 
+          // GameStateContext safely handles overwriting, identical-slot drops, and swapping.
+          setLineupSlot(targetSlot, draggingPlayerId);
         }
       }
       setDraggingPlayerId(null);
@@ -105,7 +132,7 @@ export default function AuthenticLobby() {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos]);
+  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos, scale, roster]);
 
   // NBA 2K Free Agents Market States
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -117,12 +144,7 @@ export default function AuthenticLobby() {
 
   // NBA 2K Chat Redesign States
   const [autoPk, setAutoPk] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { channel: "all", title: "Champion", titleColor: "text-yellow-400", user: "RUBIO", text: "5 STAR ALLEYKINGZ RECRUITS MEMBERS WITH EPIC F5!!" },
-    { channel: "all", title: "Beginner", titleColor: "text-zinc-300", user: "Alvin09", text: "FS FEARS/AMEN FOR 20APK POSTED" },
-    { channel: "all", title: "Beginner", titleColor: "text-zinc-300", user: "Mansanitas", text: "1220 FLAGG + 1480 JJ FOR 2010 LUKA" },
-    { channel: "all", title: "DreamTeam", titleColor: "text-cyan-400", user: "Juantmadx", text: "LF DE SILVA" }
-  ]);
+  const [chatMessages, setChatMessages] = useState<{ channel: string, title: string, titleColor: string, user: string, text: string }[]>([]);
 
   const handleSendChat = () => {
     if (!chatInput.trim()) return;
@@ -303,19 +325,21 @@ export default function AuthenticLobby() {
     }
   };
 
-  const finalCoords = {
-    SF: { top: 320, left: 279 },
-    C: { top: 242, left: 451 },
-    PF: { top: 243, left: 661 },
-    SG: { top: 424, left: 515 },
-    PG: { top: 370, left: 816 }
-  };
-
   useEffect(() => {
     const handleResize = () => {
-      const scaleX = window.innerWidth / 1420;
-      const scaleY = window.innerHeight / 800;
-      setScale(Math.max(0.5, Math.min(scaleX, scaleY))); // Fit to window while keeping aspect ratio
+      let logW = 1420;
+      let logH = 800;
+      const screenAspect = window.innerWidth / window.innerHeight;
+      const baseAspect = 1420 / 800;
+
+      if (screenAspect > baseAspect) {
+        logW = 800 * screenAspect;
+      } else {
+        logH = 1420 / screenAspect;
+      }
+      
+      setLogDim({ w: logW, h: logH });
+      setScale(window.innerWidth / logW);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -330,8 +354,6 @@ export default function AuthenticLobby() {
     return () => clearInterval(timer);
   }, []);
 
-
-
   const getPlayerForSlot = (pos: PlayerPosition) => {
     const overrideId = lineupOverride[pos];
     if (overrideId) {
@@ -342,7 +364,11 @@ export default function AuthenticLobby() {
 
   const renderSlot = (pos: PlayerPosition) => {
     const player = getPlayerForSlot(pos);
-    const coords = finalCoords[pos as keyof typeof finalCoords];
+    const coords = customCoords[pos as keyof typeof customCoords];
+    
+    // Calculate offsets to keep players anchored to the background image center
+    const offsetX = (logDim.w - 1420) / 2;
+    const offsetY = (logDim.h - 800) / 2;
     
     const isHovered = dragHoverSlot === pos;
     const draggingPlayer = draggingPlayerId ? roster.find(p => p.id === draggingPlayerId) : null;
@@ -365,7 +391,7 @@ export default function AuthenticLobby() {
           }
         }}
         className={`absolute pointer-events-auto transition-transform ${isHovered ? 'scale-110 z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ top: `${coords.top}px`, left: `${coords.left}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
+        style={{ top: `${coords.top + offsetY}px`, left: `${coords.left + offsetX}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
       >
         <div className="flex flex-col items-center relative">
           
@@ -380,7 +406,7 @@ export default function AuthenticLobby() {
 
           <div className="w-[120px] relative pointer-events-auto">
             {player ? (
-              <PlayerCard player={player} tooltipDirection={draggingPlayerId ? "none" : "right"} />
+              <PlayerCard player={player} tooltipDirection={draggingPlayerId ? "none" : "right"} showPositionBox={true} positionBoxLabel={pos} />
             ) : (
               <div className="w-[120px] h-[124px] rounded-xl border border-white/5 bg-gradient-to-br from-zinc-900/90 to-black/90 flex items-center justify-center shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-sm group-hover:border-white/10 transition-colors">
                  <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:16px_16px] pointer-events-none"></div>
@@ -390,10 +416,6 @@ export default function AuthenticLobby() {
                  </div>
               </div>
             )}
-            <div className="absolute -bottom-[32px] left-[50%] -translate-x-[50%] w-[100px] h-[26px] text-white text-sm text-center font-bold py-0.5 rounded-full border border-white/40 z-30 shadow-lg pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(207, 160, 48, 0.6), rgba(143, 101, 20, 0.95))" }}>
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1a1a1a] to-[#333] opacity-20 blur-[2px] rounded-full"></div>
-              <span className="relative z-10 drop-shadow-[0_2px_2px_rgba(0,0,0,1)] text-[#e8f1ff] uppercase">{pos}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -424,6 +446,7 @@ export default function AuthenticLobby() {
           <PlayerCard 
             player={roster.find(p => p.id === draggingPlayerId)!} 
             tooltipDirection="none" 
+            isDragOverlay={true}
           />
         </div>
       )}
@@ -433,13 +456,36 @@ export default function AuthenticLobby() {
           player={selectedGlobalPlayer} 
           onClose={() => setSelectedGlobalPlayer(null)} 
           onStarUp={() => {
-            setIsAscending(true);
-            setTimeout(() => {
-              ascendPlayer(selectedGlobalPlayer.id);
-              setIsAscending(false);
-            }, 1000);
+            return new Promise((resolve) => {
+              setIsAscending(true);
+              setTimeout(() => {
+                const res = ascendPlayer(selectedGlobalPlayer.id);
+                setIsAscending(false);
+                resolve(res);
+              }, 1000);
+            });
           }} 
           isAscending={isAscending} 
+        />
+      )}
+
+      {/* --- BENCH PLAYER SELECT MODAL --- */}
+      {benchSelectSlot && (
+        <BenchSelectModal 
+          benchSelectSlot={benchSelectSlot}
+          roster={roster}
+          activeLineup={activeLineup}
+          activeReserves={activeReserves}
+          lineupOverride={lineupOverride}
+          onClose={() => setBenchSelectSlot(null)}
+          onAssignPlayer={(playerId) => {
+            setLineupSlot(benchSelectSlot as any, playerId);
+            setBenchSelectSlot(null);
+          }}
+          onUnbenchPlayer={() => {
+            clearLineupSlot(benchSelectSlot);
+            setBenchSelectSlot(null);
+          }}
         />
       )}
       
@@ -447,8 +493,8 @@ export default function AuthenticLobby() {
         id="stadium-container"
         className="relative pointer-events-auto shadow-2xl"
         style={{
-          width: "1420px",
-          height: "800px",
+          width: `${logDim.w}px`,
+          height: `${logDim.h}px`,
           transform: `scale(${scale})`,
           transformOrigin: "center center",
           backgroundImage: 'url("/bg/stadium-v9.png")',
@@ -491,15 +537,15 @@ export default function AuthenticLobby() {
             {/* Grunge / Carbon Texture Overlay (Skewed to match backdrop shape) */}
             <div className="absolute inset-y-1 left-[40px] right-0 opacity-10 pointer-events-none mix-blend-screen skew-x-[-12deg] z-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0), radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' }}></div>
             
-            {/* Neon Cyan Top Edge Highlight (Skewed to match backdrop shape) */}
-            <div className="absolute top-1 left-[40px] right-0 h-[2px] bg-gradient-to-r from-cyan-400 via-blue-500 to-transparent shadow-[0_0_10px_rgba(6,182,212,0.8)] skew-x-[-12deg] z-0"></div>
+            {/* White Top Edge Highlight (Skewed to match backdrop shape) */}
+            <div className="absolute top-1 left-[40px] right-0 h-[2px] bg-gradient-to-r from-white via-white/50 to-transparent shadow-[0_0_10px_rgba(255,255,255,0.5)] skew-x-[-12deg] z-0"></div>
 
             {/* Sharp, Un-skewed Content Container */}
             <div className="absolute inset-y-1 left-[100px] right-8 z-10 flex flex-col justify-between py-1.5">
               
               {/* Header: Name */}
               <div className="w-full mt-[-4px]">
-                <span className="font-[family-name:var(--font-outfit)] font-black text-[22px] tracking-[0.1em] uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Manager</span>
+                <span className="font-[family-name:var(--font-outfit)] font-black text-[22px] tracking-[0.1em] uppercase text-red-500 drop-shadow-[0_2px_4px_rgba(220,38,38,0.5)]">DEVELOPER</span>
               </div>
 
               {/* EXP Progress Laser */}
@@ -583,14 +629,27 @@ export default function AuthenticLobby() {
             </div>
 
             {/* Floating Level / OVR Diamond (Far Right - Fully sharp unskewed texts!) */}
-            <div className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[42px] h-[42px] z-30 transform translate-x-1/2">
-              <div className="absolute inset-0 rotate-45 bg-gradient-to-br from-cyan-300 to-blue-600 shadow-[0_0_15px_rgba(6,182,212,0.6)] border-[2px] border-white/50 group-hover:rotate-[225deg] transition-transform duration-700 ease-out"></div>
-              <div className="absolute inset-[3px] rotate-45 bg-zinc-950 border border-cyan-500/50"></div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-                <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest leading-none mb-[1px] drop-shadow-[0_0_2px_cyan]">OVR</span>
-                <span className="text-[16px] font-black text-white leading-none tracking-tighter drop-shadow-[1px_1px_1px_black]">{accountLevel}</span>
-              </div>
-            </div>
+            {(() => {
+              const lvl = accountLevel || 0;
+              const ovrTheme = 
+                lvl >= 50 ? { from: 'from-orange-400', to: 'to-red-600', shadow: 'rgba(249,115,22,0.6)', border: 'border-orange-500/50', text: 'text-orange-400', drop: 'drop-shadow-[0_0_2px_orange]' } :
+                lvl >= 40 ? { from: 'from-fuchsia-400', to: 'to-pink-600', shadow: 'rgba(244,114,182,0.6)', border: 'border-fuchsia-500/50', text: 'text-fuchsia-400', drop: 'drop-shadow-[0_0_2px_fuchsia]' } :
+                lvl >= 30 ? { from: 'from-purple-400', to: 'to-indigo-600', shadow: 'rgba(168,85,247,0.6)', border: 'border-purple-500/50', text: 'text-purple-400', drop: 'drop-shadow-[0_0_2px_purple]' } :
+                lvl >= 20 ? { from: 'from-cyan-400', to: 'to-blue-600', shadow: 'rgba(6,182,212,0.6)', border: 'border-cyan-500/50', text: 'text-cyan-400', drop: 'drop-shadow-[0_0_2px_cyan]' } :
+                lvl >= 10 ? { from: 'from-emerald-400', to: 'to-teal-600', shadow: 'rgba(52,211,153,0.6)', border: 'border-emerald-500/50', text: 'text-emerald-400', drop: 'drop-shadow-[0_0_2px_emerald]' } :
+                { from: 'from-zinc-200', to: 'to-zinc-500', shadow: 'rgba(255,255,255,0.4)', border: 'border-white/50', text: 'text-white', drop: 'drop-shadow-[0_0_2px_white]' };
+
+              return (
+                <div className="absolute right-[5px] top-1/2 -translate-y-1/2 w-[42px] h-[42px] z-30 transform translate-x-1/2">
+                  <div className={`absolute inset-0 rotate-45 bg-gradient-to-br ${ovrTheme.from} ${ovrTheme.to} border-[2px] border-white/50 group-hover:rotate-[225deg] transition-transform duration-700 ease-out`} style={{ boxShadow: `0 0 15px ${ovrTheme.shadow}` }}></div>
+                  <div className={`absolute inset-[3px] rotate-45 bg-zinc-950 border ${ovrTheme.border}`}></div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+                    <span className={`text-[7px] font-black ${ovrTheme.text} uppercase tracking-widest leading-none mb-[1px] ${ovrTheme.drop}`}>OVR</span>
+                    <span className="text-[16px] font-black text-white leading-none tracking-tighter drop-shadow-[1px_1px_1px_black]">{accountLevel}</span>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Time / Server Banner (Unskewed text for absolute server clock sharpness!) */}
             <div className="absolute -bottom-[22px] right-[10px] z-10">
@@ -615,8 +674,8 @@ export default function AuthenticLobby() {
             {/* Carbon grid overlay skewed */}
             <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-screen skew-x-[-12deg] z-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0), radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' }}></div>
             
-            {/* Orange glowing top highlight skewed */}
-            <div className="absolute top-0 right-0 left-4 h-[2px] bg-gradient-to-l from-orange-500 via-red-500 to-transparent shadow-[0_0_10px_rgba(249,115,22,0.8)] skew-x-[-12deg] z-0"></div>
+            {/* White top highlight skewed */}
+            <div className="absolute top-0 right-0 left-4 h-[2px] bg-gradient-to-l from-white via-white/50 to-transparent shadow-[0_0_10px_rgba(255,255,255,0.5)] skew-x-[-12deg] z-0"></div>
 
             {/* Sharp Unskewed Content Container (No counter skew needed!) */}
             <div className="relative z-10 flex items-center px-6 gap-6 h-full">
@@ -664,41 +723,21 @@ export default function AuthenticLobby() {
           </div>
         </div>
 
-        {/* --- Bottom Navigation Panel --- */}
-        <div className="absolute bg-black/50 backdrop-blur-sm border border-gray-600/30 rounded-t-xl" style={{ bottom: '20px', left: '820px', transform: 'translateX(-50%)', width: '800px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', zIndex: 30 }}>
-          <Link href="/task">
-            <img alt="task" src="/newicons/task.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/inventory">
-            <img alt="equipment" src="/newicons/inventory.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/player">
-            <img alt="player" src="/newicons/player.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/alliance">
-            <img alt="alliance" src="/newicons/alliance.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="102" height="102" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/article">
-            <img alt="article" src="/newicons/article.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="102" height="102" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/shop">
-            <img alt="shop" src="/newicons/shop.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/match">
-            <img alt="match" src="/newicons/match.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-          <Link href="/stadium">
-            <img alt="stadium" src="/newicons/city.webp" className="cursor-pointer transition-all duration-300 hover:scale-110 hover:drop-shadow-[0_0_5px_black] drop-shadow-[0_0_2px_white]" width="100" height="100" style={{ marginBottom: '15px' }} />
-          </Link>
-        </div>
 
         {/* --- Global Chat Box (NBA 2K STYLE - SHARP HD FIX) --- */}
         <div className="absolute bottom-[10px] left-[20px] w-[350px] z-30 group p-3">
           {/* Slanted Glassmorphic Backdrop Card (Skewed separately so scrollbars and text remain ultra-sharp and HD) */}
-          <div className="absolute inset-0 bg-[#0c0d12]/95 backdrop-blur-[12px] border border-white/10 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] skew-x-[-4deg] group-hover:border-cyan-500/40 transition-all duration-300 z-0 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-[#0c0d12]/95 backdrop-blur-[12px] border border-white/10 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] skew-x-[-4deg] group-hover:border-white/30 transition-all duration-300 z-0 pointer-events-none"></div>
           
-          {/* Subtle carbon grid backdrop overlay (Skewed matching the card backdrop) */}
-          <div className="absolute inset-0 opacity-[0.05] pointer-events-none mix-blend-screen skew-x-[-4deg] z-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0), radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' }}></div>
+          {/* Low Poly / Glass Facets Background Pattern (Skewed matching the card backdrop) */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-60 skew-x-[-4deg] z-0 rounded-2xl">
+            <div className="absolute inset-0 bg-white/[0.02]" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}></div>
+            <div className="absolute inset-0 bg-black/[0.4]" style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}></div>
+            <div className="absolute inset-0 bg-white/[0.03]" style={{ clipPath: "polygon(50% 0, 100% 0, 100% 50%)" }}></div>
+            <div className="absolute inset-0 bg-black/[0.3]" style={{ clipPath: "polygon(0 50%, 50% 100%, 0 100%)" }}></div>
+            <div className="absolute inset-0 bg-white/[0.01]" style={{ clipPath: "polygon(20% 0, 80% 0, 50% 100%)" }}></div>
+            <div className="absolute inset-0 bg-black/[0.2]" style={{ clipPath: "polygon(80% 0, 100% 50%, 50% 100%)" }}></div>
+          </div>
 
           {/* Sharp, Unskewed Interior Content Wrapper */}
           <div className="relative z-10">
@@ -706,9 +745,9 @@ export default function AuthenticLobby() {
             {/* Header Tab */}
             <div className="flex justify-between items-center mb-2">
               <div className="flex space-x-2">
-                <div className="px-3 py-1 bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-500/20 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-[10px] rounded-md shadow-md skew-x-[-12deg] flex items-center gap-1.5">
+                <div className="px-3 py-1 bg-zinc-800 border border-white/20 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-[10px] rounded-md shadow-[0_0_8px_rgba(255,255,255,0.1)] skew-x-[-12deg] flex items-center gap-1.5">
                   <span className="skew-x-[12deg] flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80] animate-pulse"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_5px_#34d399] animate-pulse"></div>
                     GLOBAL
                   </span>
                 </div>
@@ -725,14 +764,14 @@ export default function AuthenticLobby() {
                   <div key={idx} className="text-xs border-b border-white/[0.03] pb-1.5 last:border-0 last:pb-0 leading-relaxed break-words">
                     <span className="inline-flex items-center gap-1.5 mr-1.5 align-middle select-none">
                       {/* [all] tag */}
-                      <span className="bg-red-500/10 border border-red-500/30 text-red-400 text-[8px] font-black tracking-wide uppercase px-1 rounded">
+                      <span className="bg-white/10 border border-white/20 text-white text-[8px] font-black tracking-wide uppercase px-1 rounded">
                         ALL
                       </span>
                       
                       {/* Title Badges */}
                       <span className={`text-[8px] font-black tracking-wide uppercase px-1.5 py-0.5 rounded skew-x-[-6deg] shadow-sm ${
-                        msg.title === 'Champion' ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 text-yellow-400' :
-                        msg.title === 'DreamTeam' ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-400' :
+                        msg.title === 'Champion' ? 'bg-white/15 border border-white/30 text-white drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]' :
+                        msg.title === 'DreamTeam' ? 'bg-white/10 border border-white/20 text-zinc-100' :
                         'bg-zinc-700/20 border border-zinc-600/30 text-zinc-300'
                       }`}>
                         <span className="skew-x-[6deg] inline-block">{msg.title}</span>
@@ -757,14 +796,14 @@ export default function AuthenticLobby() {
             {/* Input Action Panel */}
             <div className="mt-2.5 flex space-x-2 items-center relative">
               {/* Emoji button */}
-              <button className="w-9 h-9 bg-zinc-800/80 border border-white/10 hover:bg-zinc-700 hover:border-cyan-500/40 text-white rounded-lg flex items-center justify-center transition hover:scale-105 active:scale-95 shadow-md text-sm">
+              <button className="w-9 h-9 bg-zinc-800/80 border border-white/10 hover:bg-zinc-700 hover:border-white/30 text-white rounded-lg flex items-center justify-center transition hover:scale-105 active:scale-95 shadow-md text-sm">
                 😊
               </button>
               
               {/* Text input */}
               <input 
                 type="text" 
-                className="flex-1 h-9 bg-zinc-950/80 border border-white/10 rounded-lg px-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-cyan-500/80 focus:ring-1 focus:ring-cyan-500/30 transition-all font-sans font-semibold tracking-wide shadow-inner animate-none" 
+                className="flex-1 h-9 bg-zinc-950/80 border border-white/10 rounded-lg px-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-sans font-semibold tracking-wide shadow-inner animate-none" 
                 value={chatInput} 
                 onChange={e => setChatInput(e.target.value)} 
                 onKeyDown={e => { if (e.key === 'Enter') handleSendChat(); }}
@@ -774,7 +813,7 @@ export default function AuthenticLobby() {
               {/* Send Button */}
               <button 
                 onClick={handleSendChat}
-                className="h-9 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-500/40 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-xs px-4 rounded-lg shadow-lg hover:shadow-red-500/20 hover:scale-105 active:scale-95 transition-all skew-x-[-12deg]"
+                className="h-9 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-xs px-4 rounded-lg shadow-lg hover:shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all skew-x-[-12deg]"
               >
                 <span className="skew-x-[12deg] flex items-center gap-1">SEND</span>
               </button>
@@ -784,14 +823,20 @@ export default function AuthenticLobby() {
         </div>
 
         {/* --- Online Counter --- */}
-        <div className="absolute bottom-[20px] right-[20px] flex gap-4 items-end z-30">
-          <div className="relative w-24 h-24 bg-gray-800 rounded-lg shadow-xl border border-gray-700 text-center">
-            <div className="absolute top-1 right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-            <div className="absolute top-1 right-1 w-3 h-3 bg-green-500 rounded-full"></div>
-            <div className="bg-gray-900 text-white py-1 rounded-t-lg text-[10px] font-semibold tracking-wide shadow-inner">ONLINE</div>
-            <div className="flex items-center justify-center h-[calc(100%-1.5rem)]">
-              <span className="text-3xl font-extrabold text-white">240</span>
-            </div>
+        <div className="absolute top-[625px] right-[20px] w-[210px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 z-30 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+
+          <div className="flex items-center gap-2 relative z-10">
+             <div className="relative flex items-center justify-center w-3 h-3">
+               <div className="absolute w-full h-full bg-emerald-400 rounded-full animate-ping opacity-75"></div>
+               <div className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+             </div>
+             <span className="text-zinc-300 font-[family-name:var(--font-outfit)] font-bold text-[11px] tracking-widest uppercase mt-0.5">Servers</span>
+          </div>
+          
+          <div className="relative z-10 flex items-center">
+             <span className="text-white font-mono font-black text-[15px] tracking-wider drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] mt-0.5">240</span>
           </div>
         </div>
 
@@ -804,23 +849,33 @@ export default function AuthenticLobby() {
         </div>
         <div className="absolute top-[160px] left-[70px] z-20">
           <img alt="Daily Signin" src="/bg/dailysignin.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 transition" />
+          <img alt="Daily Signin" src="/bg/dailysignin.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 active:scale-95 transition" />
         </div>
         <div className="absolute top-[210px] left-[20px] z-20">
-          <img alt="Lottery" src="/bg/lottery.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 transition" />
+          <img alt="Lottery" src="/bg/lottery.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 active:scale-95 transition" />
         </div>
 
         {/* --- Right Side Characters --- */}
         <div className="absolute top-[60px] right-[380px] w-[150px] h-[300px] z-10 pointer-events-none">
-          <img alt="Agent" onClick={() => setShowAgentModal(true)} src="/agent.png" className="w-full h-full object-contain pointer-events-auto cursor-pointer hover:scale-105 transition drop-shadow-[0_0_2px_white]" />
+          <img alt="Agent" onClick={() => setShowAgentModal(true)} src="/agent.png" className="w-full h-full object-contain pointer-events-auto cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 drop-shadow-[0_0_2px_white]" />
         </div>
         <div className="absolute top-[120px] right-[200px] w-[160px] h-[250px] z-10 pointer-events-none">
-          <img alt="Coach" onClick={() => setShowCoachModal(true)} src="/coach.png" className="w-full h-full object-contain pointer-events-auto cursor-pointer hover:scale-105 transition drop-shadow-[0_0_2px_white]" />
+          <img alt="Coach" onClick={() => setShowCoachModal(true)} src="/coach.png" className="w-full h-full object-contain pointer-events-auto cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200 drop-shadow-[0_0_2px_white]" />
         </div>
 
         {/* --- AUTO LINEUP BUTTON --- */}
-        <div className="absolute top-[580px] right-[20px] w-[200px] h-[40px] z-30">
-          <button onClick={autoLineup} className="w-full h-full bg-slate-800 border border-slate-700 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center text-white font-semibold text-sm hover:drop-shadow-[0_0_5px_rgba(0,0,0,0.5)] active:scale-95">
-            AUTO LINEUP
+        <div className="absolute top-[575px] right-[20px] w-[210px] h-[38px] z-30">
+          <button onClick={autoLineup} className="w-full h-full relative group overflow-hidden rounded-[4px] border border-white/20 bg-[#121215]/90 backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300 active:scale-[0.98] hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+            {/* Glass sheen */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+            {/* Cyber glow on hover */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.15)_0%,transparent_70%)] transition-opacity duration-300 pointer-events-none"></div>
+            {/* Mesh texture */}
+            <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
+            
+            <span className="relative z-10 text-white font-[family-name:var(--font-outfit)] font-black text-[13px] tracking-[0.2em] uppercase italic drop-shadow-md mt-0.5">
+              Auto Lineup
+            </span>
           </button>
         </div>
 
@@ -832,17 +887,26 @@ export default function AuthenticLobby() {
         {renderSlot('PG')}
 
         {/* --- BENCH PLAYERS (PREMIUM 2K BINDER CARD STORAGE) --- */}
-        <div className="absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-zinc-950/90 backdrop-blur-md border border-cyan-500/30 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible">
+        <div className="absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible">
+          {/* Low Poly / Glass Facets Texture for the entire panel */}
+          <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 bg-white/[0.02]" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}></div>
+            <div className="absolute inset-0 bg-black/[0.2]" style={{ clipPath: "polygon(0 100%, 100% 0, 100% 100%)" }}></div>
+            <div className="absolute inset-0 bg-white/[0.03]" style={{ clipPath: "polygon(50% 0, 100% 0, 100% 50%)" }}></div>
+            <div className="absolute inset-0 bg-black/[0.15]" style={{ clipPath: "polygon(0 50%, 50% 100%, 0 100%)" }}></div>
+            <div className="absolute inset-0 bg-white/[0.01]" style={{ clipPath: "polygon(20% 0, 80% 0, 50% 100%)" }}></div>
+          </div>
+
           {/* Slanted header banner */}
-          <div className="bg-gradient-to-r from-cyan-950/60 to-zinc-900/60 border-b border-cyan-500/20 pb-1.5 mb-2.5 shrink-0 flex items-center justify-between px-1">
+          <div className="relative bg-gradient-to-r from-zinc-800/80 to-zinc-900/60 border-b border-white/20 pb-1.5 mb-2.5 shrink-0 flex items-center justify-between px-1 z-10">
             <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[12px] tracking-wider uppercase italic leading-none mt-1">RESERVES</span>
-            <span className="text-cyan-400 font-mono font-bold text-[9px] leading-none bg-cyan-950/80 border border-cyan-500/20 px-1.5 py-[3px] rounded shadow-[0_0_8px_rgba(6,182,212,0.15)] flex items-center justify-center mt-0.5">
+            <span className="text-white font-mono font-bold text-[9px] leading-none bg-white/10 border border-white/20 px-1.5 py-[3px] rounded shadow-[0_0_8px_rgba(255,255,255,0.1)] flex items-center justify-center mt-0.5">
               {activeReserves.length} CARDS
             </span>
           </div>
           
           {/* Scrollable binder grid */}
-          <div className="flex-1 pr-1 flex flex-col min-h-0">
+          <div className="relative flex-1 pr-1 flex flex-col min-h-0 z-10">
             <div className="grid grid-cols-2 gap-x-2 gap-y-4" style={{ gridAutoRows: 'min-content', alignItems: 'start' }}>
               {['B1', 'B2', 'B3', 'B4', 'B5', 'B6'].map((slotKey, index) => {
                 const benchPlayer = activeReserves.find(p => lineupOverride[slotKey] === p.id);
@@ -852,34 +916,58 @@ export default function AuthenticLobby() {
                   <div 
                     key={slotKey}
                     data-slot={slotKey}
-                    className={`flex flex-col items-center relative z-20 transition-all ${isHovered ? 'scale-110 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]' : ''}`}
+                    className={`flex flex-col items-center relative z-20 hover:z-[60] transition-all ${isHovered ? 'scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]' : ''}`}
                   >
-                    <div className={`relative w-[85px] h-[88px] rounded-lg border flex items-center justify-center transition-all ${isHovered ? 'border-cyan-400 bg-cyan-900/40 shadow-[inset_0_0_15px_rgba(6,182,212,0.3)]' : 'border-white/5 bg-gradient-to-br from-zinc-900/80 to-black/80 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]'}`}>
+                    <div className={`relative group/bench w-[85px] h-[88px] rounded-lg border flex items-center justify-center transition-all ${isHovered ? 'border-white bg-white/10 shadow-[inset_0_0_15px_rgba(255,255,255,0.2)]' : 'border-white/5 bg-black/20 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]'}`}>
                       {!benchPlayer && (
                         <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
-                          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:12px_12px]" />
+                          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%,transparent_100%)] bg-[length:12px_12px] opacity-50" />
                         </div>
                       )}
                       {benchPlayer ? (
+                        <>
+                          <div 
+                            onPointerDown={(e) => {
+                              e.preventDefault();
+                              setPotentialDragPlayerId(benchPlayer.id);
+                              setDragStartPos({ x: e.clientX, y: e.clientY });
+                              setPointerPos({ x: e.clientX, y: e.clientY });
+                            }}
+                            className={`absolute top-0 left-0 origin-top-left ${draggingPlayerId === benchPlayer.id ? 'opacity-50' : 'hover:z-50 hover:scale-105 cursor-grab active:cursor-grabbing'}`} 
+                            style={{ transform: 'scale(0.708)' }}
+                            onClick={() => {
+                              if (!hasDraggedRef.current) {
+                                setSelectedGlobalPlayer(benchPlayer);
+                              }
+                            }}
+                          >
+                            <PlayerCard player={benchPlayer} tooltipDirection={draggingPlayerId ? "none" : "left"} tooltipScale={1.412} />
+                          </div>
+                          {/* UNBENCH HOVER BUTTON */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearLineupSlot(slotKey);
+                            }}
+                            className="absolute -top-2 -right-2 z-[60] w-6 h-6 bg-red-600 rounded-full text-white flex items-center justify-center border-2 border-zinc-900 opacity-0 group-hover/bench:opacity-100 transition-opacity shadow-[0_0_10px_rgba(220,38,38,0.8)] hover:bg-red-500 hover:scale-110 active:scale-95"
+                            title="Unbench Player"
+                          >
+                            <X size={14} strokeWidth={3} />
+                          </button>
+                        </>
+                      ) : (
                         <div 
-                          onPointerDown={(e) => {
-                            e.preventDefault();
-                            setPotentialDragPlayerId(benchPlayer.id);
-                            setDragStartPos({ x: e.clientX, y: e.clientY });
-                            setPointerPos({ x: e.clientX, y: e.clientY });
-                          }}
-                          className={`absolute top-0 left-0 origin-top-left ${draggingPlayerId === benchPlayer.id ? 'opacity-50' : 'hover:z-50 hover:scale-105 cursor-grab active:cursor-grabbing'}`} 
-                          style={{ transform: 'scale(0.708)' }}
+                          className="absolute inset-0 flex flex-col items-center justify-center opacity-30 hover:opacity-100 hover:bg-white/5 transition-all cursor-pointer z-30 rounded-lg pointer-events-auto"
                           onClick={() => {
-                            if (!hasDraggedRef.current) {
-                              setSelectedGlobalPlayer(benchPlayer);
+                            if (draggingPlayerId) {
+                              // If holding a player, drop them here
+                              setLineupSlot(slotKey as any, draggingPlayerId);
+                            } else {
+                              // Open modal to select player
+                              setBenchSelectSlot(slotKey);
                             }
                           }}
                         >
-                          <PlayerCard player={benchPlayer} tooltipDirection={draggingPlayerId ? "none" : "left"} tooltipScale={1.412} />
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center opacity-30">
                           <Plus size={14} className="text-zinc-400 mb-0.5" strokeWidth={3} />
                           <span className="text-zinc-400 font-[family-name:var(--font-outfit)] font-black uppercase text-[10px] tracking-widest italic">{slotKey}</span>
                         </div>
@@ -895,15 +983,29 @@ export default function AuthenticLobby() {
         {/* --- COACH STRATEGY PROGRESSION MODAL (NBA 2K STYLE) --- */}
         {showCoachModal && (
           <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <style>{`#global-bottom-nav { display: none !important; }`}</style>
             {/* Standard non-skewed container for absolute pixel-perfect HD clarity */}
-            <div className="w-[850px] h-[590px] rounded-2xl p-6 flex flex-col relative overflow-hidden">
+            <div className="w-[850px] h-[590px] rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter">
               
-              {/* Decoupled Skewed Backdrop & Border (eliminates chromium transform subpixel layout blur!) */}
-              <div className={`absolute inset-0 bg-zinc-950/95 border-2 ${coachActiveTab === 'OFF' ? 'border-cyan-500/40 shadow-[0_0_50px_rgba(6,182,212,0.35)]' : 'border-orange-500/40 shadow-[0_0_50px_rgba(249,115,22,0.35)]'} rounded-2xl skew-x-[-6deg] scale-x-[1.04] z-0 pointer-events-none`} />
-              
-              {/* Carbon Grid backdrop & Scanlines */}
-              <div className="absolute inset-0 opacity-[0.1] pointer-events-none mix-blend-screen z-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0), radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' }}></div>
-              <div className={`absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_15px_cyan] z-0 skew-x-[-6deg] scale-x-[1.04]`}></div>
+              {/* Modal Background Pattern (Unified with Player Filter) */}
+              <div className="absolute inset-0 pointer-events-none flex overflow-hidden rounded-2xl bg-[#30333b] shadow-2xl border border-white/10 z-0">
+                {/* Left half: Halftone Dots */}
+                <div 
+                  className="flex-1 opacity-[0.4] pointer-events-none mix-blend-screen animate-pulse" 
+                  style={{ 
+                    backgroundImage: `radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)`,
+                    backgroundSize: '14px 14px',
+                    backgroundPosition: '0 0, 7px 7px'
+                  }} 
+                />
+                {/* Right half: Glass Diamond Pattern */}
+                <div className="flex-1 relative">
+                  <div className="absolute top-[-20%] right-[-10%] w-[120%] h-[150%] bg-white/[0.03] rotate-45 border border-white/5 backdrop-blur-[2px]" />
+                  <div className="absolute top-[10%] left-[-20%] w-[80%] h-[120%] bg-black/[0.1] -rotate-12 border border-white/5 backdrop-blur-sm" />
+                  <div className="absolute bottom-[-10%] right-[10%] w-[100%] h-[80%] bg-white/[0.02] rotate-[30deg] border border-white/5" />
+                </div>
+              </div>
+              <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_15px_rgba(255,255,255,0.5)] z-0 skew-x-[-6deg] scale-x-[1.04]"></div>
               
               {/* Unskewed, perfectly flat content plane */}
               <div className="flex-1 flex flex-col min-h-0 relative z-10">
@@ -911,10 +1013,6 @@ export default function AuthenticLobby() {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-5 relative z-10">
                   <div className="flex items-center gap-4">
-                    {/* Glowing slanted icon box */}
-                    <div className={`w-14 h-12 bg-gradient-to-b ${coachActiveTab === 'OFF' ? 'from-cyan-500 to-blue-600' : 'from-orange-500 to-red-600'} rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.4)] border border-white/20 skew-x-[-12deg]`}>
-                      <Trophy className="text-white w-6 h-6 animate-bounce skew-x-[12deg]" />
-                    </div>
                     <div>
                       <h2 className="text-2xl font-[family-name:var(--font-outfit)] font-black text-white tracking-[0.08em] uppercase flex items-center gap-2 italic drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                         HEAD COACH STRATEGY BOARD
@@ -954,7 +1052,7 @@ export default function AuthenticLobby() {
                       </div>
 
                       <div className="font-[family-name:var(--font-outfit)] text-[18px] font-black text-white uppercase tracking-wider italic leading-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">Coach Pop</div>
-                      <span className="font-[family-name:var(--font-outfit)] text-[8px] font-black italic text-cyan-400 tracking-[0.25em] uppercase mt-1 leading-none">MASTER STRATEGIST</span>
+                      <span className="font-[family-name:var(--font-outfit)] text-[8px] font-black italic text-white tracking-[0.25em] uppercase mt-1 leading-none">MASTER STRATEGIST</span>
                     </div>
 
                     {/* Slanted Coach Report Card */}
@@ -968,7 +1066,7 @@ export default function AuthenticLobby() {
                         </div>
                         <div className="flex justify-between text-zinc-300 mb-1">
                           <span className="font-semibold">Tactics LVL Sum:</span>
-                          <span className={`font-black ${coachActiveTab === 'OFF' ? 'text-cyan-400' : 'text-orange-400'}`}>
+                          <span className="font-black text-white">
                             {Object.values(strategyLevels).reduce((acc, s) => acc + s.level, 0)}
                           </span>
                         </div>
@@ -989,7 +1087,7 @@ export default function AuthenticLobby() {
                         onClick={() => setCoachActiveTab('OFF')}
                         className={`px-6 py-2.5 text-xs font-[family-name:var(--font-outfit)] font-black tracking-[0.15em] transition-all cursor-pointer uppercase skew-x-[-12deg] border border-white/10
                           ${coachActiveTab === 'OFF' 
-                            ? 'bg-gradient-to-r from-cyan-600/90 to-cyan-800/90 text-white shadow-[0_0_15px_rgba(6,182,212,0.3)] border-l-4 border-l-cyan-400' 
+                            ? 'bg-zinc-800 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border-l-4 border-l-white' 
                             : 'bg-zinc-900/60 text-zinc-500 hover:text-zinc-300'}`}
                       >
                         <span className="block skew-x-[12deg] italic">OFFENSIVE TACTICS ({offStrategies.length})</span>
@@ -998,7 +1096,7 @@ export default function AuthenticLobby() {
                         onClick={() => setCoachActiveTab('DEF')}
                         className={`px-6 py-2.5 text-xs font-[family-name:var(--font-outfit)] font-black tracking-[0.15em] transition-all cursor-pointer uppercase skew-x-[-12deg] border border-white/10
                           ${coachActiveTab === 'DEF' 
-                            ? 'bg-gradient-to-r from-orange-600/90 to-red-700/90 text-white shadow-[0_0_15px_rgba(249,115,22,0.3)] border-l-4 border-l-orange-400' 
+                            ? 'bg-zinc-800 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border-l-4 border-l-white' 
                             : 'bg-zinc-900/60 text-zinc-500 hover:text-zinc-300'}`}
                       >
                         <span className="block skew-x-[12deg] italic">DEFENSIVE TACTICS ({defStrategies.length})</span>
@@ -1020,11 +1118,10 @@ export default function AuthenticLobby() {
                           current.level === 4 ? 'text-amber-400 border-amber-500 bg-amber-950/40 shadow-[0_0_8px_rgba(245,158,11,0.3)]' :
                           current.level === 3 ? 'text-purple-400 border-purple-500 bg-purple-950/40' :
                           current.level === 2 ? 'text-emerald-400 border-emerald-500 bg-emerald-950/40' :
-                          'text-cyan-400 border-cyan-500/40 bg-cyan-950/20';
+                          'text-white border-white/40 bg-white/5';
 
                         return (
-                          <div key={strat.name} className={`bg-zinc-900/70 border border-white/5 rounded-xl p-4 flex flex-col gap-3 transition-all hover:bg-zinc-900 hover:border-white/10 skew-x-[-6deg] shadow-lg relative
-                            ${coachActiveTab === 'OFF' ? 'border-l-4 border-l-cyan-500/80' : 'border-l-4 border-l-orange-500/80'}`}>
+                          <div key={strat.name} className={`bg-zinc-900/70 border border-white/5 rounded-xl p-4 flex flex-col gap-3 transition-all hover:bg-zinc-900 hover:border-white/10 skew-x-[-6deg] shadow-lg relative border-l-4 border-l-white/80`}>
                             
                             {/* Unskewed block content */}
                             <div className="skew-x-[6deg] flex flex-col gap-2.5">
@@ -1041,7 +1138,7 @@ export default function AuthenticLobby() {
                                   
                                   {/* Dynamic attribute badges */}
                                   <div className="flex flex-wrap gap-2 text-[9px] font-bold font-mono">
-                                    <span className={`bg-zinc-950/80 px-2 py-0.5 rounded border border-white/5 ${coachActiveTab === 'OFF' ? 'text-cyan-400' : 'text-orange-400'}`}>
+                                    <span className="bg-zinc-950/80 px-2 py-0.5 rounded border border-white/5 text-white">
                                       FOCUS: {strat.focus.toUpperCase()}
                                     </span>
                                     <span className="bg-zinc-950/80 px-2 py-0.5 rounded border border-white/5 text-yellow-400">
@@ -1074,9 +1171,7 @@ export default function AuthenticLobby() {
                                     className={`h-full rounded-full transition-all duration-500 relative
                                       ${isMax 
                                         ? 'bg-gradient-to-r from-fuchsia-500 to-pink-500 shadow-[0_0_8px_rgba(240,79,228,0.6)]' 
-                                        : coachActiveTab === 'OFF' 
-                                          ? 'bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]' 
-                                          : 'bg-gradient-to-r from-orange-500 to-red-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]'}`}
+                                        : 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]'}`}
                                     style={{ width: `${progressPct}%` }}
                                   >
                                     {!isMax && <div className="absolute top-0 right-0 w-4 h-full bg-white/40 animate-pulse blur-[1px]"></div>}
@@ -1106,15 +1201,29 @@ export default function AuthenticLobby() {
         {/* --- FREE AGENT AGENCY MARKET MODAL (PREMIUM NBA 2K GLASSMORPHIC STYLE) --- */}
         {showAgentModal && (
           <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+            <style>{`#global-bottom-nav { display: none !important; }`}</style>
             {/* Standard non-skewed container for absolute pixel-perfect HD clarity */}
-            <div className="w-[880px] h-[610px] rounded-2xl p-6 flex flex-col relative overflow-hidden">
+            <div className="w-[880px] h-[610px] rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter">
               
-              {/* Decoupled Skewed Backdrop & Border (eliminates chromium transform subpixel layout blur!) */}
-              <div className="absolute inset-0 bg-zinc-950/95 border-2 border-cyan-500/40 rounded-2xl skew-x-[-6deg] scale-x-[1.04] shadow-[0_0_50px_rgba(6,182,212,0.35)] z-0 pointer-events-none" />
-              
-              {/* Carbon Grid backdrop & Scanlines */}
-              <div className="absolute inset-0 opacity-[0.1] pointer-events-none mix-blend-screen z-0" style={{ backgroundImage: 'radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0), radial-gradient(rgba(255, 255, 255, 1) 1px, transparent 0)', backgroundSize: '8px 8px', backgroundPosition: '0 0, 4px 4px' }}></div>
-              <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_15px_cyan] z-0 skew-x-[-6deg] scale-x-[1.04]"></div>
+              {/* Modal Background Pattern (Unified with Player Filter) */}
+              <div className="absolute inset-0 pointer-events-none flex overflow-hidden rounded-2xl bg-[#30333b] shadow-2xl border border-white/10 z-0">
+                {/* Left half: Halftone Dots */}
+                <div 
+                  className="flex-1 opacity-[0.4] pointer-events-none mix-blend-screen animate-pulse" 
+                  style={{ 
+                    backgroundImage: `radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)`,
+                    backgroundSize: '14px 14px',
+                    backgroundPosition: '0 0, 7px 7px'
+                  }} 
+                />
+                {/* Right half: Glass Diamond Pattern */}
+                <div className="flex-1 relative">
+                  <div className="absolute top-[-20%] right-[-10%] w-[120%] h-[150%] bg-white/[0.03] rotate-45 border border-white/5 backdrop-blur-[2px]" />
+                  <div className="absolute top-[10%] left-[-20%] w-[80%] h-[120%] bg-black/[0.1] -rotate-12 border border-white/5 backdrop-blur-sm" />
+                  <div className="absolute bottom-[-10%] right-[10%] w-[100%] h-[80%] bg-white/[0.02] rotate-[30deg] border border-white/5" />
+                </div>
+              </div>
+              <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_15px_rgba(255,255,255,0.5)] z-0 skew-x-[-6deg] scale-x-[1.04]"></div>
               
               {/* Unskewed, perfectly flat content plane */}
               <div className="flex-1 flex flex-col min-h-0 relative z-10">
@@ -1136,8 +1245,10 @@ export default function AuthenticLobby() {
 
                 {/* Status Message Notification Overlay inside Modal */}
                 {faStatusMessage && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-cyan-600 to-blue-500 border border-cyan-400 px-6 py-2 rounded-full text-white font-[family-name:var(--font-outfit)] font-black text-xs tracking-wider shadow-[0_0_25px_rgba(6,182,212,0.6)] animate-bounce">
-                    {faStatusMessage}
+                  <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-950/95 border border-white/20 px-8 py-2.5 skew-x-[-8deg] shadow-[0_15px_40px_rgba(0,0,0,0.9)] backdrop-blur-md">
+                    <span className="block skew-x-[8deg] text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-[0.25em] uppercase italic drop-shadow-md">
+                      {faStatusMessage}
+                    </span>
                   </div>
                 )}
 
@@ -1146,14 +1257,14 @@ export default function AuthenticLobby() {
                   
                   {/* Left Column: List of 4 Free Agents */}
                   <div className="w-[380px] flex flex-col gap-3 overflow-y-auto pr-1">
-                    <div className="text-[10px] font-black text-cyan-400 tracking-widest uppercase border-b border-cyan-500/20 pb-1.5 mb-1">
+                    <div className="text-[10px] font-black text-white tracking-widest uppercase border-b border-white/20 pb-1.5 mb-1">
                       Available Talents
                     </div>
                     
                     {freeAgents.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-xl p-6 text-center">
                         <span className="text-zinc-500 text-xs font-semibold">No free agents in this batch.</span>
-                        <button onClick={refreshFreeAgents} className="mt-3 px-4 py-1.5 text-[9px] font-black uppercase text-cyan-400 border border-cyan-400/30 rounded hover:bg-cyan-400/10">
+                        <button onClick={() => refreshFreeAgents()} className="mt-3 px-4 py-1.5 text-[9px] font-black uppercase text-cyan-400 border border-cyan-400/30 rounded hover:bg-cyan-400/10">
                           Reload Pool
                         </button>
                       </div>
@@ -1169,11 +1280,11 @@ export default function AuthenticLobby() {
                             onClick={() => setSelectedFaPlayer(player)}
                             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-300 relative group overflow-hidden
                               ${isSelected 
-                                ? 'bg-gradient-to-r from-cyan-950/40 to-zinc-900/60 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.15)]' 
+                                ? 'bg-zinc-900/80 border-white shadow-[0_0_10px_rgba(255,255,255,0.15)]' 
                                 : 'bg-zinc-950/80 border-white/5 hover:border-white/20 hover:bg-zinc-900/40'}`}
                           >
                             {/* Card Background Glow for Selected */}
-                            {isSelected && <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-transparent pointer-events-none" />}
+                            {isSelected && <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent pointer-events-none" />}
                             
                             {/* Player Mini Avatar */}
                             <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-white/10 relative overflow-hidden flex items-center justify-center shrink-0">
@@ -1235,24 +1346,17 @@ export default function AuthenticLobby() {
                       <div className="flex-1 flex flex-col min-h-0">
                         
                         {/* Profile header with larger photo and details */}
-                        <div className="flex gap-4 border-b border-white/[0.04] pb-4 mb-4 shrink-0">
-                          <div className="w-24 h-24 rounded-xl bg-gradient-to-b from-cyan-950/80 to-zinc-900 border-2 border-cyan-500/20 relative overflow-hidden flex items-center justify-center shadow-lg">
-                            {selectedFaPlayer.imageUrl ? (
-                              <img src={selectedFaPlayer.imageUrl} className="w-full h-full object-cover" alt={selectedFaPlayer.name} />
-                            ) : (
-                              <span className="text-zinc-500 text-3xl font-black">{selectedFaPlayer.position}</span>
-                            )}
-                            <div className="absolute bottom-1 right-1 bg-zinc-900 border border-white/20 text-white font-black text-[9px] px-1.5 py-0.5 rounded skew-x-[-6deg]">
-                              <span className="skew-x-[6deg] block">{selectedFaPlayer.position}</span>
+                        <div className="flex gap-4 border-b border-white/[0.04] pb-4 mb-4">
+                            <div className="shrink-0 pointer-events-none" style={{ zoom: 0.9 }}>
+                              <PlayerCard player={selectedFaPlayer} />
                             </div>
-                          </div>
 
                           <div className="flex-1 flex flex-col justify-center">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="text-xl font-[family-name:var(--font-outfit)] font-black text-white uppercase italic tracking-wide">
                                 {selectedFaPlayer.name}
                               </h3>
-                              <span className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[8px] font-black px-2 py-0.5 rounded uppercase skew-x-[-6deg]">
+                              <span className="bg-white/10 border border-white/30 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase skew-x-[-6deg]">
                                 <span className="skew-x-[6deg] block">{selectedFaPlayer.rarity}</span>
                               </span>
                             </div>
@@ -1352,7 +1456,7 @@ export default function AuthenticLobby() {
                           disabled={cash < (selectedFaPlayer.price || 500) * 10000}
                           className={`w-full py-3 rounded-xl font-[family-name:var(--font-outfit)] font-black text-xs tracking-wider transition-all uppercase skew-x-[-10deg] italic border shadow-lg shrink-0
                             ${cash >= (selectedFaPlayer.price || 500) * 10000
-                              ? 'bg-gradient-to-b from-[#06b6d4] to-[#0891b2] border-cyan-400 text-white cursor-pointer hover:scale-[1.02] shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:brightness-110 active:scale-95'
+                              ? 'bg-white border-white text-black cursor-pointer hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:brightness-110 active:scale-95'
                               : 'bg-zinc-950/80 border-white/5 text-zinc-600 cursor-not-allowed shadow-inner'}`}
                         >
                           <span className="block skew-x-[10deg] text-center">
@@ -1380,7 +1484,7 @@ export default function AuthenticLobby() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2.5">
                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Market Refresh Clock</span>
-                      <span className="text-xs font-mono font-black text-cyan-400 bg-cyan-950/30 border border-cyan-500/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(6,182,212,0.1)]">
+                      <span className="text-xs font-mono font-black text-white bg-white/5 border border-white/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(255,255,255,0.05)]">
                         {formatFaTime(faTimeLeft)}
                       </span>
                     </div>
@@ -1388,9 +1492,9 @@ export default function AuthenticLobby() {
                     {/* PITY SYSTEM DISPLAY */}
                     <div className="flex items-center gap-1.5 border-l border-white/10 pl-4">
                       <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest" title="Guaranteed Mythic on 50th paid refresh">Pity Status</span>
-                      <div className="bg-zinc-900 border border-rose-500/20 px-2 py-0.5 rounded flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-[pulse_2s_ease-in-out_infinite]" />
-                        <span className="text-xs font-mono font-black text-rose-400">
+                      <div className="bg-zinc-900 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1.5 shadow-inner">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
+                        <span className="text-xs font-mono font-black text-white">
                           {faPityCounter} / 50
                         </span>
                       </div>
@@ -1399,7 +1503,7 @@ export default function AuthenticLobby() {
 
                   <button 
                     onClick={handleRefreshFA}
-                    className="flex items-center gap-2 px-4 py-2 border border-cyan-500/30 bg-cyan-950/10 rounded-xl hover:bg-cyan-500/20 active:scale-95 transition-all text-cyan-400 hover:text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase italic skew-x-[-8deg]"
+                    className="flex items-center gap-2 px-4 py-2 border border-white/20 bg-white/5 rounded-xl hover:bg-white/10 active:scale-95 transition-all text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase italic skew-x-[-8deg]"
                   >
                     <RefreshCw size={11} className="animate-spin skew-x-[8deg]" style={{ animationDuration: '6s' }} />
                     <span className="skew-x-[8deg] block">REFRESH AGENTS (-200 VC)</span>

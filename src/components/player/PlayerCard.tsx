@@ -1,7 +1,60 @@
 import { useState } from "react";
 import { Player, PlayerRarity } from "@/lib/types/player";
-import { getTierRating, getTierColor } from "@/lib/data/mockPlayers";
+import { getTierRating, getTierColor, mockPlayers } from "@/lib/data/mockPlayers";
 import { useGameState } from "@/lib/context/GameStateContext";
+import { getDerivedOffenseDefense } from "@/lib/utils/starGrowth";
+import { SkillBadge, SkillBadgeColor, skillQualityStyles, skillBadgeStyles } from "@/components/skills/SkillBadge";
+
+// Inject CSS styles globally exactly once to prevent React drag-and-drop from unmounting/remounting <style> tags
+if (typeof document !== 'undefined' && !document.getElementById('dt-star-styles')) {
+  const style = document.createElement('style');
+  style.id = 'dt-star-styles';
+  style.innerHTML = `
+    .gold-3d-border {
+      border-width: 1.5px !important;
+      border-top-color: #fef08a !important;
+      border-left-color: #fef08a !important;
+      border-bottom-color: #a16207 !important;
+      border-right-color: #a16207 !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.8), inset 0 0 2px rgba(0,0,0,0.5);
+    }
+    @keyframes starPulseOrange {
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(249,115,22,0.4)); }
+      50% { filter: drop-shadow(0 0 8px rgba(249,115,22,1)); }
+    }
+    @keyframes starPulseRed {
+      0%, 100% { filter: drop-shadow(0 0 2px rgba(239,68,68,0.4)); }
+      50% { filter: drop-shadow(0 0 8px rgba(239,68,68,1)); }
+    }
+    @keyframes starShine {
+      0% { transform: translateX(-150%) rotate(45deg); opacity: 0; }
+      10% { opacity: 1; }
+      20% { transform: translateX(150%) rotate(45deg); opacity: 0; }
+      100% { transform: translateX(150%) rotate(45deg); opacity: 0; }
+    }
+    .tier-orange-star {
+      animation: starPulseOrange 2s ease-in-out infinite;
+      animation-delay: calc(var(--star-index, 0) * 0.15s);
+    }
+    .tier-red-star {
+      animation: starPulseRed 2s ease-in-out infinite;
+      animation-delay: calc(var(--star-index, 0) * 0.15s);
+    }
+    .star-shine-effect {
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.8), transparent);
+      animation: starShine 3s infinite;
+      animation-delay: calc(var(--star-index, 0) * 0.15s);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .tier-orange-star, .tier-red-star, .star-shine-effect {
+        animation: none;
+        filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { getSkillQualityRate, isSkillQuality, SKILL_QUALITY_ORDER, SkillQuality, SPECIAL_SKILL_RATES } from "@/lib/skills/skillCatalog";
 
@@ -9,6 +62,12 @@ interface PlayerCardProps {
   player: Player;
   tooltipDirection?: "left" | "right" | "none";
   tooltipScale?: number;
+  isDragOverlay?: boolean;
+  staminaMax?: number;
+  scale?: number;
+  showPositionBox?: boolean;
+  positionBoxLabel?: string;
+  selected?: boolean;
 }
 
 const rarityColors: Record<PlayerRarity, string> = {
@@ -43,7 +102,7 @@ const lastNameColors: Record<PlayerRarity, string> = {
   Mythic: "text-rose-500 drop-shadow-[0_0_10px_rgba(244,63,94,0.7)]",
 };
 
-const getStarTierAndLevel = (starLevel: number) => {
+export const getStarTierAndLevel = (starLevel: number) => {
   if (!starLevel || starLevel === 0) return { tier: "None", level: 0, colorClass: "" };
   const index = starLevel - 1;
   const tierIndex = Math.min(4, Math.floor(index / 5));
@@ -64,7 +123,17 @@ const getStarTierAndLevel = (starLevel: number) => {
   };
 };
 
-export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: PlayerCardProps) {
+export function PlayerCard({ 
+  player, 
+  tooltipDirection = "none", 
+  tooltipScale, 
+  isDragOverlay = false, 
+  staminaMax,
+  scale = 1,
+  showPositionBox = false,
+  positionBoxLabel,
+  selected = false
+}: PlayerCardProps) {
   const [showFireConfirm, setShowFireConfirm] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -72,6 +141,10 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
 
   const tierRating = getTierRating(player.ovr);
   const tierColor = getTierColor(tierRating);
+  const mainStarInfo = getStarTierAndLevel(player.starLevel ?? 0);
+  const currentStamina = player.stamina ?? 100;
+  const effectiveStaminaMax = Math.max(100, Math.round(staminaMax ?? currentStamina));
+  const staminaPct = Math.max(0, Math.min(100, (currentStamina / effectiveStaminaMax) * 100));
 
   // Split name for NBA 2K stacked name style
   const nameParts = player.name.split(" ");
@@ -90,7 +163,10 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
 
   return (
     <>
-      <div className="group relative w-[120px] h-[124px] cursor-pointer transform hover:-translate-y-1.5 hover:scale-[1.05] transition-all duration-300 z-10 hover:z-50 bg-transparent">
+      <div 
+        className={`group relative w-[120px] h-[124px] cursor-pointer transform hover:-translate-y-1.5 transition-all duration-300 z-10 hover:z-50 bg-transparent origin-center ${selected ? 'ring-[3px] ring-white/80 shadow-[0_0_30px_rgba(255,255,255,0.4)] rounded-[14px]' : ''}`}
+        style={{ transform: `scale(${scale})` }}
+      >
         {/* 1. TOP-LEFT OVR & POSITION (Crisp & Clean Match Style) */}
         <div className="absolute top-1 left-1 z-[60] flex flex-col items-center select-none font-sans">
           <span className="text-white text-[16px] font-extrabold leading-none tracking-tighter drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] mb-[1px]">
@@ -121,18 +197,43 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
         ></div>
 
         {/* 3.5. VERTICAL STACK OF 5 STAR-UP DIAMONDS ON THE RIGHT EDGE */}
+
         <div className="absolute right-[5px] top-[26px] flex flex-col gap-[4.5px] z-[55] select-none">
-          {[5, 4, 3, 2, 1].map((lvl) => {
+          {/* Localized Fire Aura behind the stars for max mastery */}
+          {mainStarInfo.tier === 'Red' && mainStarInfo.level === 5 && (
+            <div className={`absolute inset-[-4px] z-[-1] pointer-events-none blur-[6px] bg-red-600/30 rounded-full ${isDragOverlay ? '' : 'animate-pulse'}`} />
+          )}
+          {mainStarInfo.tier === 'Orange' && mainStarInfo.level === 5 && (
+            <div className={`absolute inset-[-4px] z-[-1] pointer-events-none blur-[6px] bg-orange-500/30 rounded-full ${isDragOverlay ? '' : 'animate-pulse'}`} />
+          )}
+          
+          {[5, 4, 3, 2, 1].map((lvl, index) => {
             const starInfo = getStarTierAndLevel(player.starLevel ?? 0);
             const isActive = starInfo.level >= lvl;
+            const isOrange = mainStarInfo.tier === 'Orange'; // Permanently attach to node based on tier
+            const isRed = mainStarInfo.tier === 'Red'; // Permanently attach to node based on tier
+            const tierClass = isOrange ? 'tier-orange-star' : isRed ? 'tier-red-star' : '';
+            
             return (
               <div
-                key={lvl}
-                className={`w-[6px] h-[6px] rotate-45 border transition-all duration-300 ${isActive
-                    ? `${starInfo.colorClass}`
-                    : "border-gray-800 bg-black/85"
-                  }`}
-              />
+                key={`star-${index}`}
+                className={`relative rotate-45 transition-all duration-300 ${tierClass} ${
+                  isActive
+                    ? `${starInfo.colorClass} gold-3d-border`
+                    : "border border-gray-800 bg-black/85"
+                }`}
+                style={{
+                  width: isActive ? '8px' : '6px',
+                  height: isActive ? '8px' : '6px',
+                  '--star-index': index,
+                  ...(isDragOverlay ? { animation: 'none' } : {})
+                } as React.CSSProperties}
+              >
+                {/* Always render shine element so DOM doesn't remount, hide with opacity if not active */}
+                <div className={`absolute inset-0 overflow-hidden pointer-events-none transition-opacity duration-300 ${isActive && tierClass && !isDragOverlay ? 'opacity-100' : 'opacity-0'}`}>
+                  <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] pointer-events-none star-shine-effect" />
+                </div>
+              </div>
             );
           })}
         </div>
@@ -144,7 +245,7 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
           <div className="relative w-full h-[4px] bg-gradient-to-r from-red-500 via-orange-500 to-emerald-500 overflow-hidden">
             <div
               className="absolute top-0 right-0 h-full bg-[#1f2937] transition-all duration-1000"
-              style={{ width: `${100 - (player.stamina ?? 100)}%` }}
+              style={{ width: `${100 - staminaPct}%` }}
             />
           </div>
 
@@ -176,6 +277,11 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
             />
           </div>
         )}
+        
+        {/* PREMIUM STADIUM SLOT LABEL */}
+        {showPositionBox && positionBoxLabel && (
+          <PlayerPositionBadge label={positionBoxLabel} />
+        )}
       </div>
 
       {/* 5. PREMIUM GLASSMORPHIC DISMISS CONFIRMATION MODAL */}
@@ -186,13 +292,13 @@ export function PlayerCard({ player, tooltipDirection = "none", tooltipScale }: 
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-[380px] p-6 bg-[#0a0f1d]/95 border-2 border-red-500/40 rounded-2xl shadow-[0_0_50px_rgba(239,68,68,0.3)] flex flex-col items-center text-center backdrop-blur-md relative"
+            className={`w-[380px] p-6 bg-[#0a0f1d]/95 border-2 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center backdrop-blur-md relative ${player.starLevel === 5 ? 'border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-red-500/40 shadow-[0_0_50px_rgba(239,68,68,0.3)]'}`}
           >
-            <h3 className="text-xl font-black text-white tracking-widest mb-1 uppercase bg-gradient-to-r from-red-400 to-rose-500 bg-clip-text text-transparent">Dismiss Roster Card?</h3>
+            <h3 className={`text-xl font-black tracking-widest mb-1 uppercase bg-clip-text text-transparent ${player.starLevel === 5 ? 'bg-gradient-to-r from-orange-400 to-amber-600' : 'bg-gradient-to-r from-red-400 to-rose-500'}`}>Dismiss Roster Card?</h3>
             <p className="text-xs text-gray-400 font-mono mb-4">Are you sure you want to dismiss this asset from your squad?</p>
 
             {/* Player Mini-Card Preview */}
-            <div className="bg-slate-950/60 border border-white/10 rounded-xl p-3 w-full flex items-center gap-3 mb-4 text-left">
+            <div className="flex items-center gap-4 bg-black/50 p-3 rounded-lg border border-red-500/20 w-full mb-6">
               <div className="w-12 h-12 rounded-full border border-orange-500/40 overflow-hidden bg-slate-800 shrink-0">
                 <img
                   src={player.imageUrl ? (player.imageUrl.startsWith("http") ? player.imageUrl : `https://www.dreamteamph.com/${player.imageUrl.startsWith("/") ? player.imageUrl.slice(1) : player.imageUrl}`) : "/players/placeholder.png"}
@@ -269,6 +375,22 @@ interface StatsContentProps {
   onClose: () => void;
 }
 
+function getPreviewBaseSkills(player: Player): [string, string, string] {
+  if ((player.apg ?? 0) >= 6 || player.playmaking >= 88) {
+    return ["Tempo Surgeon", player.defense >= 160 ? "Help Wall" : "Screen Breaker", "Complete Engine"];
+  }
+  if ((player.bpg ?? 0) >= 1.5 || player.defense >= 185) {
+    return ["Paint Magnet", "Rim Warden", "Iron Motor"];
+  }
+  if (player.shooting >= 88 || (player.ppg ?? 0) >= 25) {
+    return ["Arc Pressure", "Shadow Guard", "Complete Engine"];
+  }
+  if ((player.spg ?? 0) >= 1.3 || player.speed >= 88) {
+    return ["Mismatch Caller", "Hands Active", "Tempo Switch"];
+  }
+  return ["Glass Touch", "Discipline Wall", "Connector Hub"];
+}
+
 function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onClose }: StatsContentProps) {
   const { inventory, rerollSpecialLearnSkill, rollSpecialLearnSkill } = useGameState();
   const fallbackBaseSkills = getPreviewBaseSkills(player);
@@ -276,6 +398,21 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
   const specialSkills = player.specialSkillSlots ?? [];
   const starLevel = player.starLevel ?? 0;
   const skillTapeCount = inventory.materials.skill_tape ?? 0;
+  const basePlayer = mockPlayers.find(p => p.id === player.id) ?? mockPlayers.find(p => p.name === player.name && p.position === player.position);
+  const baseDerived = getDerivedOffenseDefense(basePlayer ?? player);
+  const baseOffense = baseDerived.offense;
+  const baseDefense = baseDerived.defense;
+  const baseStamina = basePlayer?.stamina ?? 100;
+  const offenseBonus = Math.max(0, Math.round((player.offense ?? baseOffense) - baseOffense));
+  const defenseBonus = Math.max(0, Math.round((player.defense ?? baseDefense) - baseDefense));
+  const staminaBonus = Math.max(0, Math.floor((player.stamina ?? baseStamina) - baseStamina));
+
+  const StatWithBonus = ({ base, bonus }: { base: number; bonus: number }) => (
+    <span className="font-extrabold flex items-baseline gap-1">
+      <span className="text-white">{Math.round(base)}</span>
+      {bonus > 0 && <span className="text-emerald-400 text-[9px] font-black">+{bonus}</span>}
+    </span>
+  );
 
   return (
     <>
@@ -294,11 +431,11 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
         </div>
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Stamina:</span>
-          <span className="text-white font-extrabold">{player.stamina ?? 100}%</span>
+          <StatWithBonus base={baseStamina} bonus={staminaBonus} />
         </div>
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Offense:</span>
-          <span className="text-white font-extrabold">{player.offense}</span>
+          <StatWithBonus base={baseOffense} bonus={offenseBonus} />
         </div>
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Salary:</span>
@@ -306,7 +443,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
         </div>
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Defense:</span>
-          <span className="text-white font-extrabold">{player.defense}</span>
+          <StatWithBonus base={baseDefense} bonus={defenseBonus} />
         </div>
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Price:</span>
@@ -351,7 +488,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
         <div className="col-span-2 border-t border-gray-700/50 pt-2 mt-1">
           <div className="flex items-center justify-between gap-2">
             {baseSkills.map((skillName, index) => (
-              <SkillMiniBadge
+              <SkillBadge
                 key={`${skillName}-${index}`}
                 name={skillName}
                 color={index === 0 ? "red" : index === 1 ? "blue" : "green"}
@@ -368,7 +505,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
               const quality = isSkillQuality(savedQuality) ? savedQuality : "Common";
               const maxRate = hasLearnedSkill ? SPECIAL_SKILL_RATES[skillName as SpecialSkillName] : undefined;
               return (
-                <SkillMiniBadge
+                <SkillBadge
                   key={`special-${index}-${skillName}`}
                   name={skillName}
                   color="special"
@@ -417,133 +554,30 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
   );
 }
 
-type SkillBadgeColor = "red" | "blue" | "green" | "special";
-
-const skillBadgeStyles: Record<SkillBadgeColor, string> = {
-  red: "from-[#ff4b5f] via-[#a70f26] to-[#27040a] border-[#ff8b96] text-white shadow-red-500/30",
-  blue: "from-[#39b8ff] via-[#1163d8] to-[#061b48] border-[#8fd7ff] text-white shadow-blue-500/30",
-  green: "from-[#53f28c] via-[#10994b] to-[#062b18] border-[#a3ffc2] text-white shadow-emerald-500/30",
-  special: "from-[#ffd45c] via-[#e04435] to-[#351006] border-[#ffe597] text-white shadow-amber-500/30",
-};
-
-const skillQualityStyles: Record<SkillQuality, string> = {
-  Common: "from-[#40e36f] via-[#11863d] to-[#041c0d] border-[#9dffb7] text-white shadow-emerald-500/30",
-  Rare: "from-[#3fc8ff] via-[#1465e8] to-[#061842] border-[#95dcff] text-white shadow-blue-500/30",
-  Elite: "from-[#d263ff] via-[#7c28d6] to-[#23053e] border-[#efb6ff] text-white shadow-purple-500/30",
-  Epic: "from-[#ffd35b] via-[#ee7a1f] to-[#341101] border-[#ffe59a] text-white shadow-orange-500/30",
-  Legendary: "from-[#ff5368] via-[#d61022] to-[#310407] border-[#ffa2ad] text-white shadow-red-500/30",
-};
-
-function SkillMiniBadge({
-  name,
-  color,
-  locked,
-  unlockText,
-  quality,
-  maxRate,
-  tapeCount,
-  onClick,
-  actionLabel,
-}: {
-  name: string;
-  color: SkillBadgeColor;
-  locked?: boolean;
-  unlockText?: string;
-  quality?: SkillQuality;
-  maxRate?: number;
-  tapeCount?: number;
-  onClick?: () => void;
-  actionLabel?: string;
-}) {
-  const shortName = name.replace(/\s+/g, " ").trim();
-  const activeQuality = quality ?? "Common";
-  const artSrc = getSkillArtSrc(shortName, color, locked, activeQuality);
-  const lockLabel = unlockText ? `Unlocks at ${unlockText}` : "Locked 85+";
-  const unlockedStyle = color === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[color];
-
+export function PlayerPositionBadge({ label }: { label: string }) {
+  const isOOP = label.includes('(OOP)');
+  const displayLabel = label.replace(' (OOP)', '');
+  
   return (
-    <div
-      className={`group/skill relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br shadow-[0_0_16px_var(--tw-shadow-color)] transition-transform duration-150 hover:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-black/30" : unlockedStyle
-        } ${!locked && color === "special" && (activeQuality === "Epic" || activeQuality === "Legendary") ? "skill-fire-aura" : ""} ${!locked && color === "special" && activeQuality === "Legendary" ? "skill-fire-aura-legendary" : ""}`}
-      title={locked ? `${shortName} ${lockLabel}` : `${shortName}${color === "special" ? ` (${activeQuality})` : ""}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!locked && onClick) onClick();
-      }}
-    >
-      <img
-        src={artSrc}
-        alt={locked ? "Locked skill" : shortName}
-        className="absolute inset-0 h-full w-full object-contain p-[3px] contrast-[1.08] saturate-[1.14] drop-shadow-[0_2px_3px_rgba(0,0,0,0.85)]"
-        draggable={false}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.12),transparent_30%,rgba(0,0,0,0.2)_100%)]" />
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-32 -translate-x-1/2 rounded border border-white/10 bg-black/95 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow-xl group-hover/skill:block">
-        <div className="whitespace-nowrap">{locked ? lockLabel : shortName}</div>
-        {!locked && color === "special" && maxRate && (
-          <div className="mt-1 grid gap-0.5 text-left font-mono text-[7px] normal-case tracking-normal">
-            {SKILL_QUALITY_ORDER.map((tier) => (
-              <div
-                key={tier}
-                className={`flex justify-between gap-2 ${tier === activeQuality ? "text-yellow-300" : "text-zinc-300"}`}
-              >
-                <span>{tier}</span>
-                <span>{getSkillQualityRate(maxRate, tier)}</span>
-              </div>
-            ))}
-            <div className="mt-1 border-t border-white/10 pt-1 text-[7px] text-red-200">
-              Skill Tape: {tapeCount ?? 0} | {actionLabel ?? "Click reroll"}
-            </div>
-          </div>
-        )}
-        {!locked && color === "special" && !maxRate && (
-          <div className="mt-1 border-t border-white/10 pt-1 text-[7px] text-red-200">
-            Skill Tape: {tapeCount ?? 0} | {actionLabel ?? "Click learn"}
-          </div>
-        )}
+    <div className="absolute -bottom-[26px] left-[50%] -translate-x-[50%] w-[120px] h-[24px] flex items-center justify-center rounded-[4px] border border-white/20 shadow-[0_4px_10px_rgba(0,0,0,0.8)] overflow-hidden pointer-events-none z-[70]">
+      {/* Dark Faceted Glass Base */}
+      <div className="absolute inset-0 bg-[#1e1e24]">
+        {/* Low Poly / Glass Facets */}
+        <div className="absolute inset-0 bg-white/[0.04]" style={{ clipPath: "polygon(0 0, 65% 0, 35% 100%)" }}></div>
+        <div className="absolute inset-0 bg-black/[0.25]" style={{ clipPath: "polygon(40% 100%, 100% 0, 100% 100%)" }}></div>
+        <div className="absolute inset-0 bg-white/[0.06]" style={{ clipPath: "polygon(55% 0, 100% 0, 85% 100%)" }}></div>
+        <div className="absolute inset-0 bg-black/[0.15]" style={{ clipPath: "polygon(0 100%, 35% 0, 65% 100%)" }}></div>
+        
+        {/* Soft Glass Edge Sheen */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
       </div>
+      
+      {/* Clean, Premium Typography */}
+      <span className={`relative z-10 font-sans text-[13px] font-black uppercase tracking-[0.2em] drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isOOP ? 'text-red-400' : 'text-white'}`}>
+        {displayLabel}
+        {isOOP && <span className="text-[9px] ml-1 opacity-80">OOP</span>}
+      </span>
     </div>
   );
-}
-
-const skillArtMap: Record<string, string> = {
-  "tempo surgeon": "tempo-surgeon",
-  "screen breaker": "screen-breaker",
-  "complete engine": "complete-engine",
-  "paint magnet": "paint-magnet",
-  "rim warden": "rim-warden",
-  "iron motor": "iron-motor",
-  "arc pressure": "arc-pressure",
-  "shadow guard": "shadow-guard",
-  "mismatch caller": "mismatch-caller",
-  "hands active": "hands-active",
-  "tempo switch": "tempo-switch",
-  "glass touch": "glass-touch",
-  "discipline wall": "discipline-wall",
-  "connector hub": "connector-hub",
-  "debt collector x": "debt-collector-x",
-};
-
-function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {
-  if (locked) return "/skills/locked-85.png";
-  if (color === "special" && name === "Learn") return "/skills/learn-slot.png";
-  const slug = skillArtMap[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (color === "special") return `/skills/special-art/${slug}.png`;
-  return `/skills/${slug}.png`;
-}
-
-function getPreviewBaseSkills(player: Player): [string, string, string] {
-  if ((player.apg ?? 0) >= 6 || player.playmaking >= 88) {
-    return ["Tempo Surgeon", player.defense >= 160 ? "Help Wall" : "Screen Breaker", "Complete Engine"];
-  }
-  if ((player.bpg ?? 0) >= 1.5 || player.defense >= 185) {
-    return ["Paint Magnet", "Rim Warden", "Iron Motor"];
-  }
-  if (player.shooting >= 88 || (player.ppg ?? 0) >= 25) {
-    return ["Arc Pressure", "Shadow Guard", "Complete Engine"];
-  }
-  if ((player.spg ?? 0) >= 1.3 || player.speed >= 88) {
-    return ["Mismatch Caller", "Hands Active", "Tempo Switch"];
-  }
-  return ["Glass Touch", "Discipline Wall", "Connector Hub"];
 }
