@@ -24,6 +24,8 @@ import { FreeThrowPopup } from "@/features/match/components/FreeThrowPopup";
 import { ShotMeter } from "@/features/match/components/ShotMeter";
 import { FoulPips } from "@/features/match/components/FoulPips";
 import { PlayerTooltip } from "@/features/match/components/PlayerTooltip";
+import { PlayerStatusIcons } from "@/features/match/components/PlayerStatusIcons";
+import { PlayerAvailabilityOverlay } from "@/features/match/components/PlayerAvailabilityOverlay";
 
 
 
@@ -907,8 +909,10 @@ export default function MatchPage() {
           }
         }}
       >
-        {matchState.hotPlayers[p.id] && <img src="/fire_emoji.png" alt="HOT" className="card-hot-icon" />}
-        {!matchState.hotPlayers[p.id] && (matchState.formRating[p.id] ?? 1.0) <= 0.90 && <img src="/ice_emoji.png" alt="COLD" className="card-cold-icon" />}
+        <PlayerStatusIcons 
+          isHot={Boolean(matchState.hotPlayers[p.id])} 
+          isCold={!matchState.hotPlayers[p.id] && (matchState.formRating[p.id] ?? 1.0) <= 0.90} 
+        />
         {/* ═══ PREMIUM SLANTED BANNERS ═══ */}
         <PlayerEventBanner
           showFtPopup={!!showFtPopup}
@@ -947,17 +951,10 @@ export default function MatchPage() {
             showPositionBox={true}
             positionBoxLabel={`${displayPos}${isOutOfPosition ? ' (OOP)' : ''}`}
           />
-          {isOutOfPosition && (
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-lg z-[60]">
-              OOP
-            </div>
-          )}
-          {(matchState.fouledOut ?? []).includes(p.id) && (
-            <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-[65] rounded-xl backdrop-blur-[2px]">
-              <span className="text-red-500 text-2xl font-black tracking-widest font-mono">DQ</span>
-              <span className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mt-1">6 FOULS</span>
-            </div>
-          )}
+          <PlayerAvailabilityOverlay 
+            isOutOfPosition={isOutOfPosition} 
+            isFouledOut={(matchState.fouledOut ?? []).includes(p.id)} 
+          />
         </div>
 
         {/* FOUL PIPS */}
