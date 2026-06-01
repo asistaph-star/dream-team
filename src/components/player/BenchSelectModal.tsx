@@ -185,11 +185,18 @@ export function BenchSelectModal({
                         </div>
                       )}
                       {isNameUsed && (
-                        <div 
-                          title="Another copy of this player is active. Select this card to swap the active copy."
-                          className="absolute -top-1.5 -right-1.5 z-20 w-[22px] h-[22px] bg-zinc-950/95 border border-amber-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(245,158,11,0.4)]"
-                        >
-                          <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                          <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-amber-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(245,158,11,0.4)] cursor-help">
+                            <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                          </div>
+                          {/* Custom Tooltip */}
+                          <div className="absolute top-[110%] right-0 mt-1 w-[180px] bg-zinc-950 border border-amber-500/50 shadow-[0_4px_15px_rgba(245,158,11,0.3)] rounded p-2.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                            <div className="absolute -top-1 right-[8px] w-2 h-2 bg-zinc-950 border-t border-l border-amber-500/50 rotate-45"></div>
+                            <span className="relative z-10 block font-[family-name:var(--font-outfit)] text-[10px] leading-[1.3] text-amber-100/90 tracking-wide text-left">
+                              <span className="text-amber-400 font-bold block mb-1 uppercase tracking-wider text-[9px]">Active Clone</span>
+                              Another copy of this player is in your lineup. Select this card to swap them.
+                            </span>
+                          </div>
                         </div>
                       )}
                       {!isExactLineup && !isExactBench && !isNameUsed && isDuplicate && (
