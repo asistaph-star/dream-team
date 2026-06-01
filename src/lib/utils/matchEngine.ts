@@ -1795,7 +1795,7 @@ export function simulateTick(
         // 5-Out forces 3PT; Post-ISO forbids 3PT (post players don't shoot 3s)
         if (currentOff === "5-Out Spacing" && staminaPct(scorer) >= 50) is3PTBaseCheck = true;
         if (currentOff === "Post Isolation") is3PTBaseCheck = false;
-        const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, is3PTBaseCheck, pace);
+        const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
         const is3PT = shotInfo.is3PT;
         const shotType = shotInfo.type;
         ensureForm(scorer.id);
@@ -2213,7 +2213,7 @@ export function simulateTick(
     if (state.aiOffStrategy === "Post Isolation") {
       is3PTBaseCheck = false;
     }
-    const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, is3PTBaseCheck, pace);
+    const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
     const is3PT = shotInfo.is3PT;
     const shotType = shotInfo.type;
 

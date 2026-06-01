@@ -8,7 +8,28 @@ export const isThreePointer = (shot: ShotType): boolean => {
   return ['catchAndShoot', 'stepBackThree', 'pullUpThree', 'cornerThree'].includes(shot);
 };
 
-export function generateShot(player: Player, formRating: number, is3PTBaseCheck?: boolean, pace?: 'fastbreak' | 'early_offense' | 'oreb' | 'late_clock' | 'normal'): { type: ShotType, is3PT: boolean } {
+const applySmartFatigueShotWeights = (pool: Record<string, number>, staminaPct: number) => {
+  if (staminaPct >= 70) return; // Full arsenal
+
+  const heavyActions = ['dunk', 'powerLayup', 'drivingLayup', 'stepBackThree', 'stepBackMid', 'euroStep'];
+  const safeActions = ['catchAndShoot', 'cornerThree', 'pullUpMid', 'floater'];
+
+  if (staminaPct >= 40) {
+    // Medium stamina: softer reduction on heavy, slight boost to safe
+    heavyActions.forEach(shot => { if (pool[shot]) pool[shot] *= 0.80; });
+    safeActions.forEach(shot => { if (pool[shot]) pool[shot] *= 1.10; });
+  } else if (staminaPct >= 20) {
+    // Low stamina: moderate reduction on heavy, strong boost to safe
+    heavyActions.forEach(shot => { if (pool[shot]) pool[shot] *= 0.50; });
+    safeActions.forEach(shot => { if (pool[shot]) pool[shot] *= 1.25; });
+  } else {
+    // Critical stamina: heavy reduction, but not totally disabled
+    heavyActions.forEach(shot => { if (pool[shot]) pool[shot] *= 0.30; });
+    safeActions.forEach(shot => { if (pool[shot]) pool[shot] *= 1.35; });
+  }
+};
+
+export function generateShot(player: Player, formRating: number, staminaPct: number, is3PTBaseCheck?: boolean, pace?: 'fastbreak' | 'early_offense' | 'oreb' | 'late_clock' | 'normal'): { type: ShotType, is3PT: boolean } {
   // Step 1: Base Position Weights
   const base2PT: Record<string, Record<string, number>> = {
     PG: { euroStep: 30, floater: 25, pullUpMid: 20, fingerRoll: 15, drivingLayup: 10, dunk: 5, fadeaway: 3, hookShot: 1, powerLayup: 1 },
@@ -82,6 +103,9 @@ export function generateShot(player: Player, formRating: number, is3PTBaseCheck?
   } else if (pace === 'late_clock') {
     ['stepBackThree', 'pullUpThree', 'fadeaway', 'pullUpMid'].forEach(shot => { if (pool[shot]) pool[shot] *= 3.0; });
   }
+
+  // Step 4.75: Smart Fatigue Filter (Stamina Context)
+  applySmartFatigueShotWeights(pool, staminaPct);
 
   // Step 5: Final Selection (Weighted Random)
   const totalWeight = Object.values(pool).reduce((a, b) => a + b, 0);
