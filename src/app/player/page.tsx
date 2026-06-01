@@ -50,8 +50,22 @@ export default function PlayerPage() {
       case 'BENCH': return inBench;
       case 'AVAILABLE': return !inLineup && !inBench;
       case 'DUPLICATES': return isDuplicate;
-      default: return true;
     }
+  }).sort((a, b) => {
+    if (activeTab === 'ALL') {
+      const aInLineup = activeLineup.some(al => al.id === a.id);
+      const bInLineup = activeLineup.some(bl => bl.id === b.id);
+      if (aInLineup && !bInLineup) return -1;
+      if (!aInLineup && bInLineup) return 1;
+
+      const aInBench = activeReserves.some(ar => ar.id === a.id);
+      const bInBench = activeReserves.some(br => br.id === b.id);
+      if (aInBench && !bInBench) return -1;
+      if (!aInBench && bInBench) return 1;
+    }
+    
+    // Sort by OVR descending as fallback
+    return (b.ovr || 0) - (a.ovr || 0);
   });
 
   const handleOpenFilter = () => {
