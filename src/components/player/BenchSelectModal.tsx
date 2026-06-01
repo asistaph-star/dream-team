@@ -158,7 +158,7 @@ export function BenchSelectModal({
                   return (
                     <div 
                       key={player.id} 
-                      className={`transform transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02] cursor-pointer relative ${isAssigned ? 'pointer-events-none' : ''}`}
+                      className={`transform transition-transform duration-300 hover:-translate-y-1 hover:scale-[1.02] cursor-pointer relative hover:z-[100] ${isAssigned ? 'pointer-events-none' : ''}`}
                       onClick={() => {
                         onAssignPlayer(player.id);
                       }} 
@@ -169,13 +169,13 @@ export function BenchSelectModal({
 
                       {/* Floating Micro Status Badges (HD Text Fix) */}
                       {isExactLineup && (
-                        <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="absolute -top-1.5 -right-1.5 z-[110] group flex flex-col items-end">
                           <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-emerald-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(16,185,129,0.4)] cursor-help">
                             <svg className="text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[110]">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: 'cover' }}>
                               <div className="absolute inset-0 bg-black/20"></div>
                             </div>
                             <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
@@ -189,13 +189,13 @@ export function BenchSelectModal({
                         </div>
                       )}
                       {isExactBench && (
-                        <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="absolute -top-1.5 -right-1.5 z-[110] group flex flex-col items-end">
                           <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-cyan-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(6,182,212,0.4)] cursor-help">
                             <svg className="text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[110]">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: 'cover' }}>
                               <div className="absolute inset-0 bg-black/20"></div>
                             </div>
                             <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
@@ -209,13 +209,13 @@ export function BenchSelectModal({
                         </div>
                       )}
                       {isNameUsed && (
-                        <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="absolute -top-1.5 -right-1.5 z-[110] group flex flex-col items-end">
                           <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-amber-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(245,158,11,0.4)] cursor-help">
                             <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[110]">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: 'cover' }}>
                               <div className="absolute inset-0 bg-black/20"></div>
                             </div>
                             <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
@@ -229,13 +229,13 @@ export function BenchSelectModal({
                         </div>
                       )}
                       {!isExactLineup && !isExactBench && !isNameUsed && isDuplicate && (
-                        <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="absolute -top-1.5 -right-1.5 z-[110] group flex flex-col items-end">
                           <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-purple-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(168,85,247,0.4)] cursor-help">
                             <svg className="text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-[110]">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: 'cover' }}>
                               <div className="absolute inset-0 bg-black/20"></div>
                             </div>
                             <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
