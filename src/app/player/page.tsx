@@ -165,6 +165,7 @@ export default function PlayerPage() {
               {tabFilteredRoster.map((player) => {
                 const isExactLineup = activeLineup.some(p => p.id === player.id);
                 const isExactBench = activeReserves.some(p => p.id === player.id);
+                const isNameUsed = !isExactLineup && !isExactBench && (activeLineup.some(p => p.name === player.name) || activeReserves.some(p => p.name === player.name));
                 const isDuplicate = nameCounts[player.name] > 1;
 
                 return (
@@ -198,7 +199,17 @@ export default function PlayerPage() {
                         </span>
                       </SkewedBadge>
                     )}
-                    {!isExactLineup && !isExactBench && isDuplicate && (
+                    {isNameUsed && (
+                      <SkewedBadge 
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center"
+                        innerClassName="border border-amber-500/50 shadow-[0_4px_15px_rgba(245,158,11,0.5)]"
+                      >
+                        <span className="relative z-10 font-[family-name:var(--font-outfit)] font-black italic text-[8px] uppercase tracking-[0.2em] text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]">
+                          CLONE ACTIVE
+                        </span>
+                      </SkewedBadge>
+                    )}
+                    {!isExactLineup && !isExactBench && !isNameUsed && isDuplicate && (
                       <SkewedBadge 
                         className="absolute -bottom-1.5 -right-1 z-20 w-[22px] h-[18px] flex items-center justify-center" 
                         innerClassName="border border-purple-500/50 shadow-[0_4px_15px_rgba(168,85,247,0.5)]"
