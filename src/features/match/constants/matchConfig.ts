@@ -14,4 +14,4 @@ export const DEFAULT_PLAYER_IMAGES: Record<string, string> = {
   'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp',
 };
 
-export const MATCH_PLAYBACK_SPEED = 1.25;
+export const MATCH_PLAYBACK_SPEED = 2.5;
