@@ -174,11 +174,14 @@ export function BenchSelectModal({
                             <svg className="text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] bg-[#131417] border border-white/10 shadow-2xl rounded p-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#131417] border-t border-l border-white/10 rotate-45"></div>
-                            <div className="relative z-10 flex flex-col gap-1 text-left">
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                              <div className="absolute inset-0 bg-black/20"></div>
+                            </div>
+                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
+                            <div className="relative z-10 flex flex-col gap-1 text-left p-2">
                               <span className="font-bold uppercase tracking-wider text-[9px] text-emerald-400 drop-shadow-sm">Starting Lineup</span>
-                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-400">
+                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-300">
                                 This player is currently active in your main starting rotation.
                               </span>
                             </div>
@@ -191,11 +194,14 @@ export function BenchSelectModal({
                             <svg className="text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] bg-[#131417] border border-white/10 shadow-2xl rounded p-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#131417] border-t border-l border-white/10 rotate-45"></div>
-                            <div className="relative z-10 flex flex-col gap-1 text-left">
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                              <div className="absolute inset-0 bg-black/20"></div>
+                            </div>
+                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
+                            <div className="relative z-10 flex flex-col gap-1 text-left p-2">
                               <span className="font-bold uppercase tracking-wider text-[9px] text-cyan-400 drop-shadow-sm">Bench</span>
-                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-400">
+                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-300">
                                 This player is currently assigned to your bench rotation.
                               </span>
                             </div>
@@ -208,11 +214,14 @@ export function BenchSelectModal({
                             <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] bg-[#131417] border border-white/10 shadow-2xl rounded p-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#131417] border-t border-l border-white/10 rotate-45"></div>
-                            <div className="relative z-10 flex flex-col gap-1 text-left">
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                              <div className="absolute inset-0 bg-black/20"></div>
+                            </div>
+                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
+                            <div className="relative z-10 flex flex-col gap-1 text-left p-2">
                               <span className="font-bold uppercase tracking-wider text-[9px] text-amber-400 drop-shadow-sm">Active Clone</span>
-                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-400">
+                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-300">
                                 Another copy of this player is in your lineup. Select this card to swap them.
                               </span>
                             </div>
@@ -225,11 +234,14 @@ export function BenchSelectModal({
                             <svg className="text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                           </div>
                           {/* Custom Tooltip */}
-                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] bg-[#131417] border border-white/10 shadow-2xl rounded p-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#131417] border-t border-l border-white/10 rotate-45"></div>
-                            <div className="relative z-10 flex flex-col gap-1 text-left">
+                          <div className="absolute top-[110%] right-[-5px] mt-1 w-[140px] shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                            <div className="absolute inset-0 rounded border border-white/10 z-0 overflow-hidden" style={{ backgroundImage: `url("${lowPolyBg}")`, backgroundSize: 'cover' }}>
+                              <div className="absolute inset-0 bg-black/20"></div>
+                            </div>
+                            <div className="absolute -top-[5px] right-[11px] w-2 h-2 bg-[#2a2b2f] border-t border-l border-white/10 rotate-45 z-0"></div>
+                            <div className="relative z-10 flex flex-col gap-1 text-left p-2">
                               <span className="font-bold uppercase tracking-wider text-[9px] text-purple-400 drop-shadow-sm">Duplicate Card</span>
-                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-400">
+                              <span className="font-[family-name:var(--font-outfit)] text-[9px] leading-[1.3] text-gray-300">
                                 You own multiple copies of this player. Duplicates can be used for star-up ascensions.
                               </span>
                             </div>
