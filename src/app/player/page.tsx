@@ -6,6 +6,7 @@ import { PlayerPosition, PlayerRarity } from "@/lib/types/player";
 import { ChevronLeft, ChevronDown, Search, ArrowDownUp } from "lucide-react";
 import { useGameState } from "@/lib/context/GameStateContext";
 import Link from "next/link";
+import { SidebarTabs } from "@/components/shared/SidebarTabs";
 import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'ALL' | 'STARTING LINEUP' | 'BENCH' | 'AVAILABLE' | 'DUPLICATES';
@@ -147,34 +148,22 @@ export default function PlayerPage() {
       <div className="relative z-10 flex flex-1 overflow-hidden">
         
         {/* ── Left Sidebar ── */}
-        <div 
-          className="w-[180px] bg-[#2a2b2f] flex flex-col shrink-0 relative pt-7"
-          style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: '100% 400px' }}
-        >
-          {/* Fading Right Border */}
-          <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-30" />
-
-          <div className="relative z-10 flex flex-col gap-1 w-full mt-2 pl-0">
-            {(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => (
-              <button 
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`relative flex items-center justify-center py-4 text-[13px] font-bold tracking-wide transition-all ${
-                  activeTab === tab ? 'bg-gradient-to-r from-white/95 to-gray-300 text-[#111] shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-40 w-[192px]' : 'text-gray-500 hover:text-white pr-4 w-full'
-                }`}
-                style={{ clipPath: activeTab === tab ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)' : 'none' }}
-              >
-                <div className="text-center leading-tight mr-2">
-                  <div>{tab.split(' ')[0]}</div>
-                  {tab.split(' ')[1] && <div>{tab.split(' ')[1]}</div>}
-                </div>
-                {activeTab === tab && (
-                  <div className="absolute right-[14px] w-2 h-2 rounded-full bg-[#ff7300] shadow-[0_0_8px_#ff7300]" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+        <SidebarTabs
+          tabs={(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => ({
+            id: tab,
+            label: (
+              <>
+                <div>{tab.split(' ')[0]}</div>
+                {tab.split(' ')[1] && <div>{tab.split(' ')[1]}</div>}
+              </>
+            )
+          }))}
+          activeTab={activeTab}
+          onTabChange={(id) => setActiveTab(id as Tab)}
+          className="w-[180px] pt-7"
+          activeTabClassName="w-[192px]"
+          dotClassName="w-2 h-2"
+        />
 
         {/* ── Right Content Grid ── */}
         <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col">

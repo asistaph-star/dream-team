@@ -7,6 +7,7 @@ import { EquipmentSlot, Equipment } from "@/lib/types/item";
 import { mockMaterials, craftingRecipes } from "@/lib/data/mockItems";
 import { ChevronLeft, ChevronRight, Gem, Hammer, AlertTriangle, PackageOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { SidebarTabs } from "@/components/shared/SidebarTabs";
 import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'MATERIALS' | 'EQUIPMENT' | 'CRAFTING';
@@ -138,34 +139,14 @@ export default function InventoryPage() {
       <div className="flex flex-1 overflow-hidden relative z-10">
 
         {/* ── Left Sidebar ── */}
-        <div 
-          className="w-[160px] bg-[#2a2b2f] flex flex-col pt-5 z-10 shadow-xl shrink-0 relative"
-          style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: '100% 400px' }}
-        >
-          {/* Fading Right Border */}
-          <div className="absolute top-0 right-0 bottom-0 w-[1px] bg-gradient-to-b from-white/40 via-white/10 to-transparent pointer-events-none z-20" />
-          
-          <div className="flex flex-col relative z-10">
-            {tabs.map(tab => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`relative flex items-center justify-center py-4 text-[13px] font-bold tracking-wide transition-all ${
-                    isActive ? 'bg-gradient-to-r from-white/95 to-gray-300 text-[#111] shadow-[0_5px_15px_rgba(0,0,0,0.5)] z-40 w-[172px]' : 'text-gray-500 hover:text-white pr-4 w-full'
-                  }`}
-                  style={{ clipPath: isActive ? 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)' : 'none' }}
-                >
-                  <span className="relative z-10 text-center leading-tight mr-2">{tab.label}</span>
-                  {isActive && (
-                    <div className="absolute right-[14px] w-2.5 h-2.5 rounded-full bg-[#ff7300] shadow-[0_0_10px_#ff7300]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <SidebarTabs
+          tabs={tabs.map(t => ({ id: t.id, label: <span>{t.label}</span> }))}
+          activeTab={activeTab}
+          onTabChange={(id) => handleTabChange(id as Tab)}
+          className="w-[160px] pt-5 shadow-xl"
+          activeTabClassName="w-[172px]"
+          dotClassName="w-2.5 h-2.5"
+        />
 
         {/* ── Middle Grid ── */}
         <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col">
