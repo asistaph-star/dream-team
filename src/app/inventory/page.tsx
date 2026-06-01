@@ -8,6 +8,7 @@ import { mockMaterials, craftingRecipes } from "@/lib/data/mockItems";
 import { ChevronLeft, ChevronRight, Gem, Hammer, AlertTriangle, PackageOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { SidebarTabs } from "@/components/shared/SidebarTabs";
+import { DetailPanelShell } from "@/components/shared/DetailPanelShell";
 import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'MATERIALS' | 'EQUIPMENT' | 'CRAFTING';
@@ -250,64 +251,16 @@ export default function InventoryPage() {
             const glowColor = selectedMatId === 'skill_tape' ? '#ef4444' : selectedMatId === 'mat_upgrade' ? '#a855f7' : selectedMatId === 'mat_crafting' ? '#10b981' : '#3b82f6';
             
             return (
-              <div className="flex-1 flex flex-col h-full bg-[#35383d]">
-                {/* Header Title */}
-                <div className="px-4 py-2.5 bg-[#4b555d] relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
-                  <h2 className="text-[13px] font-bold text-gray-200">{mat.name}</h2>
-                </div>
-                
-                {/* Big Display Image area */}
-                <div className="relative h-60 overflow-hidden flex flex-col items-center justify-center">
-                  {/* Thick Diagonal Stripes Background */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 30px, #000 30px, #000 60px)' }} />
-
-                  {/* Soft Radial Glow Box */}
-                  <div className="absolute inset-0 pointer-events-none opacity-80" style={{ background: `radial-gradient(circle at center, ${glowColor}70 0%, ${glowColor}10 50%, transparent 70%)` }} />
-
-                  {/* Faded Circular Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
-                    <div className="w-56 h-56 border-[6px] border-white rounded-full flex items-center justify-center">
-                      <div className="w-48 h-48 border-[2px] border-white rounded-full flex flex-col items-center justify-center text-center">
-                        <span className="text-sm font-black tracking-widest uppercase">Best Team</span>
-                        <span className="text-4xl font-black mt-1">SUPERSTAR</span>
-                        <span className="text-[10px] font-bold tracking-widest mt-1">OF THE YEAR</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Shooting Stars */}
-                  <div className="absolute top-1/2 left-[40%] w-[2px] h-[150px] star-line pointer-events-none" />
-                  <div className="absolute top-1/2 right-[30%] w-[1px] h-[200px] star-line-delay pointer-events-none" />
-                  
-                  {/* Floating Item */}
-                  <div className="relative flex items-center justify-center z-10 transform -rotate-[15deg] hover:rotate-0 transition-transform duration-500 mt-4">
-                    <div className="scale-[2.5] drop-shadow-2xl">{getMaterialIcon(selectedMatId)}</div>
-                  </div>
-                  
-                  <div className="text-[15px] font-medium text-white mt-12 tracking-wide z-10 drop-shadow-md">Owned: {qty.toLocaleString()}</div>
-                  
-                  {/* Bottom-left corner decoration */}
-                  <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#666]" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)' }} />
-                </div>
-
-                {/* Info Section */}
-                <div 
-                  className="px-4 py-2 mt-1 relative z-10 bg-[#4b555d]" 
-                  style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}
-                >
-                  <h3 className="text-[13px] font-bold text-gray-300 tracking-wide">Item Info</h3>
-                </div>
-                
-                <div 
-                  className="flex-1 flex flex-col bg-[#313338]"
-                  style={{ backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 6px)' }}
-                >
-                  <div className="p-4 flex-1 overflow-y-auto">
-                    <p className="text-[13px] text-gray-300 leading-relaxed">{mat.description}</p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="px-4 pb-4 pt-0 grid grid-cols-2 gap-3">
+              <DetailPanelShell
+                title={mat.name}
+                glowColor={glowColor}
+                icon={getMaterialIcon(selectedMatId)}
+                subtitle={`Owned: ${qty.toLocaleString()}`}
+                infoContent={
+                  <p className="text-[13px] text-gray-300 leading-relaxed">{mat.description}</p>
+                }
+                actionButtons={
+                  <>
                     <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
                       <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
                       <span className="relative z-10">Get</span>
@@ -316,9 +269,9 @@ export default function InventoryPage() {
                       <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
                       <span className="relative z-10">Use</span>
                     </button>
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             );
           })()}
 
@@ -332,59 +285,13 @@ export default function InventoryPage() {
             const glowColor = currentLevel > 5 ? '#f59e0b' : currentLevel > 2 ? '#a855f7' : '#3b82f6';
             
             return (
-              <div className="flex-1 flex flex-col h-full bg-[#35383d]">
-                {/* Header Title */}
-                <div className="px-4 py-2.5 bg-[#4b555d] relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
-                  <h2 className="text-[13px] font-bold text-gray-200">Lv.{currentLevel} {selectedEquip.name}</h2>
-                </div>
-                
-                {/* Big Display Image area */}
-                <div className="relative h-60 overflow-hidden flex flex-col items-center justify-center">
-                  {/* Thick Diagonal Stripes Background */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 30px, #000 30px, #000 60px)' }} />
-
-                  {/* Soft Radial Glow Box */}
-                  <div className="absolute inset-0 pointer-events-none opacity-80" style={{ background: `radial-gradient(circle at center, ${glowColor}70 0%, ${glowColor}10 50%, transparent 70%)` }} />
-
-                  {/* Faded Circular Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
-                    <div className="w-56 h-56 border-[8px] border-white rounded-full flex items-center justify-center">
-                      <div className="w-48 h-48 border-[3px] border-white rounded-full flex flex-col items-center justify-center text-center">
-                        <span className="text-sm font-black tracking-widest uppercase">Best Team</span>
-                        <span className="text-4xl font-black mt-1">SUPERSTAR</span>
-                        <span className="text-[10px] font-bold tracking-widest mt-1">OF THE YEAR</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Shooting Stars */}
-                  <div className="absolute top-1/2 left-[40%] w-[2px] h-[150px] star-line pointer-events-none" />
-                  <div className="absolute top-1/2 right-[30%] w-[1px] h-[200px] star-line-delay pointer-events-none" />
-                  
-                  {/* Floating Item */}
-                  <div className="relative flex items-center justify-center z-10 transform -rotate-[15deg] hover:rotate-0 transition-transform duration-500 mt-4">
-                    <div className="scale-[2.5] drop-shadow-2xl">{getEquipmentEmoji(selectedEquip.slot)}</div>
-                  </div>
-                  
-                  <div className="text-[15px] font-medium text-white mt-12 tracking-wide z-10 drop-shadow-md">Owned: 1</div>
-                  
-                  {/* Bottom-left corner decoration */}
-                  <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#666]" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)' }} />
-                </div>
-
-                {/* Info Section */}
-                <div 
-                  className="px-4 py-2 mt-1 relative z-10 bg-[#4b555d]" 
-                  style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}
-                >
-                  <h3 className="text-[13px] font-bold text-gray-300 tracking-wide">Item Info</h3>
-                </div>
-                
-                <div 
-                  className="flex-1 flex flex-col bg-[#313338]"
-                  style={{ backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 6px)' }}
-                >
-                  <div className="p-4 flex-1 overflow-y-auto">
+              <DetailPanelShell
+                title={`Lv.${currentLevel} ${selectedEquip.name}`}
+                glowColor={glowColor}
+                icon={getEquipmentEmoji(selectedEquip.slot)}
+                subtitle="Owned: 1"
+                infoContent={
+                  <>
                     <p className="text-xs text-gray-300 leading-relaxed mb-4">
                       Equip this gear to boost player attributes. Higher levels yield stronger bonuses.
                     </p>
@@ -415,10 +322,10 @@ export default function InventoryPage() {
                         {upgradeResult.msg}
                       </div>
                     )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="px-4 pb-4 pt-0 grid grid-cols-2 gap-3">
+                  </>
+                }
+                actionButtons={
+                  <>
                     <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
                       <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
                       <span className="relative z-10">Equip</span>
@@ -432,9 +339,9 @@ export default function InventoryPage() {
                       {canUpgrade && <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />}
                       <span className="relative z-10">Enhance</span>
                     </button>
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             );
           })()}
 
@@ -445,59 +352,13 @@ export default function InventoryPage() {
             const glowColor = '#10b981';
             
             return (
-              <div className="flex-1 flex flex-col h-full bg-[#35383d]">
-                {/* Header Title */}
-                <div className="px-4 py-2.5 bg-[#4b555d] relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
-                  <h2 className="text-[13px] font-bold text-gray-200">{selectedCraftSlot} Blueprint</h2>
-                </div>
-                
-                {/* Big Display Image area */}
-                <div className="relative h-60 overflow-hidden flex flex-col items-center justify-center">
-                  {/* Thick Diagonal Stripes Background */}
-                  <div className="absolute inset-0 pointer-events-none opacity-[0.15]" style={{ backgroundImage: 'repeating-linear-gradient(-45deg, transparent, transparent 30px, #000 30px, #000 60px)' }} />
-
-                  {/* Soft Radial Glow Box */}
-                  <div className="absolute inset-0 pointer-events-none opacity-80" style={{ background: `radial-gradient(circle at center, ${glowColor}70 0%, ${glowColor}10 50%, transparent 70%)` }} />
-
-                  {/* Faded Circular Watermark */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none select-none">
-                    <div className="w-56 h-56 border-[8px] border-white rounded-full flex items-center justify-center">
-                      <div className="w-48 h-48 border-[3px] border-white rounded-full flex flex-col items-center justify-center text-center">
-                        <span className="text-sm font-black tracking-widest uppercase">Best Team</span>
-                        <span className="text-4xl font-black mt-1">SUPERSTAR</span>
-                        <span className="text-[10px] font-bold tracking-widest mt-1">OF THE YEAR</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Shooting Stars */}
-                  <div className="absolute top-1/2 left-[40%] w-[2px] h-[150px] star-line pointer-events-none" />
-                  <div className="absolute top-1/2 right-[30%] w-[1px] h-[200px] star-line-delay pointer-events-none" />
-                  
-                  {/* Floating Item */}
-                  <div className="relative flex items-center justify-center z-10 transform -rotate-[15deg] hover:rotate-0 transition-transform duration-500 mt-4">
-                    <div className="scale-[2.5] drop-shadow-2xl">{getEquipmentEmoji(selectedCraftSlot)}</div>
-                  </div>
-                  
-                  <div className="text-[15px] font-medium text-white mt-12 tracking-wide z-10 drop-shadow-md">Owned: 1 (Permanent)</div>
-                  
-                  {/* Bottom-left corner decoration */}
-                  <div className="absolute bottom-0 left-0 w-2 h-2 bg-[#666]" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)' }} />
-                </div>
-
-                {/* Info Section */}
-                <div 
-                  className="px-4 py-2 mt-1 relative z-10 bg-[#4b555d]" 
-                  style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%)' }}
-                >
-                  <h3 className="text-[13px] font-bold text-gray-300 tracking-wide">Item Info</h3>
-                </div>
-                
-                <div 
-                  className="flex-1 flex flex-col bg-[#313338]"
-                  style={{ backgroundImage: 'repeating-linear-gradient(-45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 6px)' }}
-                >
-                  <div className="p-4 flex-1 overflow-y-auto">
+              <DetailPanelShell
+                title={`${selectedCraftSlot} Blueprint`}
+                glowColor={glowColor}
+                icon={getEquipmentEmoji(selectedCraftSlot)}
+                subtitle="Owned: 1 (Permanent)"
+                infoContent={
+                  <>
                     <p className="text-xs text-gray-300 leading-relaxed mb-4">
                       Use Crafting Thread to forge a random piece of {selectedCraftSlot} equipment. Stats are rolled randomly upon crafting.
                     </p>
@@ -518,10 +379,10 @@ export default function InventoryPage() {
                         {craftResult.msg}
                       </div>
                     )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="px-4 pb-4 pt-0 grid grid-cols-2 gap-3">
+                  </>
+                }
+                actionButtons={
+                  <>
                     <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
                       <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
                       <span className="relative z-10">Get Mat.</span>
@@ -535,9 +396,9 @@ export default function InventoryPage() {
                       {canCraft && <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />}
                       <span className="relative z-10">Craft</span>
                     </button>
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             );
           })()}
 
