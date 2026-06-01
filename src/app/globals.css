@@ -320,3 +320,20 @@ body {
     filter: drop-shadow(0 0 5px rgba(255,255,255,0.5));
   }
 }
+
+/* Custom NBA 2K Style Cursors */
+body {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'><path d='M2,2 L2,24 L9,17 L16,30 L22,27 L15,14 L23,14 Z' fill='%2306b6d4' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/></svg>") 2 2, auto !important;
+}
+
+a, button, [role="button"], input[type="submit"], input[type="button"], input[type="reset"], select, .cursor-pointer {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'><path d='M2,2 L2,24 L9,17 L16,30 L22,27 L15,14 L23,14 Z' fill='%23f59e0b' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/></svg>") 2 2, pointer !important;
+}
+
+.cursor-help {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'><path d='M2,2 L2,24 L9,17 L16,30 L22,27 L15,14 L23,14 Z' fill='%238b5cf6' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/></svg>") 2 2, help !important;
+}
+
+.cursor-not-allowed {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'><path d='M2,2 L2,24 L9,17 L16,30 L22,27 L15,14 L23,14 Z' fill='%23ef4444' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/></svg>") 2 2, not-allowed !important;
+}
