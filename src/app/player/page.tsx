@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronDown, Search, ArrowDownUp } from "lucide-react";
 import { useGameState } from "@/lib/context/GameStateContext";
 import Link from "next/link";
 import { SidebarTabs } from "@/components/shared/SidebarTabs";
+import { SkewedBadge } from "@/components/shared/SkewedBadge";
 import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'ALL' | 'STARTING LINEUP' | 'BENCH' | 'AVAILABLE' | 'DUPLICATES';
@@ -200,26 +201,33 @@ export default function PlayerPage() {
                     
                     {/* Micro Status Badges (NBA 2K Skewed Floating Design - HD Text Fix) */}
                     {isExactLineup && (
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center">
-                        <div className="absolute inset-0 bg-zinc-950/95 border border-emerald-500/50 shadow-[0_4px_15px_rgba(16,185,129,0.5)] skew-x-[-12deg] z-0 pointer-events-none"></div>
+                      <SkewedBadge 
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center"
+                        innerClassName="border border-emerald-500/50 shadow-[0_4px_15px_rgba(16,185,129,0.5)]"
+                      >
                         <span className="relative z-10 font-[family-name:var(--font-outfit)] font-black italic text-[8px] uppercase tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]">
                           STARTING
                         </span>
-                      </div>
+                      </SkewedBadge>
                     )}
                     {isExactBench && (
-                      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center">
-                        <div className="absolute inset-0 bg-zinc-950/95 border border-cyan-500/50 shadow-[0_4px_15px_rgba(6,182,212,0.5)] skew-x-[-12deg] z-0 pointer-events-none"></div>
+                      <SkewedBadge 
+                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center"
+                        innerClassName="border border-cyan-500/50 shadow-[0_4px_15px_rgba(6,182,212,0.5)]"
+                      >
                         <span className="relative z-10 font-[family-name:var(--font-outfit)] font-black italic text-[8px] uppercase tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">
                           BENCH
                         </span>
-                      </div>
+                      </SkewedBadge>
                     )}
                     {!isExactLineup && !isExactBench && isDuplicate && (
-                      <div className="absolute -bottom-1.5 -right-1 z-20 w-[22px] h-[18px] flex items-center justify-center" title="Duplicate Copy">
-                        <div className="absolute inset-0 bg-zinc-950/95 border border-purple-500/50 shadow-[0_4px_15px_rgba(168,85,247,0.5)] skew-x-[-12deg] z-0 pointer-events-none"></div>
+                      <SkewedBadge 
+                        className="absolute -bottom-1.5 -right-1 z-20 w-[22px] h-[18px] flex items-center justify-center" 
+                        innerClassName="border border-purple-500/50 shadow-[0_4px_15px_rgba(168,85,247,0.5)]"
+                      >
+                        <div title="Duplicate Copy" className="absolute inset-0 z-10"></div>
                         <svg className="relative z-10 text-purple-400 drop-shadow-[0_0_5px_rgba(168,85,247,0.8)]" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                      </div>
+                      </SkewedBadge>
                     )}
                   </div>
                 );

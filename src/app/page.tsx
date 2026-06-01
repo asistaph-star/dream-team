@@ -15,6 +15,7 @@ import { LobbyChat } from "@/features/lobby/components/LobbyChat";
 import { CoachModal } from "@/features/lobby/components/CoachModal";
 import { LobbyProfileHUD } from "@/features/lobby/components/LobbyProfileHUD";
 import { FreeAgentMarket, FreeAgentPlayer } from "@/features/lobby/components/FreeAgentMarket";
+import { SkewedBadge } from "@/components/shared/SkewedBadge";
 
 export default function AuthenticLobby() {
   const {
@@ -452,10 +453,10 @@ export default function AuthenticLobby() {
 
         {/* Floating Toast for OOP Warning (Authentic NBA 2K Style) */}
         {isDraggingOOPGlobal && (
-          <div className="absolute top-[80px] left-1/2 -translate-x-1/2 z-[200] pointer-events-none flex items-center justify-center animate-[fadeIn_0.2s_ease-out]">
-            {/* Skewed Backdrop */}
-            <div className="absolute inset-0 bg-zinc-950/95 border-[1.5px] border-red-500 shadow-[0_0_40px_rgba(220,38,38,0.6)] skew-x-[-12deg] rounded-sm" />
-            
+          <SkewedBadge 
+            className="absolute top-[80px] left-1/2 -translate-x-1/2 z-[200] pointer-events-none flex items-center justify-center animate-[fadeIn_0.2s_ease-out]"
+            innerClassName="border-[1.5px] border-red-500 shadow-[0_0_40px_rgba(220,38,38,0.6)] rounded-sm"
+          >
             {/* Content (Counter-skewed for sharp text) */}
             <div className="relative px-8 py-3 flex items-center gap-4">
               <div className="animate-pulse">
@@ -468,7 +469,7 @@ export default function AuthenticLobby() {
                 </span>
               </div>
             </div>
-          </div>
+          </SkewedBadge>
         )}
 
         {/* --- Unified Profile HUD (Top Left & Right - SHARP HD FIX) --- */}
