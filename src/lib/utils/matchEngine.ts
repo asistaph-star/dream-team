@@ -477,7 +477,7 @@ export function simulateTick(
     currentPossession = Math.random() < 0.5 ? 'user' : 'ai';
   }
 
-  let timeElapsed = 15;
+  let timeElapsed = -1;
   let pace: 'fastbreak' | 'early_offense' | 'oreb' | 'late_clock' | 'normal' = 'normal';
 
   const activeOffStrategy = currentPossession === 'user' ? state.userOffStrategy : state.aiOffStrategy;
@@ -487,70 +487,83 @@ export function simulateTick(
 
   switch (state.lastPlayCategory) {
     case 'steal':
+      timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s
+      pace = 'fastbreak';
+      break;
     case 'block':
-      // Pillar 1: Fast break = 6-10s [DESIGN PARAMETER]
-      timeElapsed = Math.floor(Math.random() * 5) + 6;
+      timeElapsed = Math.floor(Math.random() * 5) + 5; // 5-9s
       pace = 'fastbreak';
       break;
     case 'miss_oreb':
-      // Pillar 1: OREB resets shot clock to 14s, burns 10-14s [NBA RULE 2018-19]
-      // Guard: miss_oreb path routes exclusively to oreb pace tag at 10 to 14s.
-      timeElapsed = Math.floor(Math.random() * 5) + 10;
+      if (Math.random() < 0.40) {
+        timeElapsed = Math.floor(Math.random() * 4) + 3; // 3-6s quick putback
+      } else {
+        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s reset
+      }
       pace = 'oreb';
       break;
     case 'miss_dreb':
-      // Fix 2: stamina-driven outlet fastbreak off defensive rebound (runs before early_offense)
       if (staminaAdvantage >= 15 && Math.random() < 0.15) {
-        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s
+        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s outlet
         pace = 'fastbreak';
-      } else if (Math.random() < 0.25) {
-        // Fix 1: early_offense off DREB
-        timeElapsed = Math.floor(Math.random() * 5) + 8; // 8-12s
+      } else if (Math.random() < 0.35) {
+        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s early offense outlet
         pace = 'early_offense';
       } else {
+        timeElapsed = Math.floor(Math.random() * 5) + 10; // 10-14s normal reset
         pace = 'normal';
       }
       break;
     case 'turnover':
-      // Fix 2: fastbreak off turnover (40% chance)
       if (Math.random() < 0.40) {
-        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s
+        timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s live-ball
         pace = 'fastbreak';
       } else {
+        timeElapsed = Math.floor(Math.random() * 5) + 2; // 2-6s dead-ball
         pace = 'normal';
       }
       break;
     case 'made_shot':
-      // Fix 1: Secondary trigger: early_offense on 5-Out Spacing (20% chance)
       if (activeOffStrategy === '5-Out Spacing' && Math.random() < 0.20) {
         timeElapsed = Math.floor(Math.random() * 5) + 8; // 8-12s
         pace = 'early_offense';
       } else {
+        timeElapsed = Math.floor(Math.random() * 6) + 7; // 7-12s
         pace = 'normal';
       }
       break;
     case 'foul_reset':
+      timeElapsed = Math.floor(Math.random() * 5) + 3; // 3-7s
+      pace = 'normal';
+      break;
     case 'start_quarter':
     default:
+      timeElapsed = -1;
       pace = 'normal';
       break;
   }
 
-  // If pace resolved to normal, apply strategy-based timing
+  // If pace resolved to normal, blend event-based timing with strategy timing
   if (pace === 'normal') {
+    let strategyTime = 0;
     if (activeOffStrategy === 'Isolation (ISO)' && state.clock <= 60) {
-      timeElapsed = Math.floor(Math.random() * 5) + 20; // 20-24s — end of clock ISO
+      strategyTime = Math.floor(Math.random() * 5) + 20; // 20-24s
       pace = 'late_clock';
-    } else if (activeOffStrategy === 'Post Isolation') {
-      timeElapsed = Math.floor(Math.random() * 5) + 18; // 18-22s
+    } else if (activeOffStrategy === 'Isolation (ISO)' || activeOffStrategy === 'Post Isolation') {
+      strategyTime = Math.floor(Math.random() * 6) + 17; // 17-22s
     } else if (activeOffStrategy === 'Pick & Roll') {
-      timeElapsed = Math.floor(Math.random() * 5) + 16; // 16-20s
-    } else if (activeOffStrategy === 'Motion Offense') {
-      timeElapsed = Math.floor(Math.random() * 5) + 15; // 15-19s
+      strategyTime = Math.floor(Math.random() * 6) + 13; // 13-18s
     } else if (activeOffStrategy === '5-Out Spacing') {
-      timeElapsed = Math.floor(Math.random() * 4) + 14; // 14-17s (faster)
+      strategyTime = Math.floor(Math.random() * 6) + 11; // 11-16s
     } else {
-      timeElapsed = Math.floor(Math.random() * 4) + 16; // 16-19s
+      strategyTime = Math.floor(Math.random() * 7) + 12; // 12-18s normal half-court
+    }
+
+    if (timeElapsed === -1) {
+      timeElapsed = strategyTime;
+    } else {
+      // Blend event bounds with strategy bounds to keep realistic 14-16s average
+      timeElapsed = Math.floor((timeElapsed + strategyTime) / 2);
     }
   }
 
