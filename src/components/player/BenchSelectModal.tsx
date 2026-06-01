@@ -186,13 +186,10 @@ export function BenchSelectModal({
                       )}
                       {isNameUsed && (
                         <div 
-                          title="Another copy is active. Select to swap."
-                          className="absolute -top-1.5 -right-1.5 z-20 px-1.5 py-[2px] bg-zinc-950/95 border border-amber-500/50 rounded flex items-center gap-1 shadow-[0_4px_10px_rgba(245,158,11,0.4)]"
+                          title="Another copy of this player is active. Select this card to swap the active copy."
+                          className="absolute -top-1.5 -right-1.5 z-20 w-[22px] h-[22px] bg-zinc-950/95 border border-amber-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(245,158,11,0.4)]"
                         >
-                          <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                          <span className="relative z-10 font-[family-name:var(--font-outfit)] font-bold text-[7px] uppercase tracking-wider text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)] mt-[1px]">
-                            COPY ACTIVE
-                          </span>
+                          <svg className="text-amber-400 drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </div>
                       )}
                       {!isExactLineup && !isExactBench && !isNameUsed && isDuplicate && (
