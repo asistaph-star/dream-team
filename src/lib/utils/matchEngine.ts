@@ -495,7 +495,7 @@ export function simulateTick(
       pace = 'fastbreak';
       break;
     case 'miss_oreb':
-      if (Math.random() < 0.40) {
+      if (Math.random() < 0.10) {
         timeElapsed = Math.floor(Math.random() * 4) + 3; // 3-6s quick putback
       } else {
         timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s reset
@@ -503,46 +503,34 @@ export function simulateTick(
       pace = 'oreb';
       break;
     case 'miss_dreb':
-      if (staminaAdvantage >= 15 && Math.random() < 0.15) {
+      if (staminaAdvantage >= 15 && Math.random() < 0.05) {
         timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s outlet
         pace = 'fastbreak';
-      } else if (Math.random() < 0.20) {
-        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s early offense outlet
-        pace = 'early_offense';
-      } else if (Math.random() < 0.30) {
-        timeElapsed = Math.floor(Math.random() * 5) + 10; // 10-14s normal reset event
-        pace = 'normal';
       } else {
         timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
     case 'turnover':
-      if (Math.random() < 0.40) {
+      if (Math.random() < 0.10) {
         timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s live-ball
         pace = 'fastbreak';
-      } else if (Math.random() < 0.20) {
-        timeElapsed = Math.floor(Math.random() * 5) + 2; // 2-6s dead-ball quick inbound
-        pace = 'normal';
       } else {
         timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
     case 'made_shot':
-      if (activeOffStrategy === '5-Out Spacing' && Math.random() < 0.20) {
+      if (activeOffStrategy === '5-Out Spacing' && Math.random() < 0.05) {
         timeElapsed = Math.floor(Math.random() * 5) + 8; // 8-12s
         pace = 'early_offense';
-      } else if (Math.random() < 0.30) {
-        timeElapsed = Math.floor(Math.random() * 6) + 7; // 7-12s quick push
-        pace = 'normal';
       } else {
         timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
     case 'foul_reset':
-      if (Math.random() < 0.30) {
+      if (Math.random() < 0.10) {
         timeElapsed = Math.floor(Math.random() * 5) + 3; // 3-7s
       } else {
         timeElapsed = -1;
