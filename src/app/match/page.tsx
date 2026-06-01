@@ -11,7 +11,7 @@ import { Swords, Flame, Snowflake } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { SeasonMap } from "@/components/season/SeasonMap";
 import { ViewState } from "@/features/match/types";
-import { MATCH_STAMINA_UI_CONFIG, SLOT_POSITIONS } from "@/features/match/constants/matchConfig";
+import { MATCH_STAMINA_UI_CONFIG, SLOT_POSITIONS, MATCH_PLAYBACK_SPEED } from "@/features/match/constants/matchConfig";
 import { calculateTS } from "@/features/match/utils/calculateTS";
 import { getPlayerImage } from "@/features/match/utils/playerImages";
 import { getRarityColor } from "@/features/match/utils/rarityColor";
@@ -235,7 +235,7 @@ export default function MatchPage() {
     const gameClockStart = matchState.clock + timeElapsed;
     const gameClockEnd = matchState.clock;
 
-    const duration = 1200; // animate over 1.2 seconds of the 1.5s interval
+    const duration = 1200 / MATCH_PLAYBACK_SPEED; // animate over 1.2s of the 1.5s interval scaled by speed
     const steps = 24;      // update ~20 times per second
     const stepDuration = duration / steps;
     let step = 0;
@@ -495,7 +495,7 @@ export default function MatchPage() {
           
           return next;
         });
-      }, 1500); 
+      }, 1500 / MATCH_PLAYBACK_SPEED); 
     }
     return () => clearInterval(interval);
   }, [viewState, matchState.isFinished, selectedDifficulty, teamOffense, teamDefense, currentLineup, matchRoster, isPaused, matchState.ftSequence, matchState.activeShotMeter]);

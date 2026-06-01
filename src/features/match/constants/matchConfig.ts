@@ -13,3 +13,5 @@ export const DEFAULT_PLAYER_IMAGES: Record<string, string> = {
   'PF': 'https://www.dreamteamph.com/players/newx/stoudemire.webp',
   'C': 'https://www.dreamteamph.com/players/newplayers/raptors/jakobpoeltl.webp',
 };
+
+export const MATCH_PLAYBACK_SPEED = 1.25;
