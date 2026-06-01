@@ -506,11 +506,14 @@ export function simulateTick(
       if (staminaAdvantage >= 15 && Math.random() < 0.15) {
         timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s outlet
         pace = 'fastbreak';
-      } else if (Math.random() < 0.35) {
+      } else if (Math.random() < 0.20) {
         timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s early offense outlet
         pace = 'early_offense';
+      } else if (Math.random() < 0.30) {
+        timeElapsed = Math.floor(Math.random() * 5) + 10; // 10-14s normal reset event
+        pace = 'normal';
       } else {
-        timeElapsed = Math.floor(Math.random() * 5) + 10; // 10-14s normal reset
+        timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
@@ -518,8 +521,11 @@ export function simulateTick(
       if (Math.random() < 0.40) {
         timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s live-ball
         pace = 'fastbreak';
+      } else if (Math.random() < 0.20) {
+        timeElapsed = Math.floor(Math.random() * 5) + 2; // 2-6s dead-ball quick inbound
+        pace = 'normal';
       } else {
-        timeElapsed = Math.floor(Math.random() * 5) + 2; // 2-6s dead-ball
+        timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
@@ -527,13 +533,20 @@ export function simulateTick(
       if (activeOffStrategy === '5-Out Spacing' && Math.random() < 0.20) {
         timeElapsed = Math.floor(Math.random() * 5) + 8; // 8-12s
         pace = 'early_offense';
+      } else if (Math.random() < 0.30) {
+        timeElapsed = Math.floor(Math.random() * 6) + 7; // 7-12s quick push
+        pace = 'normal';
       } else {
-        timeElapsed = Math.floor(Math.random() * 6) + 7; // 7-12s
+        timeElapsed = -1; // Fallback to strategy
         pace = 'normal';
       }
       break;
     case 'foul_reset':
-      timeElapsed = Math.floor(Math.random() * 5) + 3; // 3-7s
+      if (Math.random() < 0.30) {
+        timeElapsed = Math.floor(Math.random() * 5) + 3; // 3-7s
+      } else {
+        timeElapsed = -1;
+      }
       pace = 'normal';
       break;
     case 'start_quarter':
@@ -543,7 +556,7 @@ export function simulateTick(
       break;
   }
 
-  // If pace resolved to normal, blend event-based timing with strategy timing
+  // If pace resolved to normal, apply strategy-based timing if no event forced a time
   if (pace === 'normal') {
     let strategyTime = 0;
     if (activeOffStrategy === 'Isolation (ISO)' && state.clock <= 60) {
@@ -561,9 +574,6 @@ export function simulateTick(
 
     if (timeElapsed === -1) {
       timeElapsed = strategyTime;
-    } else {
-      // Blend event bounds with strategy bounds to keep realistic 14-16s average
-      timeElapsed = Math.floor((timeElapsed + strategyTime) / 2);
     }
   }
 
