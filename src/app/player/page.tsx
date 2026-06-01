@@ -6,10 +6,9 @@ import { PlayerPosition, PlayerRarity } from "@/lib/types/player";
 import { ChevronLeft, ChevronDown, Search, ArrowDownUp } from "lucide-react";
 import { useGameState } from "@/lib/context/GameStateContext";
 import Link from "next/link";
+import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'ALL' | 'STARTING LINEUP' | 'BENCH' | 'AVAILABLE' | 'DUPLICATES';
-
-const lowPolyBg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400" preserveAspectRatio="none"><polygon points="0,0 200,0 100,150" fill="%23303136"/><polygon points="0,0 100,150 0,250" fill="%2326272b"/><polygon points="200,0 200,200 100,150" fill="%232c2d31"/><polygon points="0,250 100,150 200,200" fill="%2328292d"/><polygon points="200,200 100,150 150,400" fill="%232a2b2f"/><polygon points="0,250 200,200 0,400" fill="%2325262a"/><polygon points="0,400 200,200 200,400" fill="%232e2f33"/></svg>`;
 
 export default function PlayerPage() {
   const { roster, activeLineup, activeReserves } = useGameState();

@@ -7,10 +7,10 @@ import { EquipmentSlot, Equipment } from "@/lib/types/item";
 import { mockMaterials, craftingRecipes } from "@/lib/data/mockItems";
 import { ChevronLeft, ChevronRight, Gem, Hammer, AlertTriangle, PackageOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { lowPolyBg } from "@/lib/constants/visuals";
 
 type Tab = 'MATERIALS' | 'EQUIPMENT' | 'CRAFTING';
 
-const lowPolyBg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400" preserveAspectRatio="none"><polygon points="0,0 200,0 100,150" fill="%23303136"/><polygon points="0,0 100,150 0,250" fill="%2326272b"/><polygon points="200,0 200,200 100,150" fill="%232c2d31"/><polygon points="0,250 100,150 200,200" fill="%2328292d"/><polygon points="200,200 100,150 150,400" fill="%232a2b2f"/><polygon points="0,250 200,200 0,400" fill="%2325262a"/><polygon points="0,400 200,200 200,400" fill="%232e2f33"/></svg>`;
 const diagonalStripes = `repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 6px)`;
 
 const RawItem = ({ icon, glowColor }: { icon: string, glowColor: string }) => (
