@@ -180,24 +180,34 @@ export default function PlayerPage() {
                     
                     {/* Micro Status Badges (NBA 2K Skewed Floating Design - HD Text Fix) */}
                     {isExactLineup && (
-                      <SkewedBadge 
-                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center"
-                        innerClassName="border border-emerald-500/50 shadow-[0_4px_15px_rgba(16,185,129,0.5)]"
-                      >
-                        <span className="relative z-10 font-[family-name:var(--font-outfit)] font-black italic text-[8px] uppercase tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]">
-                          STARTING
-                        </span>
-                      </SkewedBadge>
+                      <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-emerald-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(16,185,129,0.4)] cursor-help">
+                          <svg className="text-emerald-400 drop-shadow-[0_0_5px_rgba(16,185,129,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        </div>
+                        {/* Custom Tooltip */}
+                        <div className="absolute top-[110%] right-0 mt-1 w-[180px] bg-zinc-950 border border-emerald-500/50 shadow-[0_4px_15px_rgba(16,185,129,0.3)] rounded p-2.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                          <div className="absolute -top-1 right-[8px] w-2 h-2 bg-zinc-950 border-t border-l border-emerald-500/50 rotate-45"></div>
+                          <span className="relative z-10 block font-[family-name:var(--font-outfit)] text-[10px] leading-[1.3] text-emerald-100/90 tracking-wide text-left">
+                            <span className="text-emerald-400 font-bold block mb-1 uppercase tracking-wider text-[9px]">Starting Lineup</span>
+                            This player is currently active in your main starting rotation.
+                          </span>
+                        </div>
+                      </div>
                     )}
                     {isExactBench && (
-                      <SkewedBadge 
-                        className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-[3px] flex items-center justify-center"
-                        innerClassName="border border-cyan-500/50 shadow-[0_4px_15px_rgba(6,182,212,0.5)]"
-                      >
-                        <span className="relative z-10 font-[family-name:var(--font-outfit)] font-black italic text-[8px] uppercase tracking-[0.2em] text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">
-                          BENCH
-                        </span>
-                      </SkewedBadge>
+                      <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
+                        <div className="w-[22px] h-[22px] bg-zinc-950/95 border border-cyan-500/50 rounded flex items-center justify-center shadow-[0_4px_10px_rgba(6,182,212,0.4)] cursor-help">
+                          <svg className="text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        </div>
+                        {/* Custom Tooltip */}
+                        <div className="absolute top-[110%] right-0 mt-1 w-[180px] bg-zinc-950 border border-cyan-500/50 shadow-[0_4px_15px_rgba(6,182,212,0.3)] rounded p-2.5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                          <div className="absolute -top-1 right-[8px] w-2 h-2 bg-zinc-950 border-t border-l border-cyan-500/50 rotate-45"></div>
+                          <span className="relative z-10 block font-[family-name:var(--font-outfit)] text-[10px] leading-[1.3] text-cyan-100/90 tracking-wide text-left">
+                            <span className="text-cyan-400 font-bold block mb-1 uppercase tracking-wider text-[9px]">Bench</span>
+                            This player is currently assigned to your bench rotation.
+                          </span>
+                        </div>
+                      </div>
                     )}
                     {isNameUsed && (
                       <div className="absolute -top-1.5 -right-1.5 z-30 group flex flex-col items-end">
