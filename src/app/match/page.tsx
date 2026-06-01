@@ -38,6 +38,9 @@ import { MatchBottomHUD } from "@/features/match/components/MatchBottomHUD";
 import { MatchActionBar } from "@/features/match/components/MatchActionBar";
 import { ShootoutOverlay } from "@/features/match/components/ShootoutOverlay";
 import { MatchScoreboard } from "@/features/match/components/MatchScoreboard";
+import { OvertimeTransitionOverlay } from "@/features/match/components/OvertimeTransitionOverlay";
+import { MatchExitButton } from "@/features/match/components/MatchExitButton";
+import { BlockAnimationDevToggle } from "@/features/match/components/BlockAnimationDevToggle";
 import { getMatchStyles } from "@/features/match/styles/getMatchStyles";
 
 
@@ -1000,11 +1003,10 @@ export default function MatchPage() {
 
         <div className="stadium">
             {/* DEV TOGGLE FOR BLOCK ANIMATION */}
-            <div className="absolute top-2 left-2 z-[200]">
-              <button onClick={() => setBlockAnimationType(p => p === 'court' ? 'cut-in' : 'court')} className="bg-purple-600 px-4 py-2 text-white text-[10px] font-bold rounded shadow-lg border border-purple-400 opacity-50 hover:opacity-100">
-                DEV: Block Anim = {blockAnimationType === 'court' ? 'ON-COURT' : 'CUT-IN'}
-              </button>
-            </div>
+            <BlockAnimationDevToggle 
+              blockAnimationType={blockAnimationType} 
+              setBlockAnimationType={setBlockAnimationType} 
+            />
             {/* TOP HUD */}
             <MatchScoreboard
               matchState={matchState}
@@ -1029,9 +1031,7 @@ export default function MatchPage() {
             />
 
             {/* EXIT BUTTON */}
-            <div className="absolute top-8 right-8 z-50">
-              <button onClick={handleReturn} className="bg-red-600/90 hover:bg-red-500 text-white w-10 h-10 rounded-full text-xl font-bold flex items-center justify-center cursor-pointer transition-colors border border-red-300 shadow-[0_0_15px_rgba(220,38,38,0.5)]">✕</button>
-            </div>
+            <MatchExitButton onExit={handleReturn} />
 
             {/* PLAYERS */}
             {currentLineup.map((p, idx) => renderPlayerCard(p, false, SLOT_POSITIONS[idx]))}
@@ -1047,16 +1047,7 @@ export default function MatchPage() {
             {/* FREE THROW OVERLAY — removed from top center to avoid overlap with TV scoreboard, rendered directly on the shooting player card */}
 
             {/* OT TRANSITION OVERLAY */}
-            {showOTTransition && (
-              <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
-                <div className="flex flex-col items-center animate-[float-up_2s_ease-out_forwards]">
-                  <div className="text-6xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)] tracking-widest italic">
-                    {matchState.quarter === 5 ? 'OVERTIME' : `${matchState.quarter - 4}OT`}
-                  </div>
-                  <div className="text-xl text-white font-bold mt-2">The game continues...</div>
-                </div>
-              </div>
-            )}
+            <OvertimeTransitionOverlay show={showOTTransition} quarter={matchState.quarter} />
 
             {/* SHOOTOUT OVERLAY */}
             <ShootoutOverlay
