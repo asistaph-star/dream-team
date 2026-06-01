@@ -2933,7 +2933,14 @@ export function simulateTick(
   // the original shooter even if an offensive rebound creates a second chance.
   shotStaminaAttempts.forEach(attempt => {
     const actor = allActivePlayers.find(p => p.id === attempt.playerId);
-    const baseCost = STAMINA_CONFIG.ballHandling.quickTouch + getShotBaseCost(attempt);
+    let creationTax = 0;
+    if (activeOffStrategy === 'Isolation (ISO)' || activeOffStrategy === 'Post Isolation') {
+      creationTax += STAMINA_CONFIG.ballHandling.isolation;
+    }
+    if (pace === 'late_clock') {
+      creationTax += STAMINA_CONFIG.ballHandling.lateClockCreation;
+    }
+    const baseCost = STAMINA_CONFIG.ballHandling.quickTouch + getShotBaseCost(attempt) + creationTax;
     applyActionStaminaCost(attempt.playerId, baseCost * getContextMultiplier(actor, attempt.playerId, attempt.outcome, attempt.context));
   });
 
