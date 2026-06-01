@@ -723,14 +723,32 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       // Determine who is currently in the target slot explicitly
       const explicitDisplacedId = copy[position];
       
-      // Swap!
+      // 1. Remove the dragged player from its old position
+      if (oldPos) {
+        delete copy[oldPos];
+      }
+      
+      // 2. Remove any other assigned instance with the exact same NAME (enforce One-Player Rule actively)
+      if (p) {
+        for (const [pos, id] of Object.entries(copy)) {
+          const assignedPlayer = roster.find(r => r.id === id);
+          if (assignedPlayer && assignedPlayer.name === p.name && id !== playerId) {
+            delete copy[pos];
+          }
+        }
+      }
+      
+      // 3. Assign the target player to the requested slot
       copy[position] = playerId;
       
+      // 4. Perform the swap for the displaced player
       if (oldPos && oldPos !== position) {
         if (explicitDisplacedId && explicitDisplacedId !== playerId) {
-          copy[oldPos] = explicitDisplacedId;
-        } else {
-          delete copy[oldPos];
+          const displacedPlayer = roster.find(r => r.id === explicitDisplacedId);
+          // Only swap if the displaced player doesn't have the same name (which we just unassigned)
+          if (!displacedPlayer || (p && displacedPlayer.name !== p.name)) {
+            copy[oldPos] = explicitDisplacedId;
+          }
         }
       }
       
