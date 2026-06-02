@@ -1944,12 +1944,18 @@ export function simulateTick(
             sfChance += 0.035 * foulMagnetScale;
             skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, true);
           }
-          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(userLineup, "Flop X", newStamina)) {
+          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(userLineup, "Flop X", newStamina, (h) => {
+            const flopIdentity = getFoulDrawTendency(h);
+            return 0.90 + flopIdentity * 0.20;
+          })) {
             const flopBonus = getFlopFoulPressureBonus(scorer);
             sfChance += flopBonus;
             skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
           }
-          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(userLineup, "Four-Point Bait X", newStamina)) {
+          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(userLineup, "Four-Point Bait X", newStamina, (h) => {
+            const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
+            return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
+          })) {
             const composed = rollSpecial(aiLineup, "Composure X", newStamina, (h) => {
               const composureIdentity = getCalmRating(h);
               return 0.90 + (composureIdentity / 100) * 0.20;
@@ -2715,12 +2721,18 @@ export function simulateTick(
               sfChance_ai += 0.035 * foulMagnetScale;
               skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, false);
             }
-            if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(aiLineup, "Flop X", newStamina)) {
+            if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(aiLineup, "Flop X", newStamina, (h) => {
+              const flopIdentity = getFoulDrawTendency(h);
+              return 0.90 + flopIdentity * 0.20;
+            })) {
               const flopBonus = getFlopFoulPressureBonus(scorer);
               sfChance_ai += flopBonus;
               skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
             }
-            if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(aiLineup, "Four-Point Bait X", newStamina)) {
+            if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(aiLineup, "Four-Point Bait X", newStamina, (h) => {
+              const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
+              return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
+            })) {
               const composed = rollSpecial(userLineup, "Composure X", newStamina, (h) => {
                 const composureIdentity = getCalmRating(h);
                 return 0.90 + (composureIdentity / 100) * 0.20;
