@@ -1632,7 +1632,13 @@ export function simulateTick(
     const tovStamMod = getTovStamMod(userAvg);
     // Late clock desperation forces risky passes [DESIGN PARAMETER]
     const lateClockMod = pace === 'late_clock' ? 1.30 : 1.0;
-    const handsActivePressure = rollBaseSkill(aiLineup, "Hands Active", newStamina) ? 1.18 : 1.0;
+    let handsActivePressure = 1.0;
+    if (rollBaseSkill(aiLineup, "Hands Active", newStamina)) {
+      const holders = aiLineup.filter(p => p.baseSkills?.includes("Hands Active"));
+      const maxStealRating = holders.length > 0 ? Math.max(...holders.map(p => getStealRating(p))) : 50;
+      const handsActiveScale = 0.85 + (maxStealRating / 100) * 0.30;
+      handsActivePressure = 1.18 * handsActiveScale;
+    }
     const screenBreakerPressure =
       (currentOff === "Pick & Roll" || currentOff === "Motion Offense") &&
       rollBaseSkill(aiLineup, "Screen Breaker", newStamina)
@@ -2477,7 +2483,13 @@ export function simulateTick(
       // Pillar 5 interaction — fatigued AI turns it over more
       const aiTovMod = getTovStamMod(aiAvg);
       const aiLateClockMod = pace === 'late_clock' ? 1.30 : 1.0;
-      const userHandsActivePressure = rollBaseSkill(userLineup, "Hands Active", newStamina) ? 1.18 : 1.0;
+      let userHandsActivePressure = 1.0;
+      if (rollBaseSkill(userLineup, "Hands Active", newStamina)) {
+        const holders = userLineup.filter(p => p.baseSkills?.includes("Hands Active"));
+        const maxStealRating = holders.length > 0 ? Math.max(...holders.map(p => getStealRating(p))) : 50;
+        const handsActiveScale = 0.85 + (maxStealRating / 100) * 0.30;
+        userHandsActivePressure = 1.18 * handsActiveScale;
+      }
       const userScreenBreakerPressure =
         (state.aiOffStrategy === "Pick & Roll" || state.aiOffStrategy === "Motion Offense") &&
         rollBaseSkill(userLineup, "Screen Breaker", newStamina)
