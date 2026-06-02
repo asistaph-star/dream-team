@@ -9,6 +9,8 @@ import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEX
 import { SpecialSkillName, BaseSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
+import { formatSkillName } from "../../lib/skills/skillDisplay";
+import { getDefaultSkillTier } from "../../lib/players/playerEra";
 
 interface PlayerHexProfileModalProps {
   player: Player;
@@ -948,7 +950,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 </div>
 
                 <div className="text-center w-full mt-1">
-                  <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[0] || "Available"}</div>
+                  <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[0] ? formatSkillName(specialSkills[0], getDefaultSkillTier(player)) : "Available"}</div>
                 </div>
                 <button className="w-full mt-1 py-2 bg-zinc-900 group-hover:bg-[#d61e38] border border-white/5 group-hover:border-[#eb233f] text-gray-400 group-hover:text-white font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md">
                   Replace
@@ -986,7 +988,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   {(player.starLevel ?? 0) < 5 ? (
                     <div className="text-gray-500 font-black text-[11px] uppercase tracking-widest">Unlocks at Star 5</div>
                   ) : (
-                    <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[1] || "Available"}</div>
+                    <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[1] ? formatSkillName(specialSkills[1], getDefaultSkillTier(player)) : "Available"}</div>
                   )}
                 </div>
                 {(player.starLevel ?? 0) >= 5 && (

@@ -1,4 +1,6 @@
 import { Equipment, EquipmentSlot } from './item';
+import { BaseSkillName } from "../skills/assignBaseSkills";
+import { CardEra, SkillTier, DataSource } from "../players/playerCardTypes";
 
 export type PlayerPosition = 'PG' | 'SG' | 'SF' | 'PF' | 'C';
 export type PlayerRarity = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
@@ -101,4 +103,11 @@ export interface Player {
   specialSkillSlots?: (string | null)[];
   skillRarities?: Record<string, 'Common' | 'Rare' | 'Elite' | 'Epic' | 'Legendary'>;
   skillTiers?: Record<string, 'Base' | 'X' | 'XR' | 'XR-ULT'>;
+
+  // Era & Metadata (Phase 2A)
+  cardEra?: CardEra;
+  skillTier?: SkillTier;
+  dataSource?: DataSource;
+  seasonTag?: string;
+  eraLabel?: string;
 }
