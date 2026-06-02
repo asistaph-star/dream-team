@@ -194,8 +194,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       }}
                       className="ml-auto px-4 py-1.5 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
                     >
-                      <span className="text-[11px] font-black text-white uppercase tracking-widest italic">View Pending Skill</span>
-                      <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Resume</div>
+                      <span className="text-[11px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
+                      <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Action Required</div>
                     </button>
                   ) : (
                     <button
@@ -1123,8 +1123,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     }}
                     className="w-full py-3 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
                   >
-                    <span className="text-[12px] font-black text-white uppercase tracking-widest italic">View Pending Skill</span>
-                    <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Resume</div>
+                    <span className="text-[12px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
+                    <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Action Required</div>
                   </button>
                 ) : (
                   <button
