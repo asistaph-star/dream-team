@@ -17,6 +17,16 @@ interface PlayerHexProfileModalProps {
   isAscending: boolean;
 }
 
+const getQualityColor = (q: string) => {
+  switch(q) {
+    case 'Legendary': return 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]';
+    case 'Epic': return 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]';
+    case 'Elite': return 'text-violet-400 drop-shadow-[0_0_8px_rgba(167,139,250,0.8)]';
+    case 'Rare': return 'text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.8)]';
+    default: return 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]';
+  }
+};
+
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
   const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice, trainSpecialSkill, acceptSkillTraining, rejectSkillTraining, pendingSkillTraining } = useGameState();
   
@@ -884,7 +894,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
                 <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
                   <span className="text-gray-300 font-bold">Effect:</span> {SPECIAL_SKILL_TEXT[pendingSkillTraining.newSkill as SpecialSkillName]} 
-                  {' '}When in a game, there is a <span className="text-emerald-400 font-mono font-bold">{getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)}</span> rate to trigger this effect.
+                  {' '}When in a game, there is a <span className={`font-mono font-black text-[12px] ${getQualityColor(pendingSkillTraining.newQuality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)}</span> rate to trigger this effect.
                 </p>
               </div>
 
@@ -1138,10 +1148,10 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     <p className="text-gray-400 text-[11px] leading-relaxed mt-2 border-t border-white/10 pt-2">
                       <span className="text-gray-300 font-bold">Effect:</span> {showSkillInfo.isSpecial ? SPECIAL_SKILL_TEXT[showSkillInfo.name as SpecialSkillName] : BASE_SKILL_TEXT[showSkillInfo.name as BaseSkillName] || "Provides standard boosts during matches."}
                       {showSkillInfo.isSpecial && (
-                        <> When in a game, there is a <span className="text-emerald-400 font-mono font-bold">{getSkillQualityRate(SPECIAL_SKILL_RATES[showSkillInfo.name as SpecialSkillName] ?? 0, showSkillInfo.quality as any)}</span> rate to trigger this effect.</>
+                        <> When in a game, there is a <span className={`font-mono font-black text-[12px] ${getQualityColor(showSkillInfo.quality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[showSkillInfo.name as SpecialSkillName] ?? 0, showSkillInfo.quality as any)}</span> rate to trigger this effect.</>
                       )}
                       {!showSkillInfo.isSpecial && BASE_SKILL_RATES[showSkillInfo.name as BaseSkillName] && (
-                        <> When in a game, there is a <span className="text-blue-400 font-mono font-bold">{BASE_SKILL_RATES[showSkillInfo.name as BaseSkillName]?.[2] || 0}</span> rate to trigger this effect at max level.</>
+                        <> When in a game, there is a <span className={`font-mono font-black text-[12px] ${getQualityColor(showSkillInfo.quality as any)}`}>{BASE_SKILL_RATES[showSkillInfo.name as BaseSkillName]?.[2] || 0}</span> rate to trigger this effect at max level.</>
                       )}
                     </p>
                   </>
