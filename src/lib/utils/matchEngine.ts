@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -47,40 +47,7 @@ const getFlopFoulPressureBonus = (scorer: Player): number => {
   return isShaiGilgeousAlexander(scorer) && getSpecialSkills(scorer).includes("Flop X") ? baseBonus * 2 : baseBonus;
 };
 
-const NBA_AVG_FG_PCT = 47.4;
-const NBA_AVG_TWO_PCT = 54.7;
-const NBA_AVG_THREE_PCT = 36.6;
 
-const normalizePct = (value?: number): number | undefined => {
-  if (value === undefined || Number.isNaN(value)) return undefined;
-  return value <= 1 ? value * 100 : value;
-};
-
-const getRealShootingEfficiencyAdjustment = (player: Player, is3PT: boolean): number => {
-  const stats = player.currentSeasonStats;
-  if (!stats) return 0;
-
-  if (is3PT) {
-    const threePct = normalizePct(stats.threePct);
-    const attempts = stats.threeAttemptedPerGame ?? 0;
-    if (threePct === undefined || attempts < 0.8) return 0;
-    const volumeTrust = Math.min(1, attempts / 7);
-    return Math.max(-0.045, Math.min(0.045, (threePct - NBA_AVG_THREE_PCT) * 0.0022 * volumeTrust));
-  }
-
-  const twoPct = normalizePct(stats.twoPct);
-  if (twoPct !== undefined) {
-    const attempts = stats.twoAttemptedPerGame ?? 0;
-    const volumeTrust = Math.min(1, Math.max(0.35, attempts / 11));
-    return Math.max(-0.055, Math.min(0.055, (twoPct - NBA_AVG_TWO_PCT) * 0.0024 * volumeTrust));
-  }
-
-  const fgPct = normalizePct(stats.fgPct);
-  if (fgPct === undefined) return 0;
-  const attempts = stats.fieldGoalsAttemptedPerGame ?? 0;
-  const volumeTrust = Math.min(1, Math.max(0.35, attempts / 16));
-  return Math.max(-0.04, Math.min(0.04, (fgPct - NBA_AVG_FG_PCT) * 0.002 * volumeTrust));
-};
 
 const getStaminaCostScale = (player: Player | undefined): number => {
   const maxStamina = getPlayerMaxStamina(player);
@@ -1965,7 +1932,7 @@ export function simulateTick(
           const decisionWeightMod = 1.0 + ((goodSubRatio - 0.5) * 0.05);
           // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
           const shotValueDifficulty = is3PT ? -0.095 : 0;
-          const realEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
+          const realEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
           
           const additiveBonusSum = userHomeAdj + matchupAdj + skillShotBonus + realEfficiencyAdj;
           const cappedAdditiveBonus = (is3PT && additiveBonusSum > 0) 
@@ -2395,7 +2362,7 @@ export function simulateTick(
               ? -getAwayPenalty(scorer)   // AI is away
               : getHomeCourtBoost(scorer); // AI is home
             const aiBlitzShotValueDifficulty = is3PT ? -0.095 : 0;
-            const aiRealEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
+            const aiRealEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
             
             const aiBlitzAdditiveBonusSum = aiBlitzHomeAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
             const aiBlitzCappedAdditiveBonus = (is3PT && aiBlitzAdditiveBonusSum > 0)
@@ -2654,7 +2621,7 @@ export function simulateTick(
             : getHomeCourtBoost(scorer); // AI is home
           // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
           const aiShotValueDifficulty = is3PT ? -0.095 : 0;
-          const aiRealEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
+          const aiRealEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
           
           const aiAdditiveBonusSum = aiHomeAdj + matchupAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
           const aiCappedAdditiveBonus = (is3PT && aiAdditiveBonusSum > 0)

@@ -86,3 +86,20 @@ export const getFoulDrawTendency = (player: Player): number => {
   const finishing = player.finishing ?? ((player.offense + player.strength + player.speed) / 3);
   return clamp01(Math.min(0.5, (player.offense + finishing) / 280));
 };
+
+export const getShotIdentityEfficiencyAdjustment = (player: Player, is3PT: boolean, shotType?: string): number => {
+  if (is3PT) {
+    const rating = getThreePtRating(player);
+    // Baseline mapped to ~75 average to yield a bounded -0.045 to +0.045 adjustment
+    return Math.max(-0.045, Math.min(0.045, (rating - 75) * 0.003));
+  }
+  
+  const rimShots = ['drivingLayup', 'dunk', 'euroStep', 'fingerRoll', 'powerLayup', 'putBack', 'bankShot'];
+  if (shotType && rimShots.includes(shotType)) {
+    const rating = getFinishingRating(player);
+    return Math.max(-0.055, Math.min(0.055, (rating - 75) * 0.0035));
+  }
+  
+  const rating = getTwoPtRating(player);
+  return Math.max(-0.055, Math.min(0.055, (rating - 75) * 0.0035));
+};
