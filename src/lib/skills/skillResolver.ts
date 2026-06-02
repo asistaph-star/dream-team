@@ -9,6 +9,7 @@ import {
   SkillQuality,
   SPECIAL_SKILL_RATES,
 } from "./skillCatalog";
+import { getOffenseRating, getOnBallDefenseRating, getAssistRating } from "../utils/playerIdentity";
 
 export type SkillMarks = MatchState["skillMarks"];
 export type SkillMarkImmunity = MatchState["markImmunity"];
@@ -131,7 +132,10 @@ export const getTriggerBoost = (lineup: Player[], stamina: Record<string, number
     const staminaPct = ((stamina[p.id] ?? maxStamina) / maxStamina) * 100;
     return hasBaseSkill(p, "Complete Engine") && staminaPct >= 40;
   });
-  return holder ? 1.04 : 1.0;
+  if (!holder) return 1.0;
+  const completeEngineIdentity = (getOffenseRating(holder) + getOnBallDefenseRating(holder) + getAssistRating(holder)) / 3;
+  const completeEngineScale = 0.90 + (completeEngineIdentity / 100) * 0.20;
+  return 1.04 * completeEngineScale;
 };
 
 export const rollBaseSkill = (
