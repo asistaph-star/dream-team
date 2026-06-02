@@ -62,7 +62,7 @@ export const LEGACY_TO_FAMILY_MAP: Record<string, SpecialSkillFamilyId> = {
   "Chain Pass X": "COURT_VISION_ENGINE",
   "Lung Burner X": "POSTER_SPARK",
   "Contact Tax X": "POSTER_SPARK",
-  "Flop X": "HANGTIME_FINISH",
+  "Flop X": "FLOP",
   "Clean Contest X": "CLEAN_CHALLENGE",
   "Composure X": "COMPOSURE_SHIELD",
   "Cold Timeout X": "TIMEOUT_RESET",

@@ -6,7 +6,7 @@ export type SpecialSkillMechanicId =
   | "POSTER_SPARK_LUNG_BURNER"
   | "POSTER_SPARK_CONTACT_TAX"
   | "COURT_VISION_CHAIN_PASS"
-  | "HANGTIME_FLOP"
+  | "FLOP_SELL_CONTACT"
   | "GAMEPLAN_DEAD_AIR"
   | "GAMEPLAN_DEBT_COLLECTOR"
   | "GAMEPLAN_PRESSURE_COACH"
@@ -23,7 +23,7 @@ export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = 
   "Lung Burner X": ["POSTER_SPARK_LUNG_BURNER"],
   "Contact Tax X": ["POSTER_SPARK_CONTACT_TAX"],
   "Chain Pass X": ["COURT_VISION_CHAIN_PASS"],
-  "Flop X": ["HANGTIME_FLOP"],
+  "Flop X": ["FLOP_SELL_CONTACT"],
   "Dead Air X": ["GAMEPLAN_DEAD_AIR"],
   "Debt Collector X": ["GAMEPLAN_DEBT_COLLECTOR"],
   "Pressure Coach X": ["GAMEPLAN_PRESSURE_COACH"],

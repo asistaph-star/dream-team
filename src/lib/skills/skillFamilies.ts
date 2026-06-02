@@ -7,7 +7,7 @@ export type SpecialSkillFamilyId =
   | "DEEP_STRIKE"
   | "COURT_VISION_ENGINE"
   | "POSTER_SPARK"
-  | "HANGTIME_FINISH"
+  | "FLOP"
   | "BROKEN_PLAY_RESCUE"
   // DEFENSE
   | "SKY_WALL"
@@ -69,15 +69,15 @@ export const SPECIAL_SKILL_FAMILIES: Record<SpecialSkillFamilyId, SpecialSkillFa
     replacesLegacySkills: ["Lung Burner X", "Contact Tax X"],
     allowedTiers: ["STANDARD", "PRIME", "LEGACY", "SIGNATURE"]
   },
-  HANGTIME_FINISH: {
-    id: "HANGTIME_FINISH",
-    baseName: "Hangtime Finish",
+  FLOP: {
+    id: "FLOP",
+    baseName: "Flop",
     category: "OFFENSE",
-    role: "2+1 / tough contact finish",
-    shortDescription: "High chance to convert contact into a 2+1.",
-    identityHelpers: ["getFinishingRating", "getFoulDrawTendency", "getCalmRating"],
+    role: "Foul-draw / sell-contact skill",
+    shortDescription: "Signature foul-drawing mechanic to sell contact into foul pressure.",
+    identityHelpers: ["getFoulDrawTendency", "getCalmRating"],
     riskLevel: "SAFE",
-    replacesLegacySkills: [],
+    replacesLegacySkills: ["Flop X"],
     allowedTiers: ["STANDARD", "PRIME", "LEGACY", "SIGNATURE"]
   },
   BROKEN_PLAY_RESCUE: {
