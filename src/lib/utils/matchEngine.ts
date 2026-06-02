@@ -12,6 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
+import { getFreeThrowRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1516,7 +1517,7 @@ export function simulateTick(
 
   const getFTChance = (shooterId: string): number => {
     const shooter = userLineup.find(p => p.id === shooterId) || aiLineup.find(p => p.id === shooterId);
-    const ftRating = shooter ? (shooter.freeThrow ?? shooter.offense ?? 75) : 75;
+    const ftRating = shooter ? getFreeThrowRating(shooter) : 75;
     const normalizedFt = ftRating > 100 ? 60 + ((ftRating - 100) * 0.45) : ftRating;
     const baseChance = Math.min(0.90, Math.max(0.62, 0.74 + (normalizedFt - 75) * 0.0025));
     
