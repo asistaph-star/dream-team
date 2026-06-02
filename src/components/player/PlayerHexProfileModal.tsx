@@ -174,6 +174,21 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
                 <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Player Skills</h3>
+                {player.starLevel && player.starLevel >= 1 ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const result = trainSpecialSkill(player.id);
+                      if (!result.success && result.error && typeof window !== 'undefined') {
+                        window.alert(result.error);
+                      }
+                    }}
+                    className="ml-4 px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 rounded flex items-center gap-2 transition-colors cursor-pointer group"
+                  >
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest group-hover:text-emerald-300">Train Signature Skill</span>
+                    <div className="text-[10px] font-mono font-bold text-emerald-200 bg-emerald-950/50 px-1.5 rounded">Cost: 1 Tape</div>
+                  </button>
+                ) : null}
               </div>
               
               <div className="flex gap-6 pl-2 pt-2">
@@ -213,7 +228,16 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         unlockText={`Star ${unlockStar}`}
                         quality={quality}
                         maxRate={maxRate}
-                        onClick={!locked ? () => trainSpecialSkill(player.id) : undefined}
+                        onClick={!locked ? () => {
+                          if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary") && typeof window !== "undefined") {
+                            const confirmed = window.confirm(`Are you sure you want to spend 1 Tape to roll a new skill? You currently have a ${quality} special skill, but you can choose to keep it after rolling.`);
+                            if (!confirmed) return;
+                          }
+                          const result = trainSpecialSkill(player.id);
+                          if (!result.success && result.error && typeof window !== 'undefined') {
+                            window.alert(result.error);
+                          }
+                        } : undefined}
                         actionLabel={hasLearnedSkill ? "Click to Train" : "Click to Learn"}
                       />
                     </div>
