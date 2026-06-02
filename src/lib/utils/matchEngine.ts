@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1791,7 +1791,8 @@ export function simulateTick(
           const jammed = tryDeadAir(aiLineup, scorer, false, "Arc Pressure");
           const shadowed = !jammed && tryShadowGuard(aiLineup, false);
           const focused = !jammed && !shadowed && rollBaseSkill(aiLineup, "Focus Lock", newStamina);
-          skillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035;
+          const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
+          skillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035 * arcScale;
           skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, true);
           if (focused) skillLog(`Focus Lock contains the shooting rhythm`, false);
           if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(userLineup, "Red Dot X", newStamina)) {
@@ -1801,7 +1802,8 @@ export function simulateTick(
         }
         if (!is3PT && rollBaseSkill(userLineup, "Paint Magnet", newStamina)) {
           const jammed = tryDeadAir(aiLineup, scorer, false, "Paint Magnet");
-          skillShotBonus += jammed ? 0.005 : 0.03;
+          const paintScale = 0.85 + (getFinishingRating(scorer) / 100) * 0.30;
+          skillShotBonus += jammed ? 0.005 : 0.03 * paintScale;
           skillLog(`${scorer.name}'s Paint Magnet bends the defense`, true);
           if (!jammed && primaryDefender && staminaPct(primaryDefender) < 45) {
             newSkillMarks = addMark(newSkillMarks, primaryDefender.id, "Tilted", "Paint Magnet", 3);
@@ -2225,7 +2227,8 @@ export function simulateTick(
       const jammed = tryDeadAir(userLineup, scorer, true, "Arc Pressure");
       const shadowed = !jammed && tryShadowGuard(userLineup, true);
       const focused = !jammed && !shadowed && rollBaseSkill(userLineup, "Focus Lock", newStamina);
-      aiSkillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035;
+      const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
+      aiSkillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035 * arcScale;
       skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, false);
       if (focused) skillLog(`Focus Lock contains the shooting rhythm`, true);
       if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(aiLineup, "Red Dot X", newStamina)) {
@@ -2235,7 +2238,8 @@ export function simulateTick(
     }
     if (!is3PT && rollBaseSkill(aiLineup, "Paint Magnet", newStamina)) {
       const jammed = tryDeadAir(userLineup, scorer, true, "Paint Magnet");
-      aiSkillShotBonus += jammed ? 0.005 : 0.03;
+      const paintScale = 0.85 + (getFinishingRating(scorer) / 100) * 0.30;
+      aiSkillShotBonus += jammed ? 0.005 : 0.03 * paintScale;
       skillLog(`${scorer.name}'s Paint Magnet bends the defense`, false);
       if (!jammed && primaryDefender && staminaPct(primaryDefender) < 45) {
         newSkillMarks = addMark(newSkillMarks, primaryDefender.id, "Tilted", "Paint Magnet", 3);
