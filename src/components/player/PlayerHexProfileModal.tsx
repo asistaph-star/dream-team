@@ -213,6 +213,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         unlockText={`Star ${unlockStar}`}
                         quality={quality}
                         maxRate={maxRate}
+                        onClick={!locked ? () => trainSpecialSkill(player.id) : undefined}
+                        actionLabel={hasLearnedSkill ? "Click to Train" : "Click to Learn"}
                       />
                     </div>
                   );
