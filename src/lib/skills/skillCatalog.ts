@@ -11,11 +11,11 @@ export const SKILL_QUALITY_CONFIG: Record<SkillQuality, {
   color: string;
   order: number;
 }> = {
-  Common: { chance: 45, multiplier: 0.40, color: "green", order: 1 },
-  Rare: { chance: 30, multiplier: 0.60, color: "blue", order: 2 },
-  Elite: { chance: 17, multiplier: 0.80, color: "violet", order: 3 },
-  Epic: { chance: 6, multiplier: 1.00, color: "orange", order: 4 },
-  Legendary: { chance: 2, multiplier: 1.20, color: "red", order: 5 },
+  Common: { chance: 62, multiplier: 0.40, color: "green", order: 1 },
+  Rare: { chance: 25, multiplier: 0.60, color: "blue", order: 2 },
+  Elite: { chance: 10, multiplier: 0.80, color: "violet", order: 3 },
+  Epic: { chance: 2.5, multiplier: 1.00, color: "orange", order: 4 },
+  Legendary: { chance: 0.5, multiplier: 1.20, color: "red", order: 5 },
 };
 
 export const isSkillQuality = (value: unknown): value is SkillQuality => {
