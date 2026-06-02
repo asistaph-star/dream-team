@@ -1870,7 +1870,7 @@ export function simulateTick(
           skillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
           skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, true);
           if (focused) skillLog(`Focus Lock contains the shooting rhythm`, false);
-          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(userLineup, "Red Dot X", newStamina, (h) => {
+          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(userLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
             const redDotIdentity = getThreePtRating(h);
             return 0.90 + (redDotIdentity / 100) * 0.20;
           })) {
@@ -1896,7 +1896,7 @@ export function simulateTick(
           const drain = drainStamina(newStamina, primaryDefender, aiLineup, Math.min(36, 32 * powerDriverDrainScale));
           skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, true);
         }
-        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(userLineup, "Contact Tax X", newStamina, (h) => {
+        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(userLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
           const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
           return 0.90 + (contactTaxIdentity / 100) * 0.20;
         })) {
@@ -1904,7 +1904,7 @@ export function simulateTick(
           drainStamina(newStamina, primaryDefender, aiLineup, 45);
           skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, true);
         }
-        if (is3PT && primaryDefender && rollSpecial(aiLineup, "Corner Trap X", newStamina, (h) => {
+        if (is3PT && primaryDefender && rollSpecialMechanic(aiLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
           const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
           return 0.90 + (cornerTrapIdentity / 100) * 0.20;
         })) {
@@ -2376,7 +2376,7 @@ export function simulateTick(
       aiSkillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
       skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, false);
       if (focused) skillLog(`Focus Lock contains the shooting rhythm`, true);
-      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(aiLineup, "Red Dot X", newStamina, (h) => {
+      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
         const redDotIdentity = getThreePtRating(h);
         return 0.90 + (redDotIdentity / 100) * 0.20;
       })) {
@@ -2402,7 +2402,7 @@ export function simulateTick(
       const drain = drainStamina(newStamina, primaryDefender, userLineup, Math.min(36, 32 * powerDriverDrainScale));
       skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, false);
     }
-    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(aiLineup, "Contact Tax X", newStamina, (h) => {
+    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(aiLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
       const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (contactTaxIdentity / 100) * 0.20;
     })) {
@@ -2410,7 +2410,7 @@ export function simulateTick(
       drainStamina(newStamina, primaryDefender, userLineup, 45);
       skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, false);
     }
-    if (is3PT && primaryDefender && rollSpecial(userLineup, "Corner Trap X", newStamina, (h) => {
+    if (is3PT && primaryDefender && rollSpecialMechanic(userLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
       const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
       return 0.90 + (cornerTrapIdentity / 100) * 0.20;
     })) {
