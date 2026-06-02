@@ -746,7 +746,10 @@ export function simulateTick(
     isDisruptingUser: boolean,
     sourceText: string
   ): boolean => {
-    if (!target || !rollSpecial(disruptingTeam, "Dead Air X", newStamina)) return false;
+    if (!target || !rollSpecial(disruptingTeam, "Dead Air X", newStamina, (h) => {
+      const deadAirIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
+      return 0.90 + (deadAirIdentity / 100) * 0.20;
+    })) return false;
     newSkillMarks = addMark(newSkillMarks, newMarkImmunity, target.id, "Static", "Dead Air X", 2);
     skillLog(`Dead Air X blocks ${target.name}'s ${sourceText} in mid-air and applies Static`, isDisruptingUser);
     return true;
@@ -1680,7 +1683,10 @@ export function simulateTick(
       const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
       screenBreakerPressure = 1.12 * screenBreakerScale;
     }
-    const cageStepPressure = rollSpecial(aiLineup, "Cage Step X", newStamina) ? 1.12 : 1.0;
+    const cageStepPressure = rollSpecial(aiLineup, "Cage Step X", newStamina, (h) => {
+      const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
+      return 0.90 + (cageStepIdentity / 100) * 0.20;
+    }) ? 1.12 : 1.0;
     const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure);
     if (Math.random() < finalTOVChance) {
       turnoverOccurred = true;
@@ -1854,7 +1860,10 @@ export function simulateTick(
           skillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
           skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, true);
           if (focused) skillLog(`Focus Lock contains the shooting rhythm`, false);
-          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(userLineup, "Red Dot X", newStamina)) {
+          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(userLineup, "Red Dot X", newStamina, (h) => {
+            const redDotIdentity = getThreePtRating(h);
+            return 0.90 + (redDotIdentity / 100) * 0.20;
+          })) {
             newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
             skillLog(`Red Dot X marks ${primaryDefender.name} as Exposed`, true);
           }
@@ -1877,12 +1886,18 @@ export function simulateTick(
           const drain = drainStamina(newStamina, primaryDefender, aiLineup, Math.min(36, 32 * powerDriverDrainScale));
           skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, true);
         }
-        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(userLineup, "Contact Tax X", newStamina)) {
+        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(userLineup, "Contact Tax X", newStamina, (h) => {
+          const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
+          return 0.90 + (contactTaxIdentity / 100) * 0.20;
+        })) {
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
           drainStamina(newStamina, primaryDefender, aiLineup, 45);
           skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, true);
         }
-        if (is3PT && primaryDefender && rollSpecial(aiLineup, "Corner Trap X", newStamina)) {
+        if (is3PT && primaryDefender && rollSpecial(aiLineup, "Corner Trap X", newStamina, (h) => {
+          const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
+          return 0.90 + (cornerTrapIdentity / 100) * 0.20;
+        })) {
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, scorer.id, "Pinned", "Corner Trap X", 2);
           skillShotBonus -= 0.025;
           skillLog(`Corner Trap X pins ${scorer.name} on the perimeter`, false);
@@ -2107,7 +2122,10 @@ export function simulateTick(
                 userLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                 skillLog(`${a.name}'s Share Rhythm steadies the lineup`, true);
               }
-              if (rollSpecial(userLineup, "Chain Pass X", newStamina)) {
+              if (rollSpecial(userLineup, "Chain Pass X", newStamina, (h) => {
+                const chainPassIdentity = getAssistRating(h);
+                return 0.90 + (chainPassIdentity / 100) * 0.20;
+              })) {
                 const debtTarget = getLowestStaminaPlayer(aiLineup);
                 newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Debt", "Chain Pass X", 3);
                 skillLog(`Chain Pass X places Debt on ${debtTarget.name}`, true);
@@ -2339,7 +2357,10 @@ export function simulateTick(
       aiSkillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
       skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, false);
       if (focused) skillLog(`Focus Lock contains the shooting rhythm`, true);
-      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(aiLineup, "Red Dot X", newStamina)) {
+      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(aiLineup, "Red Dot X", newStamina, (h) => {
+        const redDotIdentity = getThreePtRating(h);
+        return 0.90 + (redDotIdentity / 100) * 0.20;
+      })) {
         newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
         skillLog(`Red Dot X marks ${primaryDefender.name} as Exposed`, false);
       }
@@ -2362,12 +2383,18 @@ export function simulateTick(
       const drain = drainStamina(newStamina, primaryDefender, userLineup, Math.min(36, 32 * powerDriverDrainScale));
       skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, false);
     }
-    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(aiLineup, "Contact Tax X", newStamina)) {
+    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(aiLineup, "Contact Tax X", newStamina, (h) => {
+      const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
+      return 0.90 + (contactTaxIdentity / 100) * 0.20;
+    })) {
       newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
       drainStamina(newStamina, primaryDefender, userLineup, 45);
       skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, false);
     }
-    if (is3PT && primaryDefender && rollSpecial(userLineup, "Corner Trap X", newStamina)) {
+    if (is3PT && primaryDefender && rollSpecial(userLineup, "Corner Trap X", newStamina, (h) => {
+      const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
+      return 0.90 + (cornerTrapIdentity / 100) * 0.20;
+    })) {
       newSkillMarks = addMark(newSkillMarks, newMarkImmunity, scorer.id, "Pinned", "Corner Trap X", 2);
       aiSkillShotBonus -= 0.025;
       skillLog(`Corner Trap X pins ${scorer.name} on the perimeter`, true);
@@ -2592,7 +2619,10 @@ export function simulateTick(
         const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
         userScreenBreakerPressure = 1.12 * screenBreakerScale;
       }
-      const userCageStepPressure = rollSpecial(userLineup, "Cage Step X", newStamina) ? 1.12 : 1.0;
+      const userCageStepPressure = rollSpecial(userLineup, "Cage Step X", newStamina, (h) => {
+        const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
+        return 0.90 + (cageStepIdentity / 100) * 0.20;
+      }) ? 1.12 : 1.0;
       const aiFinalTOVChance = Math.min(0.25, aiBaseTOVRate * userDefPressureMod * aiTovMod * aiLateClockMod * userHandsActivePressure * userScreenBreakerPressure * userCageStepPressure);
       if (Math.random() < aiFinalTOVChance) {
         turnoverOccurred = true;
@@ -2847,7 +2877,10 @@ export function simulateTick(
                    aiLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                    skillLog(`${a.name}'s Share Rhythm steadies the lineup`, false);
                  }
-                 if (rollSpecial(aiLineup, "Chain Pass X", newStamina)) {
+                 if (rollSpecial(aiLineup, "Chain Pass X", newStamina, (h) => {
+                   const chainPassIdentity = getAssistRating(h);
+                   return 0.90 + (chainPassIdentity / 100) * 0.20;
+                 })) {
                    const debtTarget = getLowestStaminaPlayer(userLineup);
                    newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Debt", "Chain Pass X", 3);
                    skillLog(`Chain Pass X places Debt on ${debtTarget.name}`, false);
