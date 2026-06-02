@@ -1,4 +1,5 @@
 import { Player } from "../types/player";
+import { getThreePtTendency } from "./playerIdentity";
 
 export type ShotType = 
   | 'euroStep' | 'floater' | 'pullUpMid' | 'stepBackMid' | 'fingerRoll' | 'drivingLayup' | 'dunk' | 'fadeaway' | 'hookShot' | 'powerLayup' | 'bankShot' | 'putBack'
@@ -47,7 +48,7 @@ export function generateShot(player: Player, formRating: number, staminaPct: num
     C:  { catchAndShoot: 60, cornerThree: 40, pullUpThree: 5, stepBackThree: 2 }
   };
 
-  const threePointTendency = Math.max(0.12, Math.min(0.42, player.shooting / 260));
+  const threePointTendency = getThreePtTendency(player);
   const is3PT = is3PTBaseCheck ?? (Math.random() < threePointTendency);
   const pool = is3PT ? { ...base3PT[player.position] } : { ...base2PT[player.position] };
 
