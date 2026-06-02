@@ -36,6 +36,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
     unlockStar: number;
     hasLearnedSkill?: boolean;
   } | null>(null);
+  const [isPendingOverlayHidden, setIsPendingOverlayHidden] = useState(false);
   const [isProcessingStarUp, setIsProcessingStarUp] = useState(false);
   const [ascendOutcome, setAscendOutcome] = useState<{ 
     status: 'success' | 'failed', 
@@ -185,16 +186,29 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 <div className="w-1 h-3 bg-[#d61e38] shadow-[0_0_8px_rgba(214,30,56,0.8)] skew-x-[-15deg]" />
                 <h3 className="text-[12px] font-black text-white/80 uppercase tracking-[0.25em] italic">Player Skills</h3>
                 {player.starLevel && player.starLevel >= 1 ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowTrainConfirm({ show: true });
-                    }}
-                    className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
-                  >
-                    <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
-                    <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
-                  </button>
+                  pendingSkillTraining && pendingSkillTraining.playerId === player.id ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsPendingOverlayHidden(false);
+                      }}
+                      className="ml-auto px-4 py-1.5 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
+                    >
+                      <span className="text-[11px] font-black text-white uppercase tracking-widest italic">View Pending Skill</span>
+                      <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Resume</div>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowTrainConfirm({ show: true });
+                      }}
+                      className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
+                    >
+                      <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
+                      <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                    </button>
+                  )
                 ) : null}
               </div>
               
@@ -817,7 +831,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
     </div>
 
     {/* Pending Training Modal Overlay */}
-    {pendingSkillTraining && pendingSkillTraining.playerId === player.id && (
+    {pendingSkillTraining && pendingSkillTraining.playerId === player.id && !isPendingOverlayHidden && (
       <div 
         className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center pointer-events-auto backdrop-blur-sm"
         onClick={(e) => e.stopPropagation()}
@@ -843,9 +857,11 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#d61e38] shadow-[0_0_15px_rgba(214,30,56,0.8)]" />
             <span className="text-white font-black text-[15px] tracking-[0.15em] uppercase italic font-oswald drop-shadow-md ml-2">Signature Skill Training</span>
             <button 
-              onClick={() => rejectSkillTraining()} 
-              className="text-gray-400 hover:text-white transition-colors mr-1"
+              onClick={() => setIsPendingOverlayHidden(true)} 
+              className="text-gray-400 hover:text-white transition-colors mr-1 flex items-center gap-2"
+              title="Minimize (Save for later)"
             >
+              <span className="text-[10px] font-bold uppercase tracking-widest">Minimize</span>
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -1099,20 +1115,33 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             
             {showSkillInfo.isSpecial && !showSkillInfo.locked && (
               <div className="mt-5">
-                <button
-                  onClick={() => {
-                    let confirmMsg = undefined;
-                    if (showSkillInfo.hasLearnedSkill && (showSkillInfo.quality === "Epic" || showSkillInfo.quality === "Legendary")) {
-                      confirmMsg = `You currently have a ${showSkillInfo.quality} special skill, but you can choose to keep it after rolling.`;
-                    }
-                    setShowSkillInfo(null);
-                    setShowTrainConfirm({ show: true, warning: confirmMsg });
-                  }}
-                  className="w-full py-3 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
-                >
-                  <span className="text-[12px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Reroll This Slot</span>
-                  <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
-                </button>
+                {pendingSkillTraining && pendingSkillTraining.playerId === player.id ? (
+                  <button
+                    onClick={() => {
+                      setShowSkillInfo(null);
+                      setIsPendingOverlayHidden(false);
+                    }}
+                    className="w-full py-3 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
+                  >
+                    <span className="text-[12px] font-black text-white uppercase tracking-widest italic">View Pending Skill</span>
+                    <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Resume</div>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      let confirmMsg = undefined;
+                      if (showSkillInfo.hasLearnedSkill && (showSkillInfo.quality === "Epic" || showSkillInfo.quality === "Legendary")) {
+                        confirmMsg = `You currently have a ${showSkillInfo.quality} special skill, but you can choose to keep it after rolling.`;
+                      }
+                      setShowSkillInfo(null);
+                      setShowTrainConfirm({ show: true, warning: confirmMsg });
+                    }}
+                    className="w-full py-3 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
+                  >
+                    <span className="text-[12px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Reroll This Slot</span>
+                    <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                  </button>
+                )}
               </div>
             )}
           </div>
