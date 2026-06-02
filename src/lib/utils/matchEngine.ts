@@ -1867,8 +1867,11 @@ export function simulateTick(
           }
         }
         if (!is3PT && primaryDefender && rollBaseSkill(userLineup, "Power Driver", newStamina)) {
-          skillShotBonus += 0.02;
-          const drain = drainStamina(newStamina, primaryDefender, aiLineup, 32);
+          const powerDriverIdentity = (getFinishingRating(scorer) + getStrengthRating(scorer)) / 2;
+          const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
+          skillShotBonus += 0.02 * powerDriverShotScale;
+          const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
+          const drain = drainStamina(newStamina, primaryDefender, aiLineup, Math.min(36, 32 * powerDriverDrainScale));
           skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, true);
         }
         if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(userLineup, "Contact Tax X", newStamina)) {
@@ -2343,8 +2346,11 @@ export function simulateTick(
       }
     }
     if (!is3PT && primaryDefender && rollBaseSkill(aiLineup, "Power Driver", newStamina)) {
-      aiSkillShotBonus += 0.02;
-      const drain = drainStamina(newStamina, primaryDefender, userLineup, 32);
+      const powerDriverIdentity = (getFinishingRating(scorer) + getStrengthRating(scorer)) / 2;
+      const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
+      aiSkillShotBonus += 0.02 * powerDriverShotScale;
+      const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
+      const drain = drainStamina(newStamina, primaryDefender, userLineup, Math.min(36, 32 * powerDriverDrainScale));
       skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, false);
     }
     if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecial(aiLineup, "Contact Tax X", newStamina)) {
