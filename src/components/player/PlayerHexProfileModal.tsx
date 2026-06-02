@@ -12,12 +12,12 @@ import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
 interface PlayerHexProfileModalProps {
   player: Player;
   onClose: () => void;
-  onStarUp: () => Promise<any> | void;
+  onStarUp: (confirmSacrifice?: boolean) => Promise<any> | void;
   isAscending: boolean;
 }
 
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
-  const { inventory, roster, activeLineup } = useGameState();
+  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice } = useGameState();
   
   // Ensure the modal always reads the absolute latest player state from the roster,
   // fixing the issue where the modal wouldn't update after a successful Star Up.
@@ -186,8 +186,9 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     />
                   </div>
                 ))}
-                
-                {/* Divider */}
+
+
+                {/* Result Modal */}
                 <div className="w-[1px] h-[50px] bg-white/10 mx-3" />
 
                 {/* 2 Special/Learnable Skills */}
@@ -295,7 +296,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               const starFactor = 1.0 - (targetInfo.level - 1) * decayRate;
               const ratePercent = Math.max(1, Math.floor((baseChance * starFactor) * 100));
 
-              const executeStarUp = async () => {
+              const executeStarUp = async (confirmSacrifice?: boolean) => {
                 if (isProcessingStarUp) return;
                 setIsProcessingStarUp(true);
                 
@@ -306,8 +307,12 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 const oldPower = Math.floor(Object.values(oldDetails).reduce((a:any,b:any)=>a+b,0)*1.5 + (player.stamina??100)*2);
                 const newPower = Math.floor(Object.values(newDetails).reduce((a:any,b:any)=>a+b,0)*1.5 + (projectedPlayer.stamina??100)*2);
                 
-                const res = await onStarUp();
+                const res = await onStarUp(confirmSacrifice);
                 setIsProcessingStarUp(false);
+                
+                if (res && res.pendingWarning) {
+                  return;
+                }
                 
                 if (res && typeof res.success !== 'undefined') {
                   setAscendOutcome({
@@ -484,6 +489,59 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     </div>
                   </div>
                 </div>
+
+                {/* Learned Skill Sacrifice Warning Modal */}
+                {pendingAscendSacrificeWarning && pendingAscendSacrificeWarning.baseCardId === player.id && (
+                  <div className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center animate-[fadeIn_0.15s_ease-out]">
+                    <div className="w-[450px] bg-zinc-950 border border-red-500/50 rounded-xl flex flex-col overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.3)]">
+                      <div className="h-12 bg-red-600 flex items-center px-4 gap-2">
+                        <AlertTriangle className="text-white w-5 h-5" />
+                        <span className="text-white font-black uppercase tracking-widest text-sm">Critical Warning</span>
+                      </div>
+                      <div className="p-6 flex flex-col gap-4">
+                        <p className="text-zinc-300 text-sm leading-relaxed">
+                          This upgrade will sacrifice duplicate card(s) that have <span className="text-emerald-400 font-bold">Learned X Skills</span>. If the upgrade succeeds, those skills will be lost forever.
+                        </p>
+                        
+                        <div className="bg-black/50 border border-white/5 rounded-lg p-3 max-h-[150px] overflow-y-auto">
+                          {pendingAscendSacrificeWarning.learnedSkills.map((s, idx) => (
+                            <div key={idx} className="flex items-center gap-3 mb-2 last:mb-0 border-b border-white/5 pb-2 last:border-0 last:pb-0">
+                              <div className="flex-1">
+                                <div className="text-white text-xs font-bold">{s.playerName} <span className="text-zinc-500 font-mono text-[9px] font-normal">(Slot {s.slotNumber})</span></div>
+                                <div className="text-emerald-400 text-sm font-black italic tracking-wide">{s.skillName}</div>
+                              </div>
+                              <div className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
+                                {s.rarity}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <p className="text-zinc-500 text-xs mt-2">
+                          Note: If the upgrade fails, your duplicate(s) are not consumed. Materials will still be consumed upon confirmation.
+                        </p>
+                      </div>
+                      
+                      <div className="flex border-t border-white/10">
+                        <button 
+                          onClick={() => cancelAscendSacrifice()}
+                          className="flex-1 py-4 text-zinc-400 font-bold uppercase tracking-widest text-sm hover:bg-white/5 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={() => {
+                            cancelAscendSacrifice();
+                            executeStarUp(true);
+                          }}
+                          className="flex-1 py-4 bg-red-600/10 text-red-500 font-black uppercase tracking-widest text-sm hover:bg-red-600 hover:text-white transition-colors"
+                        >
+                          Confirm Sacrifice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* System Notification Confirm Modal */}
                 {showSystemNotification && (

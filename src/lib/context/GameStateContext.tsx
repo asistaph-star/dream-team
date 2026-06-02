@@ -8,7 +8,15 @@ import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
-import { getRequiredDuplicateCount, hasLearnedSkills } from "@/lib/utils/starRequirements";
+import { getRequiredDuplicateCount, hasLearnedSkills, getLearnedSkillSummary } from "@/lib/utils/starRequirements";
+
+export interface PendingAscendWarning {
+  baseCardId: string;
+  targetStarLevel: number;
+  requiredDuplicates: number;
+  duplicateIds: string[];
+  learnedSkills: { playerName: string; skillName: string; slotNumber: number; rarity: string; tier?: string | number }[];
+}
 
 const getStarTierAndLevel = (starLevel: number) => {
   if (!starLevel || starLevel === 0) return { tier: "None", level: 0 };
@@ -85,7 +93,9 @@ interface GameState {
   gainStrategyExp: (strategyName: string, expAmount: number) => void;
   upgradeStrategy: (strategyName: string) => { success: boolean; newLevel?: number; error?: string };
   signPlayerToRoster: (player: Player) => { success: boolean; error?: string };
-  ascendPlayer: (playerId: string) => { success: boolean; rolled?: number; chanceNeeded?: number; error?: string };
+  ascendPlayer: (playerId: string, confirmSacrifice?: boolean) => { success: boolean; rolled?: number; chanceNeeded?: number; error?: string; pendingWarning?: boolean };
+  pendingAscendSacrificeWarning: PendingAscendWarning | null;
+  cancelAscendSacrifice: () => void;
   pendingSkillReroll: PendingSkillReroll | null;
   acceptSkillReroll: () => { success: boolean; error?: string };
   rejectSkillReroll: () => { success: boolean; error?: string };
@@ -174,6 +184,9 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   const [lineupOverride, setLineupOverride] = useState<Record<string, string>>({});
   const [playerStorageLimit, setPlayerStorageLimit] = useState(100);
   const [pendingSkillReroll, setPendingSkillReroll] = useState<PendingSkillReroll | null>(null);
+  const [pendingAscendSacrificeWarning, setPendingAscendSacrificeWarning] = useState<PendingAscendWarning | null>(null);
+
+  const cancelAscendSacrifice = () => setPendingAscendSacrificeWarning(null);
 
   const [strategyLevels, setStrategyLevels] = useState<Record<string, { level: number; exp: number }>>({
     "Motion Offense": { level: 1, exp: 0 },
@@ -964,7 +977,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     return { success: true, skill, quality };
   };
 
-  const ascendPlayer = (playerId: string): { success: boolean; rolled?: number; chanceNeeded?: number; error?: string } => {
+  const ascendPlayer = (playerId: string, confirmSacrifice?: boolean): { success: boolean; rolled?: number; chanceNeeded?: number; error?: string; pendingWarning?: boolean } => {
     const playerIndex = roster.findIndex(p => p.id === playerId);
     if (playerIndex === -1) {
       return { success: false, error: "Player not found on your roster!" };
@@ -1018,6 +1031,26 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       });
       
       duplicatesToSacrifice = sortedDupCandidates.slice(0, requiredDuplicates);
+      
+      if (!confirmSacrifice) {
+        const skillsToWarn: PendingAscendWarning["learnedSkills"] = [];
+        for (const dup of duplicatesToSacrifice) {
+          const summaries = getLearnedSkillSummary(dup);
+          if (summaries.length > 0) {
+            summaries.forEach(s => skillsToWarn.push({ ...s, playerName: dup.name }));
+          }
+        }
+        if (skillsToWarn.length > 0) {
+          setPendingAscendSacrificeWarning({
+            baseCardId: playerId,
+            targetStarLevel: targetStars,
+            requiredDuplicates,
+            duplicateIds: duplicatesToSacrifice.map(d => d.id),
+            learnedSkills: skillsToWarn
+          });
+          return { success: false, pendingWarning: true };
+        }
+      }
     }
 
     // Success rate calculation based on Star Color Tier
@@ -1126,7 +1159,9 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       rollSpecialLearnSkill,
       rerollSpecialLearnSkill,
       resetRosterProgress,
-      setCampaignStage
+      setCampaignStage,
+      pendingAscendSacrificeWarning,
+      cancelAscendSacrifice,
     }}>
       {children}
     </GameStateContext.Provider>

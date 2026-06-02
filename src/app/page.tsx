@@ -401,11 +401,11 @@ export default function AuthenticLobby() {
         <PlayerHexProfileModal 
           player={selectedGlobalPlayer} 
           onClose={() => setSelectedGlobalPlayer(null)} 
-          onStarUp={() => {
+          onStarUp={(confirmSacrifice?: boolean) => {
             return new Promise((resolve) => {
               setIsAscending(true);
               setTimeout(() => {
-                const res = ascendPlayer(selectedGlobalPlayer.id);
+                const res = ascendPlayer(selectedGlobalPlayer.id, confirmSacrifice);
                 setIsAscending(false);
                 resolve(res);
               }, 1000);

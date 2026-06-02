@@ -12,3 +12,20 @@ export function hasLearnedSkills(player: Player): boolean {
   if (!player.specialSkillSlots) return false;
   return player.specialSkillSlots.some(slot => slot !== null && slot !== undefined);
 }
+
+export function getLearnedSkillSummary(player: Player) {
+  const summaries: { skillName: string; slotNumber: number; rarity: string; tier?: string | number }[] = [];
+  if (player.specialSkillSlots && player.skillRarities) {
+    player.specialSkillSlots.forEach((skillName, index) => {
+      if (skillName) {
+        summaries.push({
+          skillName,
+          slotNumber: index + 1,
+          rarity: player.skillRarities![index] || "Common",
+          tier: player.skillTiers ? player.skillTiers[index] : undefined
+        });
+      }
+    });
+  }
+  return summaries;
+}
