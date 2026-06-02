@@ -27,6 +27,15 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
   const [showStarUpConfirm, setShowStarUpConfirm] = useState(false);
   const [showSystemNotification, setShowSystemNotification] = useState(false);
   const [showTrainConfirm, setShowTrainConfirm] = useState<{show: boolean, warning?: string}>({show: false});
+  const [showSkillInfo, setShowSkillInfo] = useState<{
+    name: string;
+    quality: string;
+    maxRate?: number;
+    isSpecial: boolean;
+    locked: boolean;
+    unlockStar: number;
+    hasLearnedSkill?: boolean;
+  } | null>(null);
   const [isProcessingStarUp, setIsProcessingStarUp] = useState(false);
   const [ascendOutcome, setAscendOutcome] = useState<{ 
     status: 'success' | 'failed', 
@@ -173,18 +182,18 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             {/* 5-Box Skill System */}
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-                <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Player Skills</h3>
+                <div className="w-1 h-3 bg-[#d61e38] shadow-[0_0_8px_rgba(214,30,56,0.8)] skew-x-[-15deg]" />
+                <h3 className="text-[12px] font-black text-white/80 uppercase tracking-[0.25em] italic">Player Skills</h3>
                 {player.starLevel && player.starLevel >= 1 ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowTrainConfirm({ show: true });
                     }}
-                    className="ml-4 px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 rounded flex items-center gap-2 transition-colors cursor-pointer group"
+                    className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
                   >
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest group-hover:text-emerald-300">Train Signature Skill</span>
-                    <div className="text-[10px] font-mono font-bold text-emerald-200 bg-emerald-950/50 px-1.5 rounded">Cost: 1 Tape</div>
+                    <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
+                    <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
                   </button>
                 ) : null}
               </div>
@@ -197,6 +206,14 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       name={skill} 
                       color={idx === 0 ? "red" : idx === 1 ? "blue" : "green"} 
                       locked={idx === 2 && player.ovr < 85} 
+                      onClick={() => setShowSkillInfo({
+                        name: skill,
+                        quality: "Common",
+                        isSpecial: false,
+                        locked: idx === 2 && player.ovr < 85,
+                        unlockStar: 0
+                      })}
+                      actionLabel="View Details"
                     />
                   </div>
                 ))}
@@ -226,8 +243,16 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         unlockText={`Star ${unlockStar}`}
                         quality={quality}
                         maxRate={maxRate}
-                        onClick={undefined}
-                        actionLabel={undefined}
+                        onClick={() => setShowSkillInfo({
+                          name: skillName,
+                          quality: quality,
+                          maxRate: maxRate,
+                          isSpecial: true,
+                          locked: locked,
+                          unlockStar: unlockStar,
+                          hasLearnedSkill: hasLearnedSkill
+                        })}
+                        actionLabel="View Details"
                       />
                     </div>
                   );
@@ -967,8 +992,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           
           <div className="p-6 flex flex-col relative z-10">
             <div className="flex gap-4 items-center">
-              <div className="w-12 h-12 rounded bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0">
-                <AlertTriangle className="w-6 h-6 text-amber-500" />
+              <div className="flex items-center justify-center shrink-0 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                <AlertTriangle className="w-9 h-9 text-amber-500" />
               </div>
               <div className="flex flex-col">
                 <p className="text-gray-200 text-[13px] leading-relaxed font-[family-name:var(--font-outfit)]">
@@ -1002,6 +1027,94 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             >
               Confirm Training
             </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Skill Info Modal */}
+    {showSkillInfo && (
+      <div 
+        className="fixed inset-0 z-[35000] bg-black/80 flex items-center justify-center pointer-events-auto backdrop-blur-sm"
+        onClick={() => setShowSkillInfo(null)}
+      >
+        <style>{`
+          @keyframes infoPopIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+        <div 
+          className="w-[400px] bg-[#2a2b2f] rounded-sm flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden"
+          style={{ 
+            backgroundImage: `url('${lowPolyBg}')`, 
+            backgroundSize: '100% 400px',
+            animation: 'infoPopIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards'
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="h-12 bg-gradient-to-r from-blue-500/20 to-transparent border-b border-blue-500/30 flex items-center justify-between px-5 relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+            <span className="text-white font-black text-[14px] tracking-[0.1em] uppercase italic font-oswald drop-shadow-md ml-2">Skill Information</span>
+            <button 
+              onClick={() => setShowSkillInfo(null)} 
+              className="text-gray-400 hover:text-white transition-colors mr-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="p-6 flex flex-col relative z-10">
+            <div className="flex gap-5 items-center bg-black/40 border border-white/5 p-4 rounded-sm">
+              <div className="transform scale-[1.25] origin-center shrink-0 drop-shadow-[0_8px_15px_rgba(0,0,0,0.6)] ml-2 mr-1">
+                <SkillBadge 
+                  name={showSkillInfo.name} 
+                  color={showSkillInfo.isSpecial ? "special" : "blue"} 
+                  quality={showSkillInfo.quality as any}
+                  locked={showSkillInfo.locked}
+                />
+              </div>
+              <div className="flex flex-col">
+                {showSkillInfo.locked ? (
+                  <>
+                    <div className="text-[10px] font-bold text-red-500 uppercase tracking-widest mb-1">Locked Skill Slot</div>
+                    <h2 className="text-gray-500 font-black text-xl italic tracking-tight font-oswald uppercase drop-shadow-md">Not Unlocked</h2>
+                    <p className="text-gray-600 text-[11px] mt-1 font-bold">Unlocks at Star {showSkillInfo.unlockStar}</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`text-[10px] font-bold uppercase tracking-widest ${showSkillInfo.isSpecial ? 'text-emerald-400' : 'text-blue-400'}`}>
+                        {showSkillInfo.quality} {showSkillInfo.isSpecial ? "Signature" : "Base"} Skill
+                      </div>
+                    </div>
+                    <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{showSkillInfo.name}</h2>
+                    <p className="text-gray-400 text-[11px] leading-relaxed mt-2 border-t border-white/10 pt-2">
+                      <span className="text-gray-300 font-bold">Effect:</span> Provides standard boosts depending on position and rarity during matches.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            {showSkillInfo.isSpecial && !showSkillInfo.locked && (
+              <div className="mt-5">
+                <button
+                  onClick={() => {
+                    let confirmMsg = undefined;
+                    if (showSkillInfo.hasLearnedSkill && (showSkillInfo.quality === "Epic" || showSkillInfo.quality === "Legendary")) {
+                      confirmMsg = `You currently have a ${showSkillInfo.quality} special skill, but you can choose to keep it after rolling.`;
+                    }
+                    setShowSkillInfo(null);
+                    setShowTrainConfirm({ show: true, warning: confirmMsg });
+                  }}
+                  className="w-full py-3 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
+                >
+                  <span className="text-[12px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Reroll This Slot</span>
+                  <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
