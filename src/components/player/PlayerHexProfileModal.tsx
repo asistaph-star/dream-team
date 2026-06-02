@@ -26,7 +26,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
   const [showStarUpConfirm, setShowStarUpConfirm] = useState(false);
   const [showSystemNotification, setShowSystemNotification] = useState(false);
-  const [showTrainConfirm, setShowTrainConfirm] = useState<{show: boolean, warning?: string}>({show: false});
+  const [showTrainConfirm, setShowTrainConfirm] = useState<{show: boolean, warning?: string, isRerollAgain?: boolean}>({show: false});
   const [showSkillInfo, setShowSkillInfo] = useState<{
     name: string;
     quality: string;
@@ -889,12 +889,25 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
               {/* Reroll Instantly Button */}
               <button 
-                onClick={() => trainSpecialSkill(player.id, { force: true })}
+                onClick={() => {
+                  if (pendingSkillTraining.newQuality === "Epic" || pendingSkillTraining.newQuality === "Legendary") {
+                    setShowTrainConfirm({ 
+                      show: true, 
+                      isRerollAgain: true,
+                      warning: `You are about to discard a ${pendingSkillTraining.newQuality} Signature Skill! Are you sure you want to reroll it?` 
+                    });
+                  } else {
+                    trainSpecialSkill(player.id, { force: true });
+                  }
+                }}
                 disabled={(inventory.materials.skill_tape ?? 0) < 1}
-                className="ml-auto px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-sm flex flex-col items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed group/reroll z-10 mr-2"
+                className="ml-auto px-5 py-2.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed group/reroll z-10 mr-2 relative overflow-hidden"
               >
-                <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest group-hover/reroll:text-amber-400">Reroll Again</span>
-                <span className="text-[9px] font-mono text-amber-500/70">1 Tape</span>
+                <div className="flex items-center gap-2">
+                   <svg className="w-3.5 h-3.5 text-gray-500 group-hover/reroll:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                   <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest group-hover/reroll:text-white italic">Reroll</span>
+                </div>
+                <div className="text-[9px] font-mono font-bold text-gray-500 mt-0.5 group-hover/reroll:text-[#d61e38]">Cost: 1 Tape</div>
               </button>
             </div>
 
@@ -1023,7 +1036,11 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               </div>
               <div className="flex flex-col">
                 <p className="text-gray-200 text-[13px] leading-relaxed font-[family-name:var(--font-outfit)]">
-                  Use <span className="font-bold text-amber-400">1 Skill Tape</span> to train a new Signature Skill?
+                  {showTrainConfirm.isRerollAgain ? (
+                    <>Use <span className="font-bold text-amber-400">1 Skill Tape</span> to discard this skill and reroll again?</>
+                  ) : (
+                    <>Use <span className="font-bold text-amber-400">1 Skill Tape</span> to train a new Signature Skill?</>
+                  )}
                 </p>
                 {showTrainConfirm.warning && (
                   <p className="text-red-400 text-[11px] mt-2 font-bold leading-tight uppercase tracking-wide">
@@ -1043,13 +1060,15 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             </button>
             <button
               onClick={() => {
-                const result = trainSpecialSkill(player.id);
-                if (!result.success && result.error && typeof window !== 'undefined') {
-                  window.alert(result.error);
+                const result = trainSpecialSkill(player.id, showTrainConfirm.isRerollAgain ? { force: true } : undefined);
+                if (result.success) {
+                  setShowTrainConfirm({show: false});
+                  // Pending training state is set automatically by the context
+                } else {
+                  alert(result.error);
                 }
-                setShowTrainConfirm({show: false});
               }}
-              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-[11px] uppercase tracking-widest rounded-sm transition-colors shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-[11px] uppercase tracking-widest rounded-sm transition-colors shadow-[0_0_15px_rgba(217,119,6,0.4)]"
             >
               Confirm Training
             </button>
