@@ -18,7 +18,7 @@ interface PlayerHexProfileModalProps {
 }
 
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
-  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice, rerollSpecialLearnSkill, rollSpecialLearnSkill } = useGameState();
+  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice, rerollSpecialLearnSkill, rollSpecialLearnSkill, pendingSkillReroll, acceptSkillReroll, rejectSkillReroll } = useGameState();
   
   // Ensure the modal always reads the absolute latest player state from the roster,
   // fixing the issue where the modal wouldn't update after a successful Star Up.
@@ -555,6 +555,63 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           className="flex-1 py-4 bg-red-600/10 text-red-500 font-black uppercase tracking-widest text-sm hover:bg-red-600 hover:text-white transition-colors"
                         >
                           Confirm Sacrifice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pending Reroll Modal Overlay */}
+                {pendingSkillReroll && pendingSkillReroll.playerId === player.id && (
+                  <div className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center animate-[fadeIn_0.15s_ease-out]">
+                    <div className="w-[550px] bg-zinc-950 border border-emerald-500/50 rounded-xl flex flex-col overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.2)] relative">
+                      
+                      {/* Header */}
+                      <div className="h-12 bg-emerald-900/40 border-b border-emerald-500/20 flex items-center justify-center px-4 relative z-10">
+                        <span className="text-emerald-400 font-black uppercase tracking-[0.2em] text-sm italic">Skill Rerolled</span>
+                      </div>
+
+                      <div className="p-8 flex flex-col items-center gap-8 relative z-10 mt-2">
+                        <div className="text-[11px] text-emerald-100/50 font-mono flex flex-col gap-1 items-center bg-emerald-950/30 py-3 px-8 rounded-lg border border-emerald-500/10 shadow-inner">
+                          <span>⚠️ Skill Tape is consumed when you reroll.</span>
+                          <span>⚠️ Keeping current does not refund Skill Tape.</span>
+                          <span>⚠️ New roll will replace current only if accepted.</span>
+                        </div>
+
+                        <div className="flex gap-8 w-full justify-center items-center mt-2 mb-4">
+                          <div className="flex flex-col items-center gap-4">
+                            <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest">Current Skill</span>
+                            <div className="transform scale-[1.35] origin-center p-3 rounded-xl bg-black/40 border border-white/5 shadow-inner">
+                              <SkillBadge name={pendingSkillReroll.oldSkill} color="special" quality={pendingSkillReroll.oldQuality as any} />
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-center translate-y-4">
+                            <ChevronsRight className="w-8 h-8 text-emerald-500/50 mb-2 animate-pulse" />
+                            <span className="text-emerald-500/30 font-black text-xl italic tracking-widest">VS</span>
+                          </div>
+                          
+                          <div className="flex flex-col items-center gap-4">
+                            <span className="text-[11px] text-emerald-400 font-bold uppercase tracking-widest animate-pulse">New Skill</span>
+                            <div className="transform scale-[1.35] origin-center p-3 rounded-xl bg-emerald-900/20 border border-emerald-500/30 shadow-[inset_0_0_20px_rgba(16,185,129,0.15)]">
+                              <SkillBadge name={pendingSkillReroll.newSkill} color="special" quality={pendingSkillReroll.newQuality as any} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex border-t border-white/10 relative z-10 mt-4">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); rejectSkillReroll(); }}
+                          className="flex-1 py-4 bg-zinc-900/50 text-zinc-400 font-bold uppercase tracking-widest text-sm hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer"
+                        >
+                          Keep Current
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); acceptSkillReroll(); }}
+                          className="flex-1 py-4 bg-emerald-600/10 text-emerald-400 font-black uppercase tracking-widest text-sm hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer"
+                        >
+                          Accept New Skill
                         </button>
                       </div>
                     </div>
