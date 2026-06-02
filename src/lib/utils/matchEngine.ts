@@ -1663,11 +1663,13 @@ export function simulateTick(
       const handsActiveScale = 0.85 + (maxStealRating / 100) * 0.30;
       handsActivePressure = 1.18 * handsActiveScale;
     }
-    const screenBreakerPressure =
-      (currentOff === "Pick & Roll" || currentOff === "Motion Offense") &&
-      rollBaseSkill(aiLineup, "Screen Breaker", newStamina)
-        ? 1.12
-        : 1.0;
+    let screenBreakerPressure = 1.0;
+    if ((currentOff === "Pick & Roll" || currentOff === "Motion Offense") && rollBaseSkill(aiLineup, "Screen Breaker", newStamina)) {
+      const holders = aiLineup.filter(p => hasBaseSkill(p, "Screen Breaker"));
+      const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : 50;
+      const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
+      screenBreakerPressure = 1.12 * screenBreakerScale;
+    }
     const cageStepPressure = rollSpecial(aiLineup, "Cage Step X", newStamina) ? 1.12 : 1.0;
     const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure);
     if (Math.random() < finalTOVChance) {
@@ -2558,11 +2560,13 @@ export function simulateTick(
         const handsActiveScale = 0.85 + (maxStealRating / 100) * 0.30;
         userHandsActivePressure = 1.18 * handsActiveScale;
       }
-      const userScreenBreakerPressure =
-        (state.aiOffStrategy === "Pick & Roll" || state.aiOffStrategy === "Motion Offense") &&
-        rollBaseSkill(userLineup, "Screen Breaker", newStamina)
-          ? 1.12
-          : 1.0;
+      let userScreenBreakerPressure = 1.0;
+      if ((state.aiOffStrategy === "Pick & Roll" || state.aiOffStrategy === "Motion Offense") && rollBaseSkill(userLineup, "Screen Breaker", newStamina)) {
+        const holders = userLineup.filter(p => hasBaseSkill(p, "Screen Breaker"));
+        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : 50;
+        const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
+        userScreenBreakerPressure = 1.12 * screenBreakerScale;
+      }
       const userCageStepPressure = rollSpecial(userLineup, "Cage Step X", newStamina) ? 1.12 : 1.0;
       const aiFinalTOVChance = Math.min(0.25, aiBaseTOVRate * userDefPressureMod * aiTovMod * aiLateClockMod * userHandsActivePressure * userScreenBreakerPressure * userCageStepPressure);
       if (Math.random() < aiFinalTOVChance) {
