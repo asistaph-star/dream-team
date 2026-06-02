@@ -347,6 +347,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           if (data.lineupOverride !== undefined) setLineupOverride(data.lineupOverride);
           if (data.strategyLevels !== undefined) setStrategyLevels(data.strategyLevels);
           if (data.playerStorageLimit !== undefined) setPlayerStorageLimit(data.playerStorageLimit);
+          if (data.pendingSkillTraining !== undefined) setPendingSkillTraining(data.pendingSkillTraining);
         }
       } catch (err) {
         console.error("Failed to load saved Dream Team progression:", err);
@@ -380,14 +381,15 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
           inventory,
           lineupOverride,
           strategyLevels,
-          playerStorageLimit
+          playerStorageLimit,
+          pendingSkillTraining
         };
         localStorage.setItem("dream_team_save_v1", JSON.stringify(stateToSave));
       } catch (err) {
         console.error("Failed to save Dream Team progression:", err);
       }
     }
-  }, [isLoaded, tk, cash, accountLevel, accountExp, campaignStage, stadiumLevels, roster, inventory, lineupOverride, strategyLevels, playerStorageLimit]);
+  }, [isLoaded, tk, cash, accountLevel, accountExp, campaignStage, stadiumLevels, roster, inventory, lineupOverride, strategyLevels, playerStorageLimit, pendingSkillTraining]);
 
   // Derived state: active lineup and reserves
   // Ensure that no two players with the exact same NAME can be in the lineup at the same time!

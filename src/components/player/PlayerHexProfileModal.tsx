@@ -226,14 +226,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         unlockText={`Star ${unlockStar}`}
                         quality={quality}
                         maxRate={maxRate}
-                        onClick={!locked ? () => {
-                          let confirmMsg = undefined;
-                          if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary")) {
-                            confirmMsg = `You currently have a ${quality} special skill, but you can choose to keep it after rolling.`;
-                          }
-                          setShowTrainConfirm({ show: true, warning: confirmMsg });
-                        } : undefined}
-                        actionLabel={hasLearnedSkill ? "Click to Train" : "Click to Learn"}
+                        onClick={undefined}
+                        actionLabel={undefined}
                       />
                     </div>
                   );
