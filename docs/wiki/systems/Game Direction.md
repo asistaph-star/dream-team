@@ -28,14 +28,15 @@ Core feel:
 
 ## Open Questions
 
-- What exact OVR formula will be used once the NBA stat import is complete?
+- **[RESOLVED]** What exact OVR formula will be used once the NBA stat import is complete?
+  - *Resolution: Implemented via daily sync scripts calculating ESPN-glossary rating scales mapped directly into 12 OVR brackets. See [[wiki/systems/nba-data-pipeline/01 OVR Source Rules|OVR Source Rules]].*
 - How often should current-season NBA data refresh?
 - Should old-season player cards use historical-season data or current player data?
 
 ## Related Pages
 
-- [[NBA Data Pipeline]]
-- [[Star-Up System]]
-- [[Skill System]]
-- [[Combo Counter Design]]
+- [[wiki/systems/nba-data-pipeline/00 Current NBA Data Pipeline State|NBA Data Pipeline]]
+- [[wiki/systems/player-card-upgrade/04 Upgrade System|Star-Up System]]
+- [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Skill System]]
+- [[wiki/concepts/Combo Counter Design|Combo Counter Design]]
 

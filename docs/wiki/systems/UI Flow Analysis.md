@@ -1,6 +1,6 @@
 # UI Flow Analysis
 
-Related pages: [[wiki/systems/Full Project Audit|Full Project Audit]], [[wiki/systems/Game State And Economy|Game State And Economy]], [[wiki/systems/Player Card And Upgrade Systems|Player Card And Upgrade Systems]].
+Related pages: [[wiki/systems/Full Project Audit|Full Project Audit]], [[wiki/systems/game-economy/00 Current Economy State|Game State And Economy]], [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Player Card And Upgrade Systems]].
 
 ## App Shell
 
@@ -24,7 +24,7 @@ Pre-match shows both starting lineups and readiness. Simulating view shows the c
 
 The player page has Roster and Stock tabs, search, position filter, sort, storage expansion, player card grid, and lineup/reserve grouping.
 
-Confirmed TypeScript issue: the search checks `p.team`, but `Player` has no `team` property.
+*Note: The previous search check issue against `p.team` is fully resolved; `Player` now correctly defines the `team?: string` property.*
 
 ## Inventory `/inventory`
 

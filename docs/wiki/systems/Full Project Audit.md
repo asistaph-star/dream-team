@@ -1,18 +1,15 @@
 # Full Project Audit
 
-Status: code-reading snapshot on 2026-05-28.
-Project audited: `C:\Users\Nhico\Documents\School\dream-team`.
-Vault target: `C:\Users\Nhico\Documents\Project\G10K`.
-
-No game code was changed during this audit. This page is the hub for the connected project understanding.
+> [!NOTE]
+> **Historical Archive**: This document is a static code-reading snapshot captured on **May 28, 2026**. It represents the initial state of the codebase and does not override current canonical documentation. For current specs, refer to the folders below.
 
 ## Connected Pages
 
 - [[wiki/systems/Project Architecture|Project Architecture]] - folders, entry points, configs, active runtime files, and reference artifacts.
-- [[wiki/systems/Game State And Economy|Game State And Economy]] - persistence, roster, lineup, storage, draft, free agents, currency, equipment, stadium, rewards, and strategies.
-- [[wiki/systems/Player Card And Upgrade Systems|Player Card And Upgrade Systems]] - player model, OVR rules, star-up, attributes, injuries, cards, and skill slots.
-- [[wiki/systems/Skill System|Skill System]] - base skills, special learned skills, marks, slot rules, and counters.
-- [[wiki/systems/Match Simulation Analysis|Match Simulation Analysis]] - match engine, stamina, AI, fouls, OT, shot meter, events, and skill wiring.
+- [[wiki/systems/game-economy/00 Current Economy State|Game State And Economy]] - persistence, roster, lineup, storage, draft, free agents, currency, equipment, stadium, rewards, and strategies.
+- [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Player Card And Upgrade Systems]] - player model, OVR rules, star-up, attributes, injuries, cards, and skill slots.
+- [[wiki/systems/player-card-upgrade/02 Learned Special Skills|Skill System]] - base skills, special learned skills, marks, slot rules, and counters.
+- [[wiki/systems/match-engine/00 Current Match Engine State|Match Simulation Analysis]] - match engine, stamina, AI, fouls, OT, shot meter, events, and skill wiring.
 - [[wiki/systems/UI Flow Analysis|UI Flow Analysis]] - screens, modals, navigation, live match controls, and user flow.
 - [[wiki/decisions/Audit Findings|Audit Findings]] - bugs, missing logic, confusing areas, and things I could not confirm from the code.
 

@@ -1,6 +1,6 @@
 # Project Architecture
 
-Related hub: [[wiki/systems/Full Project Audit|Full Project Audit]], [[wiki/systems/Frontend Component Architecture|Frontend Component Architecture]].
+Related hubs: [[wiki/systems/Full Project Audit|Full Project Audit]], [[wiki/systems/Frontend Component Architecture|Frontend Component Architecture]], [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Player Card and Upgrade Systems]], [[wiki/systems/match-engine/00 Current Match Engine State|Match Engine State]].
 
 ## Runtime
 

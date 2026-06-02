@@ -2,6 +2,11 @@
 
 Welcome! The daily statistics updates, ESPN glossary rating derivations, price rank matrices, and overall rating mapping tables have been modularized. This page serves as the entry point for all data pipeline documentation.
 
+> [!IMPORTANT]
+> **Core OVR Rules**:
+> - **OVR comes strictly from the NBA Data Pipeline** (Performance rankings, stats, and clamped OVR brackets).
+> - **Star-up upgrades do NOT increase player OVR** (Ascension only scales gameplay-relevant attributes like 3PT or Calm, and unlocks learned skill slots).
+
 ---
 
 ## Document Index

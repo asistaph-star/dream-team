@@ -1,6 +1,6 @@
 # Frontend Component Architecture
 
-Related hubs: [[wiki/systems/Project Architecture|Project Architecture]], [[wiki/systems/UI Flow Analysis|UI Flow Analysis]].
+Related hubs: [[wiki/systems/Project Architecture|Project Architecture]], [[wiki/systems/UI Flow Analysis|UI Flow Analysis]], [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Player Card and Upgrade Systems]].
 
 ## Connected Component Architecture Rule
 
@@ -25,6 +25,7 @@ When a design update is required (e.g., changing a border style, drop shadow, or
    - Canonical Source: `src/components/skills/SkillBadge.tsx`
    - Handles: Base skills, Special skills, Hover tooltips, Quality (Common-Legendary) auras, and Reroll/Learn actions.
    - Usage: PlayerHexProfileModal, PlayerCard.
+   - *Note: For functional specs of special skills, families, and ascension, see [[wiki/systems/player-card-upgrade/00 Current Canonical System State|Player Card and Upgrade Systems]].*
 
 ## Design Patterns
 
