@@ -31,6 +31,8 @@ import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skil
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
 export { createInitialMatchState, getStaminaMod, getPlayerStaminaMod, getStaminaPercent, getPlayerMaxStamina, computeTeamScore, computeEffective, avgStamina, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, formatClock, clampForm, emptyStats, getShotZoneModifier, getMatchupBonus, getShotClockReset, getSkillHolders, hasSkillStack, getEnteredPlayerIds, resolveFlagrantFoul, translateOffIQBoost, translateDefIQBoost, isStrategyRevertBlocked, getEffectiveRevertThreshold, isSkillBlocked, getSkillRate } from "./matchTypes";
 
+const MAX_3PT_POSITIVE_ADDITIVE_BONUS = 0.08;
+
 const isShaiGilgeousAlexander = (player: Player): boolean => {
   return player.name.toLowerCase().includes("shai gilgeous-alexander");
 };
@@ -1955,7 +1957,13 @@ export function simulateTick(
           // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
           const shotValueDifficulty = is3PT ? -0.095 : 0;
           const realEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
-          const finalScoringChance = Math.max(0.15, Math.min(0.85, (clutchAdjustedChance * decisionWeightMod) + userHomeAdj + matchupAdj + skillShotBonus + shotValueDifficulty + realEfficiencyAdj));
+          
+          const additiveBonusSum = userHomeAdj + matchupAdj + skillShotBonus + realEfficiencyAdj;
+          const cappedAdditiveBonus = (is3PT && additiveBonusSum > 0) 
+            ? Math.min(additiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
+            : additiveBonusSum;
+
+          const finalScoringChance = Math.max(0.15, Math.min(0.85, (clutchAdjustedChance * decisionWeightMod) + cappedAdditiveBonus + shotValueDifficulty));
           const isSuccess = Math.random() < finalScoringChance;
           if (is3PT) {
             const baseHalfWidth = 2.0;
@@ -2372,7 +2380,13 @@ export function simulateTick(
               : getHomeCourtBoost(scorer); // AI is home
             const aiBlitzShotValueDifficulty = is3PT ? -0.095 : 0;
             const aiRealEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
-            const aiBlitzFinalChance = Math.max(0.15, Math.min(0.80, aiBlitzAdjustedChance + aiBlitzHomeAdj + aiSkillShotBonus + aiBlitzShotValueDifficulty + aiRealEfficiencyAdj));
+            
+            const aiBlitzAdditiveBonusSum = aiBlitzHomeAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
+            const aiBlitzCappedAdditiveBonus = (is3PT && aiBlitzAdditiveBonusSum > 0)
+              ? Math.min(aiBlitzAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
+              : aiBlitzAdditiveBonusSum;
+
+            const aiBlitzFinalChance = Math.max(0.15, Math.min(0.80, aiBlitzAdjustedChance + aiBlitzCappedAdditiveBonus + aiBlitzShotValueDifficulty));
             const isSuccess = Math.random() < aiBlitzFinalChance;
             if (is3PT) {
               const baseHalfWidth = 2.0;
@@ -2618,7 +2632,13 @@ export function simulateTick(
           // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
           const aiShotValueDifficulty = is3PT ? -0.095 : 0;
           const aiRealEfficiencyAdj = getRealShootingEfficiencyAdjustment(scorer, is3PT);
-          const aiFinalChance = Math.max(0.15, Math.min(0.85, aiAdjustedChance + aiHomeAdj + matchupAdj + aiSkillShotBonus + aiShotValueDifficulty + aiRealEfficiencyAdj));
+          
+          const aiAdditiveBonusSum = aiHomeAdj + matchupAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
+          const aiCappedAdditiveBonus = (is3PT && aiAdditiveBonusSum > 0)
+            ? Math.min(aiAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
+            : aiAdditiveBonusSum;
+
+          const aiFinalChance = Math.max(0.15, Math.min(0.85, aiAdjustedChance + aiCappedAdditiveBonus + aiShotValueDifficulty));
           const isSuccess = Math.random() < aiFinalChance;
           if (is3PT) {
             const baseHalfWidth = 2.0;
