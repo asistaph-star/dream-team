@@ -26,6 +26,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
   const [showStarUpConfirm, setShowStarUpConfirm] = useState(false);
   const [showSystemNotification, setShowSystemNotification] = useState(false);
+  const [showTrainConfirm, setShowTrainConfirm] = useState<{show: boolean, warning?: string}>({show: false});
   const [isProcessingStarUp, setIsProcessingStarUp] = useState(false);
   const [ascendOutcome, setAscendOutcome] = useState<{ 
     status: 'success' | 'failed', 
@@ -178,14 +179,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (typeof window !== "undefined") {
-                        const confirmed = window.confirm("Use 1 Skill Tape to train a new Signature Skill?");
-                        if (!confirmed) return;
-                        const result = trainSpecialSkill(player.id);
-                        if (!result.success && result.error) {
-                          window.alert(result.error);
-                        }
-                      }
+                      setShowTrainConfirm({ show: true });
                     }}
                     className="ml-4 px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 rounded flex items-center gap-2 transition-colors cursor-pointer group"
                   >
@@ -233,19 +227,11 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         quality={quality}
                         maxRate={maxRate}
                         onClick={!locked ? () => {
-                          if (typeof window !== "undefined") {
-                            let confirmMsg = "Use 1 Skill Tape to train a new Signature Skill?";
-                            if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary")) {
-                              confirmMsg = `Are you sure? You currently have a ${quality} special skill, but you can choose to keep it after rolling.`;
-                            }
-                            const confirmed = window.confirm(confirmMsg);
-                            if (!confirmed) return;
-                            
-                            const result = trainSpecialSkill(player.id);
-                            if (!result.success && result.error) {
-                              window.alert(result.error);
-                            }
+                          let confirmMsg = undefined;
+                          if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary")) {
+                            confirmMsg = `You currently have a ${quality} special skill, but you can choose to keep it after rolling.`;
                           }
+                          setShowTrainConfirm({ show: true, warning: confirmMsg });
                         } : undefined}
                         actionLabel={hasLearnedSkill ? "Click to Train" : "Click to Learn"}
                       />
@@ -955,6 +941,74 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             </button>
           </div>
 
+        </div>
+      </div>
+    )}
+
+    {/* Custom Training Confirmation Modal */}
+    {showTrainConfirm.show && (
+      <div 
+        className="fixed inset-0 z-[30000] bg-black/80 flex items-center justify-center pointer-events-auto backdrop-blur-sm"
+        onClick={() => setShowTrainConfirm({show: false})}
+      >
+        <style>{`
+          @keyframes confirmPopIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+        <div 
+          className="w-[450px] bg-[#2a2b2f] rounded-sm flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden"
+          style={{ 
+            backgroundImage: `url('${lowPolyBg}')`, 
+            backgroundSize: '100% 400px',
+            animation: 'confirmPopIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards'
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="h-12 bg-gradient-to-r from-amber-500/20 to-transparent border-b border-amber-500/30 flex items-center justify-between px-5 relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
+            <span className="text-white font-black text-[14px] tracking-[0.1em] uppercase italic font-oswald drop-shadow-md ml-2">Confirm Training</span>
+          </div>
+          
+          <div className="p-6 flex flex-col relative z-10">
+            <div className="flex gap-4 items-center">
+              <div className="w-12 h-12 rounded bg-amber-500/10 flex items-center justify-center border border-amber-500/20 shrink-0">
+                <AlertTriangle className="w-6 h-6 text-amber-500" />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-gray-200 text-[13px] leading-relaxed font-[family-name:var(--font-outfit)]">
+                  Use <span className="font-bold text-amber-400">1 Skill Tape</span> to train a new Signature Skill?
+                </p>
+                {showTrainConfirm.warning && (
+                  <p className="text-red-400 text-[11px] mt-2 font-bold leading-tight uppercase tracking-wide">
+                    WARNING: {showTrainConfirm.warning}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-[#1c1d21]/90 px-5 py-4 border-t border-white/5 flex justify-end gap-3">
+            <button
+              onClick={() => setShowTrainConfirm({show: false})}
+              className="px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-black text-[11px] uppercase tracking-widest rounded-sm transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                const result = trainSpecialSkill(player.id);
+                if (!result.success && result.error && typeof window !== 'undefined') {
+                  window.alert(result.error);
+                }
+                setShowTrainConfirm({show: false});
+              }}
+              className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black text-[11px] uppercase tracking-widest rounded-sm transition-colors shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+            >
+              Confirm Training
+            </button>
+          </div>
         </div>
       </div>
     )}
