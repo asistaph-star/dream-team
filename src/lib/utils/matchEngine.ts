@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1689,7 +1689,7 @@ export function simulateTick(
       const pfx = clutchSituation.active ? 'CRUCIAL TURNOVER — ' : '';
       if (Math.random() < 0.55) {
         // Weighted random steal selection — distributes steals across roster by defensive rating
-        const stlWeights = aiLineup.map(p => p.defense);
+        const stlWeights = aiLineup.map(p => getStealRating(p));
         const stlTotalW = stlWeights.reduce((s, w) => s + w, 0);
         let stlR = Math.random() * stlTotalW;
         let stl = aiLineup[aiLineup.length - 1];
@@ -2315,7 +2315,7 @@ export function simulateTick(
 
       if (roll < stealChance) {
         // Weighted random steal selection — Blitz/Trap path
-        const bStlW = userLineup.map(p => p.defense);
+        const bStlW = userLineup.map(p => getStealRating(p));
         const bStlTW = bStlW.reduce((s, w) => s + w, 0);
         let bStlR = Math.random() * bStlTW;
         let stealer = userLineup[userLineup.length - 1];
@@ -2517,7 +2517,7 @@ export function simulateTick(
         const pfx = clutchSituation.active ? 'CRUCIAL TURNOVER — ' : '';
         if (Math.random() < 0.55) {
           // Weighted random steal selection — AI TOV path
-          const stlW2 = userLineup.map(p => p.defense);
+          const stlW2 = userLineup.map(p => getStealRating(p));
           const stlTW2 = stlW2.reduce((s, w) => s + w, 0);
           let stlR2 = Math.random() * stlTW2;
           let stl = userLineup[userLineup.length - 1];
