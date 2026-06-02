@@ -753,7 +753,7 @@ export function simulateTick(
     isDisruptingUser: boolean,
     sourceText: string
   ): boolean => {
-    if (!target || !rollSpecial(disruptingTeam, "Dead Air X", newStamina, (h) => {
+    if (!target || !rollSpecialMechanic(disruptingTeam, "GAMEPLAN_DEAD_AIR", newStamina, (h) => {
       const deadAirIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
       return 0.90 + (deadAirIdentity / 100) * 0.20;
     })) return false;
