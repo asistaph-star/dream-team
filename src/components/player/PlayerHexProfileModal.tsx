@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Player } from "@/lib/types/player";
 import { lowPolyBg } from "@/lib/constants/visuals";
-import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRight } from "lucide-react";
+import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRight, Plus } from "lucide-react";
 import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain } from "@/lib/utils/starGrowth";
 import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
 import { SkillBadge } from "@/components/skills/SkillBadge";
@@ -812,7 +812,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           }
         `}</style>
         <div 
-          className="w-[550px] bg-[#313338] rounded-sm flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden"
+          className="w-[550px] bg-[#2a2b2f] rounded-sm flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden"
           style={{ 
             backgroundImage: `url('${lowPolyBg}')`, 
             backgroundSize: '100% 400px',
@@ -822,8 +822,9 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
         >
           
           {/* Header */}
-          <div className="h-12 bg-[#2a2b2f]/90 border-b border-white/5 flex items-center justify-between px-4 relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
-            <span className="text-emerald-400 font-black text-[13px] tracking-widest uppercase drop-shadow-sm">Signature Skill Training</span>
+          <div className="h-14 bg-gradient-to-r from-[#d61e38]/20 to-transparent border-b border-[#d61e38]/30 flex items-center justify-between px-5 relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#d61e38] shadow-[0_0_15px_rgba(214,30,56,0.8)]" />
+            <span className="text-white font-black text-[15px] tracking-[0.15em] uppercase italic font-oswald drop-shadow-md ml-2">Signature Skill Training</span>
             <button 
               onClick={() => rejectSkillTraining()} 
               className="text-gray-400 hover:text-white transition-colors mr-1"
@@ -832,84 +833,97 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             </button>
           </div>
 
-          <div className="flex flex-col relative z-10 p-4">
+          <div className="flex flex-col relative z-10 p-5">
             
             {/* Top: New Skill */}
-            <div className="bg-emerald-950/30 border border-emerald-500/20 rounded p-4 flex gap-4 items-center shadow-inner relative overflow-hidden group">
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.1),transparent_50%)] pointer-events-none" />
-              <div className="w-20 h-20 flex-shrink-0 bg-black/50 border border-white/10 rounded flex items-center justify-center transform scale-[1.15] origin-center shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+            <div className="bg-black/40 border border-white/5 rounded-sm p-4 flex gap-5 items-center relative overflow-hidden group">
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,1) 45%, transparent 50%)', backgroundSize: '200% 200%' }} />
+              
+              <div className="transform scale-[1.35] origin-center shrink-0 ml-3 mr-2 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
                 <SkillBadge name={pendingSkillTraining.newSkill} color="special" quality={pendingSkillTraining.newQuality as any} />
               </div>
-              <div className="flex flex-col flex-1 pl-2">
-                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">New Skill Discovered</div>
-                <h2 className="text-white font-black text-xl mb-1 tracking-tight drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
-                <p className="text-gray-400 text-[11px] leading-relaxed font-[family-name:var(--font-outfit)]">
+              
+              <div className="flex flex-col flex-1 pl-2 relative z-10">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="px-1.5 py-0.5 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-sm">New</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Skill Discovered</div>
+                </div>
+                <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
+                <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
                   <span className="text-gray-300 font-bold">Max Level Effect:</span> When in a game, there's a 100 rate to trigger... (Up to 100 rate at max level).
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 mt-5 mb-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
-              <h3 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Select Slot to Replace</h3>
+            <div className="flex items-center gap-3 mt-6 mb-4 px-1">
+              <h3 className="text-[12px] font-black text-white/80 uppercase tracking-[0.25em] italic">Select Slot to Replace</h3>
+              <div className="flex-1 h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
             </div>
 
             {/* Bottom: The Slots */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               
               {/* Slot 1 */}
               <div 
-                className="bg-black/40 border border-white/5 hover:border-white/20 hover:bg-white/[0.02] transition-all rounded p-4 flex flex-col items-center gap-3 relative group cursor-pointer"
+                className="bg-black/30 border border-white/5 hover:border-[#d61e38]/50 hover:bg-[#d61e38]/5 transition-all rounded-sm p-5 flex flex-col items-center gap-4 relative group cursor-pointer"
                 onClick={() => acceptSkillTraining(0)}
               >
-                <div className="absolute top-2 left-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Slot 1</div>
-                <div className="w-16 h-16 bg-black/50 border border-white/10 rounded flex items-center justify-center mt-2 shadow-inner">
+                <div className="absolute top-2 left-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Slot 1</div>
+                
+                <div className="transform scale-[1.15] origin-center mt-3 drop-shadow-[0_8px_15px_rgba(0,0,0,0.6)] h-10 w-10 flex items-center justify-center">
                   {specialSkills[0] ? (
                     <SkillBadge name={specialSkills[0]} color="special" quality={(player.skillRarities?.[specialSkills[0]] as any) || "Common"} />
                   ) : (
-                    <div className="text-gray-600 text-xs font-bold uppercase tracking-wider">Empty</div>
+                    <div className="w-10 h-10 rounded-[8px] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/40 text-gray-500">
+                       <Plus size={16} />
+                    </div>
                   )}
                 </div>
-                <div className="text-center w-full">
-                  <div className="text-gray-200 font-bold text-sm truncate w-full">{specialSkills[0] || "Available"}</div>
+
+                <div className="text-center w-full mt-1">
+                  <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[0] || "Available"}</div>
                 </div>
-                <button className="w-full py-2 bg-red-950/40 group-hover:bg-red-600 border border-red-500/30 group-hover:border-red-500 text-red-400 group-hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors">
+                <button className="w-full mt-1 py-2 bg-zinc-900 group-hover:bg-[#d61e38] border border-white/5 group-hover:border-[#eb233f] text-gray-400 group-hover:text-white font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md">
                   Replace
                 </button>
               </div>
 
               {/* Slot 2 */}
               <div 
-                className={`border transition-all rounded p-4 flex flex-col items-center gap-3 relative ${
+                className={`border transition-all rounded-sm p-5 flex flex-col items-center gap-4 relative ${
                   (player.starLevel ?? 0) < 5 
                     ? 'bg-black/20 border-white/5 opacity-50 cursor-not-allowed' 
-                    : 'bg-black/40 border-white/5 hover:border-white/20 hover:bg-white/[0.02] cursor-pointer group'
+                    : 'bg-black/30 border-white/5 hover:border-[#d61e38]/50 hover:bg-[#d61e38]/5 cursor-pointer group'
                 }`}
                 onClick={() => {
                   if ((player.starLevel ?? 0) >= 5) acceptSkillTraining(1);
                 }}
               >
-                <div className="absolute top-2 left-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Slot 2</div>
-                <div className="w-16 h-16 bg-black/50 border border-white/10 rounded flex items-center justify-center mt-2 shadow-inner">
+                <div className="absolute top-2 left-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Slot 2</div>
+                
+                <div className="transform scale-[1.15] origin-center mt-3 drop-shadow-[0_8px_15px_rgba(0,0,0,0.6)] h-10 w-10 flex items-center justify-center">
                   {(player.starLevel ?? 0) < 5 ? (
-                    <div className="flex flex-col items-center opacity-50 mt-1">
-                      <div className="w-5 h-5 mb-1 rounded bg-gray-500/50 flex items-center justify-center"><div className="w-2 h-3 border-2 border-zinc-300 rounded-t-full relative after:absolute after:w-0.5 after:h-1 after:bg-zinc-300 after:-bottom-1.5 after:left-0.5" /></div>
+                    <div className="flex flex-col items-center opacity-50">
+                      <div className="w-5 h-5 rounded bg-gray-500/50 flex items-center justify-center"><div className="w-2 h-3 border-2 border-zinc-300 rounded-t-full relative after:absolute after:w-0.5 after:h-1 after:bg-zinc-300 after:-bottom-1.5 after:left-0.5" /></div>
                     </div>
                   ) : specialSkills[1] ? (
                     <SkillBadge name={specialSkills[1]} color="special" quality={(player.skillRarities?.[specialSkills[1]] as any) || "Common"} />
                   ) : (
-                    <div className="text-gray-600 text-xs font-bold uppercase tracking-wider">Empty</div>
+                    <div className="w-10 h-10 rounded-[8px] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/40 text-gray-500">
+                       <Plus size={16} />
+                    </div>
                   )}
                 </div>
-                <div className="text-center w-full">
+
+                <div className="text-center w-full mt-1">
                   {(player.starLevel ?? 0) < 5 ? (
-                    <div className="text-gray-500 font-bold text-[11px] uppercase tracking-widest mt-2">Unlocks at Star 5</div>
+                    <div className="text-gray-500 font-black text-[11px] uppercase tracking-widest">Unlocks at Star 5</div>
                   ) : (
-                    <div className="text-gray-200 font-bold text-sm truncate w-full">{specialSkills[1] || "Available"}</div>
+                    <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[1] || "Available"}</div>
                   )}
                 </div>
                 {(player.starLevel ?? 0) >= 5 && (
-                  <button className="w-full py-2 bg-red-950/40 group-hover:bg-red-600 border border-red-500/30 group-hover:border-red-500 text-red-400 group-hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors">
+                  <button className="w-full mt-1 py-2 bg-zinc-900 group-hover:bg-[#d61e38] border border-white/5 group-hover:border-[#eb233f] text-gray-400 group-hover:text-white font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md">
                     Replace
                   </button>
                 )}
@@ -920,10 +934,10 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           </div>
           
           {/* Footer */}
-          <div className="bg-[#1c1d21]/80 p-4 border-t border-white/5 flex justify-end">
+          <div className="bg-[#1c1d21]/90 px-5 py-4 border-t border-white/5 flex justify-end">
             <button
               onClick={() => rejectSkillTraining()}
-              className="px-8 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors shadow-md"
+              className="px-8 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-black text-[11px] uppercase tracking-widest rounded-sm transition-colors shadow-md"
             >
               Forfeit Skill
             </button>
