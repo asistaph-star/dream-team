@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1336,7 +1336,7 @@ export function simulateTick(
   const pickCommitter = (lineup: Player[]): Player => {
     const ws = lineup.map(p => {
       const base = TOV_W[p.position] || 1.0;
-      const plyMod = 1.0 - ((p.playmaking - 50) / 100);
+      const plyMod = 1.0 - ((getHandleRating(p) - 50) / 100);
       return Math.max(0.1, base * plyMod);
     });
     const tw = ws.reduce((s, w) => s + w, 0);
@@ -1652,7 +1652,7 @@ export function simulateTick(
     // ═══ PILLAR 6: TURNOVER CHECK — fires BEFORE shot math [NBA DATA: 11-14 TOV/game]
     // Base rate calibrated so each team turns it over ~12-13 times per 100 possessions.
     // Factors: playmaking quality, defensive pressure, shot clock urgency, stamina.
-    const userAvgPly = userLineup.reduce((s, p) => s + p.playmaking, 0) / 5;
+    const userAvgPly = userLineup.reduce((s, p) => s + getHandleRating(p), 0) / 5;
     // Base TOV rate: ~12% per possession baseline, scaled by ball-handling skill
     // (league avg playmaking ~72 → ~11-12% rate; poor playmaking → higher)
     const baseTOVRate = 0.085 * (80 / Math.max(55, userAvgPly));
@@ -2483,7 +2483,7 @@ export function simulateTick(
     } else {
       // ═══ PILLAR 6: TURNOVER CHECK — AI possession (non-Blitz) ═══
       // Same data-driven calibration: ~12% base, scaled by AI playmaking quality
-      const aiAvgPly = aiLineup.reduce((s, p) => s + p.playmaking, 0) / 5;
+      const aiAvgPly = aiLineup.reduce((s, p) => s + getHandleRating(p), 0) / 5;
       const aiBaseTOVRate = 0.085 * (80 / Math.max(55, aiAvgPly));
       // Pillar 4 interaction: user defensive strategy increases AI turnover risk
       const userDefPressureMod = currentDef === 'Blitz/Trap' ? 1.35
