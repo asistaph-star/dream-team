@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1822,7 +1822,24 @@ export function simulateTick(
           const shadowed = !jammed && tryShadowGuard(aiLineup, false);
           const focused = !jammed && !shadowed && rollBaseSkill(aiLineup, "Focus Lock", newStamina);
           const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
-          skillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035 * arcScale;
+          
+          let shadowRemaining = 0.015;
+          if (shadowed) {
+            const holders = aiLineup.filter(p => hasBaseSkill(p, "Shadow Guard"));
+            const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+            const shadowScale = 0.85 + (maxRating / 100) * 0.30;
+            shadowRemaining = 0.015 / shadowScale;
+          }
+          
+          let focusRemaining = 0.02;
+          if (focused) {
+            const holders = aiLineup.filter(p => hasBaseSkill(p, "Focus Lock"));
+            const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+            const focusScale = 0.85 + (maxRating / 100) * 0.30;
+            focusRemaining = 0.02 / focusScale;
+          }
+          
+          skillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
           skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, true);
           if (focused) skillLog(`Focus Lock contains the shooting rhythm`, false);
           if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(userLineup, "Red Dot X", newStamina)) {
@@ -1914,7 +1931,10 @@ export function simulateTick(
               skillShotBonus -= 0.03;
             } else if (disciplineWall) {
               skillLog(`Discipline Wall holds off Four-Point Bait X`, false);
-              skillShotBonus -= 0.03;
+              const holders = aiLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
+              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+              const disciplineScale = 0.85 + (maxRating / 100) * 0.30;
+              skillShotBonus -= 0.03 * disciplineScale;
             } else {
               sfChance += 0.09;
               skillLog(`Four-Point Bait X pressures the Exposed defender`, true);
@@ -2275,7 +2295,24 @@ export function simulateTick(
       const shadowed = !jammed && tryShadowGuard(userLineup, true);
       const focused = !jammed && !shadowed && rollBaseSkill(userLineup, "Focus Lock", newStamina);
       const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
-      aiSkillShotBonus += jammed ? 0.005 : shadowed ? 0.015 : focused ? 0.02 : 0.035 * arcScale;
+      
+      let shadowRemaining = 0.015;
+      if (shadowed) {
+        const holders = userLineup.filter(p => hasBaseSkill(p, "Shadow Guard"));
+        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+        const shadowScale = 0.85 + (maxRating / 100) * 0.30;
+        shadowRemaining = 0.015 / shadowScale;
+      }
+      
+      let focusRemaining = 0.02;
+      if (focused) {
+        const holders = userLineup.filter(p => hasBaseSkill(p, "Focus Lock"));
+        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+        const focusScale = 0.85 + (maxRating / 100) * 0.30;
+        focusRemaining = 0.02 / focusScale;
+      }
+      
+      aiSkillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
       skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, false);
       if (focused) skillLog(`Focus Lock contains the shooting rhythm`, true);
       if (!jammed && !shadowed && !focused && primaryDefender && rollSpecial(aiLineup, "Red Dot X", newStamina)) {
