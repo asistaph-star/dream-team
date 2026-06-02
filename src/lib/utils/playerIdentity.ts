@@ -8,6 +8,18 @@ export const clamp01 = (value: number): number => {
 // Rating Helpers (Core Gameplay Attribute Fallbacks)
 // -----------------------------------------------------------------------------
 
+export const getSpeedRating = (player: Player): number => {
+  return player.speed ?? player.offense;
+};
+
+export const getStrengthRating = (player: Player): number => {
+  return player.strength ?? player.defense;
+};
+
+export const getOffenseRating = (player: Player): number => {
+  return player.offense;
+};
+
 export const getThreePtRating = (player: Player): number => {
   return player.threePt ?? player.shooting;
 };

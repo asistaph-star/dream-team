@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
