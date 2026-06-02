@@ -58,6 +58,7 @@ export interface Player {
   threePt?: number;
   twoPt?: number;
   freeThrow?: number;
+  finishing?: number;
   handle?: number;
   assist?: number;
   steal?: number;
@@ -65,6 +66,11 @@ export interface Player {
   rebound?: number;
   onBall?: number;
   calm?: number;
+  // Tendencies (Phase Scoring-3B)
+  threePtTendency?: number;
+  driveTendency?: number;
+  pullUpTendency?: number;
+  foulDrawTendency?: number;
   equipped?: Partial<Record<EquipmentSlot, Equipment>>; // Equipped gear
   imageUrl?: string;
   // Stats & Economy details (from screenshot)
