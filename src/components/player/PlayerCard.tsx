@@ -395,7 +395,7 @@ function getPreviewBaseSkills(player: Player): [string, string, string] {
 }
 
 function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onClose }: StatsContentProps) {
-  const { inventory, rerollSpecialLearnSkill, rollSpecialLearnSkill } = useGameState();
+  const { inventory } = useGameState();
   const fallbackBaseSkills = getPreviewBaseSkills(player);
   const baseSkills = player.baseSkills ?? fallbackBaseSkills;
   const specialSkills = player.specialSkillSlots ?? [];

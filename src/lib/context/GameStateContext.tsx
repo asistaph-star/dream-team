@@ -46,11 +46,8 @@ export interface StadiumLevels {
   store: number;
 }
 
-export interface PendingSkillReroll {
+export interface PendingSkillTraining {
   playerId: string;
-  specialSlotIndex: 0 | 1;
-  oldSkill: string;
-  oldQuality: string;
   newSkill: string;
   newQuality: string;
 }
@@ -96,11 +93,10 @@ interface GameState {
   ascendPlayer: (playerId: string, confirmSacrifice?: boolean) => { success: boolean; rolled?: number; chanceNeeded?: number; error?: string; pendingWarning?: boolean };
   pendingAscendSacrificeWarning: PendingAscendWarning | null;
   cancelAscendSacrifice: () => void;
-  pendingSkillReroll: PendingSkillReroll | null;
-  acceptSkillReroll: () => { success: boolean; error?: string };
-  rejectSkillReroll: () => { success: boolean; error?: string };
-  rollSpecialLearnSkill: (playerId: string, specialSlotIndex: 0 | 1) => { success: boolean; skill?: string; quality?: string; error?: string };
-  rerollSpecialLearnSkill: (playerId: string, specialSlotIndex: 0 | 1) => { success: boolean; skill?: string; quality?: string; error?: string };
+  pendingSkillTraining: PendingSkillTraining | null;
+  acceptSkillTraining: (slotIndex: 0 | 1) => { success: boolean; error?: string };
+  rejectSkillTraining: () => { success: boolean; error?: string };
+  trainSpecialSkill: (playerId: string) => { success: boolean; skill?: string; quality?: string; error?: string };
   resetRosterProgress: () => void;
 }
 
@@ -183,7 +179,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   const [seasonMode, setSeasonMode] = useState<'REGULAR' | 'PLAYOFFS_FREEZE'>('PLAYOFFS_FREEZE');
   const [lineupOverride, setLineupOverride] = useState<Record<string, string>>({});
   const [playerStorageLimit, setPlayerStorageLimit] = useState(100);
-  const [pendingSkillReroll, setPendingSkillReroll] = useState<PendingSkillReroll | null>(null);
+  const [pendingSkillTraining, setPendingSkillTraining] = useState<PendingSkillTraining | null>(null);
   const [pendingAscendSacrificeWarning, setPendingAscendSacrificeWarning] = useState<PendingAscendWarning | null>(null);
 
   const cancelAscendSacrifice = () => setPendingAscendSacrificeWarning(null);
@@ -844,35 +840,29 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
-  const rerollSpecialLearnSkill = (
-    playerId: string,
-    specialSlotIndex: 0 | 1
+  const trainSpecialSkill = (
+    playerId: string
   ): { success: boolean; skill?: string; quality?: string; error?: string } => {
     const player = roster.find(p => p.id === playerId);
     if (!player) return { success: false, error: "Player not found on your roster!" };
 
-    if (pendingSkillReroll) {
-      return { success: false, error: "Please resolve your pending reroll before rolling again." };
+    if (pendingSkillTraining) {
+      return { success: false, error: "Please resolve your pending training before rolling again." };
     }
 
-    const starRequired = getSpecialSlotUnlockStar(specialSlotIndex);
-    if ((player.starLevel ?? 0) < starRequired) {
-      return { success: false, error: `Special slot ${specialSlotIndex + 1} unlocks at Star ${starRequired}.` };
+    if ((player.starLevel ?? 0) < 1) {
+      return { success: false, error: "Player must be at least Star 1 to learn special skills." };
+    }
+
+    if ((inventory.materials.skill_tape ?? 0) < 1) {
+      return { success: false, error: "Not enough Skill Tape to train a special skill." };
     }
 
     const specialSkillSlots = [...(player.specialSkillSlots ?? [null, null])] as (string | null)[];
-    const previousSkill = specialSkillSlots[specialSlotIndex];
-    if (!previousSkill) return { success: false, error: "No learned special skill found in this slot." };
-
-    if ((inventory.materials.skill_tape ?? 0) < 1) {
-      return { success: false, error: "Not enough Skill Tape to reroll this special skill." };
-    }
-
-    const otherSlotSkill = specialSkillSlots[1 - specialSlotIndex];
-    const previousQuality = player.skillRarities?.[previousSkill] ?? "Common";
-
+    
     let skill = rollSpecialSkillName();
-    while (skill === previousSkill || skill === otherSlotSkill) {
+    // Duplicate Protection: Do not roll a skill they already have equipped
+    while (specialSkillSlots.includes(skill)) {
       skill = rollSpecialSkillName();
     }
     const quality = rollSkillQuality();
@@ -885,11 +875,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       }
     }));
 
-    setPendingSkillReroll({
+    setPendingSkillTraining({
       playerId,
-      specialSlotIndex,
-      oldSkill: previousSkill,
-      oldQuality: previousQuality,
       newSkill: skill,
       newQuality: quality
     });
@@ -897,84 +884,39 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     return { success: true, skill, quality };
   };
 
-  const acceptSkillReroll = (): { success: boolean; error?: string } => {
-    if (!pendingSkillReroll) return { success: false, error: "No pending reroll found." };
+  const acceptSkillTraining = (slotIndex: 0 | 1): { success: boolean; error?: string } => {
+    if (!pendingSkillTraining) return { success: false, error: "No pending training found." };
     
-    setRoster(prev => prev.map(p => {
-      if (p.id !== pendingSkillReroll.playerId) return p;
-      const specialSkillSlots = [...(p.specialSkillSlots ?? [null, null])];
-      specialSkillSlots[pendingSkillReroll.specialSlotIndex] = pendingSkillReroll.newSkill;
-      return {
-        ...p,
-        specialSkillSlots,
-        skillRarities: {
-          ...(p.skillRarities ?? {}),
-          [pendingSkillReroll.newSkill]: pendingSkillReroll.newQuality as any,
-        },
-      };
-    }));
+    const player = roster.find(p => p.id === pendingSkillTraining.playerId);
+    if (!player) return { success: false, error: "Player not found." };
     
-    setPendingSkillReroll(null);
-    return { success: true };
-  };
-
-  const rejectSkillReroll = (): { success: boolean; error?: string } => {
-    if (!pendingSkillReroll) return { success: false, error: "No pending reroll found." };
-    setPendingSkillReroll(null);
-    return { success: true };
-  };
-
-  const rollSpecialLearnSkill = (
-    playerId: string,
-    specialSlotIndex: 0 | 1
-  ): { success: boolean; skill?: string; quality?: string; error?: string } => {
-    const player = roster.find(p => p.id === playerId);
-    if (!player) return { success: false, error: "Player not found on your roster!" };
-
-    const starRequired = getSpecialSlotUnlockStar(specialSlotIndex);
+    const starRequired = getSpecialSlotUnlockStar(slotIndex);
     if ((player.starLevel ?? 0) < starRequired) {
-      return { success: false, error: `Special slot ${specialSlotIndex + 1} unlocks at Star ${starRequired}.` };
+      return { success: false, error: `Special slot ${slotIndex + 1} unlocks at Star ${starRequired}.` };
     }
-
-    const specialSkillSlots = [...(player.specialSkillSlots ?? [null, null])] as (string | null)[];
-    if (specialSkillSlots[specialSlotIndex]) {
-      return { success: false, error: "This special slot already has a learned skill. Use reroll to change quality only." };
-    }
-
-    if ((inventory.materials.skill_tape ?? 0) < 1) {
-      return { success: false, error: "Not enough Skill Tape to learn a special skill." };
-    }
-
-    const otherSlotSkill = specialSkillSlots[1 - specialSlotIndex];
-
-    let skill = rollSpecialSkillName();
-    while (skill === otherSlotSkill) {
-      skill = rollSpecialSkillName();
-    }
-    const quality = rollSkillQuality();
-    specialSkillSlots[specialSlotIndex] = skill;
-
-    setInventory(prev => ({
-      ...prev,
-      materials: {
-        ...prev.materials,
-        skill_tape: Math.max(0, (prev.materials.skill_tape ?? 0) - 1),
-      }
-    }));
 
     setRoster(prev => prev.map(p => {
-      if (p.id !== playerId) return p;
+      if (p.id !== pendingSkillTraining.playerId) return p;
+      const specialSkillSlots = [...(p.specialSkillSlots ?? [null, null])];
+      specialSkillSlots[slotIndex] = pendingSkillTraining.newSkill;
       return {
         ...p,
         specialSkillSlots,
         skillRarities: {
           ...(p.skillRarities ?? {}),
-          [skill]: quality,
+          [pendingSkillTraining.newSkill]: pendingSkillTraining.newQuality as any,
         },
       };
     }));
+    
+    setPendingSkillTraining(null);
+    return { success: true };
+  };
 
-    return { success: true, skill, quality };
+  const rejectSkillTraining = (): { success: boolean; error?: string } => {
+    if (!pendingSkillTraining) return { success: false, error: "No pending training found." };
+    setPendingSkillTraining(null);
+    return { success: true };
   };
 
   const ascendPlayer = (playerId: string, confirmSacrifice?: boolean): { success: boolean; rolled?: number; chanceNeeded?: number; error?: string; pendingWarning?: boolean } => {
@@ -1153,11 +1095,10 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       upgradeStrategy,
       signPlayerToRoster,
       ascendPlayer,
-      pendingSkillReroll,
-      acceptSkillReroll,
-      rejectSkillReroll,
-      rollSpecialLearnSkill,
-      rerollSpecialLearnSkill,
+      pendingSkillTraining,
+      acceptSkillTraining,
+      rejectSkillTraining,
+      trainSpecialSkill,
       resetRosterProgress,
       setCampaignStage,
       pendingAscendSacrificeWarning,
