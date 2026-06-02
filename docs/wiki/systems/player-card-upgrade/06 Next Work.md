@@ -1,0 +1,35 @@
+# Next Work
+
+## Current Status
+- Base Skills: ✅ Locked stable
+- Upgrade System: ✅ Locked stable
+- Learned Skill Identity Scaling: ✅ Locked stable
+- MatchEngine Mechanic Migration: ✅ Locked stable
+- New Family Rolling Pool: ❌ Not active yet
+- Native Mechanics for 15 Families: ❌ Not implemented yet
+
+## Next Phase
+**Phase SpecialSkill-2B2 — Native Mechanics Batch A: Safe Counters / Utility**
+
+Implement native engine mechanics for:
+- COMPOSURE_SHIELD
+- CLEAN_CHALLENGE
+- TIMEOUT_RESET
+- BENCH_CAPTAIN
+- COURT_VISION_ENGINE
+
+These are the safest families to start with because they are counters, recovery, or team-rhythm mechanics with low risk of breaking balance.
+
+## Activation Prerequisites
+The new 15-family rolling pool will **not** be activated until:
+1. All 15 native mechanics exist in the match engine.
+2. `SPECIAL_SKILL_TEXT` has descriptions for all 15.
+3. `SPECIAL_SKILL_RATES` has base rates for all 15.
+4. UI/icons can handle all 15 (no broken images or missing text).
+5. Reroll/duplicate prevention passes with new IDs.
+6. Full balance regression passes (30+ matches).
+
+## Workflow Rules
+- **Batch safe/non-risky work together** (documentation, naming, type helpers, UI copy, icon mapping audits).
+- **Isolate risky work** (matchEngine changes, stamina/foul/mark logic, rolling pool activation, save data migration, OVR/star-up changes).
+- Stop before risky gameplay/balance changes and wait for approval.
