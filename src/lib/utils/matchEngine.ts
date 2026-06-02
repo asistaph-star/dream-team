@@ -26,6 +26,7 @@ import {
   rollBaseSkill,
   rollSpecial,
   rollSpecialMechanic,
+  hasSpecialSkillMechanic,
 } from "../skills/skillResolver";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 
@@ -45,7 +46,7 @@ const isShaiGilgeousAlexander = (player: Player): boolean => {
 
 const getFlopFoulPressureBonus = (scorer: Player): number => {
   const baseBonus = 0.04;
-  return isShaiGilgeousAlexander(scorer) && getSpecialSkills(scorer).includes("Flop X") ? baseBonus * 2 : baseBonus;
+  return isShaiGilgeousAlexander(scorer) && hasSpecialSkillMechanic(scorer, "FLOP_SELL_CONTACT") ? baseBonus * 2 : baseBonus;
 };
 
 
@@ -1954,7 +1955,7 @@ export function simulateTick(
             sfChance += 0.035 * foulMagnetScale;
             skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, true);
           }
-          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(userLineup, "Flop X", newStamina, (h) => {
+          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(userLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
             const flopIdentity = getFoulDrawTendency(h);
             return 0.90 + flopIdentity * 0.20;
           })) {
@@ -1962,7 +1963,7 @@ export function simulateTick(
             sfChance += flopBonus;
             skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
           }
-          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(userLineup, "Four-Point Bait X", newStamina, (h) => {
+          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(userLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
             const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
             return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
           })) {
@@ -2734,7 +2735,7 @@ export function simulateTick(
               sfChance_ai += 0.035 * foulMagnetScale;
               skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, false);
             }
-            if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(aiLineup, "Flop X", newStamina, (h) => {
+            if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(aiLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
               const flopIdentity = getFoulDrawTendency(h);
               return 0.90 + flopIdentity * 0.20;
             })) {
@@ -2742,7 +2743,7 @@ export function simulateTick(
               sfChance_ai += flopBonus;
               skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
             }
-            if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(aiLineup, "Four-Point Bait X", newStamina, (h) => {
+            if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
               const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
               return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
             })) {
