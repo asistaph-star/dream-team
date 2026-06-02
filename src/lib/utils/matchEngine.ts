@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -2067,7 +2067,11 @@ export function simulateTick(
             }
             // ═══ ROLL A: AND-1 CHECK (only if no prior FT this tick) ═══
             if (!nonShootingFoulToFT) {
-              const and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(aiLineup, newStamina)); // Reduced And-1 rate
+              const finishingRating = scorer && !is3PT ? getFinishingRating(scorer) : 50;
+              const finishingAnd1Mod = 0.85 + (finishingRating / 100) * 0.30;
+              let and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(aiLineup, newStamina)) * finishingAnd1Mod; // Reduced And-1 rate
+              const MAX_AND1_CHANCE = 0.15;
+              and1Chance = Math.min(MAX_AND1_CHANCE, and1Chance);
               if (Math.random() < and1Chance) {
                 const and1Committer = pickFoulCommitter(aiLineup);
                 ensureStats(and1Committer.id);
@@ -2748,7 +2752,11 @@ export function simulateTick(
             }
               // And-1
               if (!nonShootingFoulToFT) {
-                const and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(userLineup, newStamina)); // Reduced And-1 rate
+                const finishingRating = scorer && !is3PT ? getFinishingRating(scorer) : 50;
+                const finishingAnd1Mod = 0.85 + (finishingRating / 100) * 0.30;
+                let and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(userLineup, newStamina)) * finishingAnd1Mod; // Reduced And-1 rate
+                const MAX_AND1_CHANCE = 0.15;
+                and1Chance = Math.min(MAX_AND1_CHANCE, and1Chance);
                 if (Math.random() < and1Chance) {
                   const and1C = pickFoulCommitter(userLineup);
                   ensureStats(and1C.id);
