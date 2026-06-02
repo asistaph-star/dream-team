@@ -781,7 +781,13 @@ export function simulateTick(
     });
     const foulsThisQuarter = isUserTeam ? newTeamFouls.user[newQuarter - 1] : newTeamFouls.ai[newQuarter - 1];
     if (foulsThisQuarter > 0 && rollBaseSkill(team, "Enforcer Lift", newStamina)) {
-      team.forEach(p => recoverSkillStamina(p, 6));
+      const enforcerHolders = team.filter(p => hasBaseSkill(p, "Enforcer Lift"));
+      const bestEnforcer = enforcerHolders.reduce((best, p) => {
+        const id = (getOnBallDefenseRating(p) + getStrengthRating(p) + getStaminaRating(p)) / 3;
+        return id > best ? id : best;
+      }, 50);
+      const enforcerLiftScale = 0.85 + (bestEnforcer / 100) * 0.30;
+      team.forEach(p => recoverSkillStamina(p, 6 * enforcerLiftScale));
       skillLog(`Enforcer Lift turns physical play into team energy`, isUserTeam);
     }
   };
