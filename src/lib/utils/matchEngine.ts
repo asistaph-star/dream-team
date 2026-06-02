@@ -26,8 +26,8 @@ import {
   rollBaseSkill,
   rollSpecial,
   rollSpecialMechanic,
-  hasSpecialSkillMechanic,
 } from "../skills/skillResolver";
+import { hasSpecialSkillMechanic } from "../skills/skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 
 // Re-export everything the UI needs
