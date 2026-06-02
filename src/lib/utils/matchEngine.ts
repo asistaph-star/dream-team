@@ -1268,30 +1268,30 @@ export function simulateTick(
   // ═══ STEP 8 LAYER 3: HOME COURT SCORING HELPERS ═══
   const getHomeCourtBoost = (player: Player): number => {
     const base: Record<string, number> = {
-      'Mythic':    0.01,
-      'Legendary': 0.02,
-      'Epic':      0.03,
-      'Rare':      0.04,
-      'Common':    0.05,
+      'Mythic':    0.005,
+      'Legendary': 0.010,
+      'Epic':      0.015,
+      'Rare':      0.020,
+      'Common':    0.025,
     };
-    const rarityBoost = base[player.rarity] ?? 0.03;
+    const rarityBoost = base[player.rarity] ?? 0.015;
     const energyScaled = rarityBoost * homeCourt.crowdEnergy;
-    const rallyBonus = homeCourt.rallyMode ? 0.02 : 0.00;
-    return energyScaled + rallyBonus;
+    const rallyBonus = homeCourt.rallyMode ? 0.01 : 0.00;
+    return Math.min(0.025, energyScaled + rallyBonus);
   };
 
   const getAwayPenalty = (player: Player): number => {
     const base: Record<string, number> = {
-      'Mythic':    0.01,
-      'Legendary': 0.015,
-      'Epic':      0.02,
-      'Rare':      0.025,
-      'Common':    0.03,
+      'Mythic':    0.005,
+      'Legendary': 0.008,
+      'Epic':      0.010,
+      'Rare':      0.012,
+      'Common':    0.015,
     };
-    const rarityPenalty = base[player.rarity] ?? 0.02;
+    const rarityPenalty = base[player.rarity] ?? 0.010;
     const energyScaled = rarityPenalty * homeCourt.crowdEnergy;
-    const rallyPenalty = homeCourt.rallyMode ? 0.02 : 0.00;
-    return energyScaled + rallyPenalty;
+    const rallyPenalty = homeCourt.rallyMode ? 0.01 : 0.00;
+    return Math.min(0.020, energyScaled + rallyPenalty);
   };
 
   let pointsScored = 0;
