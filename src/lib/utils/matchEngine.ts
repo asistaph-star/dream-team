@@ -1838,7 +1838,10 @@ export function simulateTick(
         }
         if (rollBaseSkill(userLineup, "Tempo Surgeon", newStamina)) {
           const jammed = tryDeadAir(aiLineup, scorer, false, "Tempo Surgeon");
-          skillShotBonus += jammed ? 0.003 : 0.018;
+          const holders = userLineup.filter(p => p.baseSkills?.includes("Tempo Surgeon"));
+          const maxTempo = holders.length > 0 ? Math.max(...holders.map(p => Math.round((getHandleRating(p) + getAssistRating(p)) / 2))) : 50;
+          const tempoScale = 0.85 + (maxTempo / 100) * 0.30;
+          skillShotBonus += jammed ? (0.003 * tempoScale) : (0.018 * tempoScale);
           skillLog(`Tempo Surgeon creates a cleaner offensive read`, true);
         }
         if ((pace === "fastbreak" || pace === "early_offense") && rollBaseSkill(userLineup, "Tempo Switch", newStamina)) {
@@ -2028,7 +2031,8 @@ export function simulateTick(
               eventIndicator = { playerId: a.id, type: 'AST' };
               newEvents.push(makeEvent(newQuarter, newClock, `${a.name} with the assist`, true, 0));
               if (hasBaseSkill(a, "Connector Hub") && rollBaseSkill(userLineup, "Connector Hub", newStamina)) {
-                recoverSkillStamina(scorer, 35);
+                const connectorScale = 0.85 + (getAssistRating(a) / 100) * 0.30;
+                recoverSkillStamina(scorer, 35 * connectorScale);
                 skillLog(`${a.name}'s Connector Hub restores ${scorer.name}'s stamina`, true);
               }
               if (rollBaseSkill(userLineup, "Share Rhythm", newStamina)) {
@@ -2287,7 +2291,10 @@ export function simulateTick(
     }
     if (rollBaseSkill(aiLineup, "Tempo Surgeon", newStamina)) {
       const jammed = tryDeadAir(userLineup, scorer, true, "Tempo Surgeon");
-      aiSkillShotBonus += jammed ? 0.003 : 0.018;
+      const holders = aiLineup.filter(p => p.baseSkills?.includes("Tempo Surgeon"));
+      const maxTempo = holders.length > 0 ? Math.max(...holders.map(p => Math.round((getHandleRating(p) + getAssistRating(p)) / 2))) : 50;
+      const tempoScale = 0.85 + (maxTempo / 100) * 0.30;
+      aiSkillShotBonus += jammed ? (0.003 * tempoScale) : (0.018 * tempoScale);
       skillLog(`Tempo Surgeon creates a cleaner offensive read`, false);
     }
     if ((pace === "fastbreak" || pace === "early_offense") && rollBaseSkill(aiLineup, "Tempo Switch", newStamina)) {
@@ -2733,7 +2740,8 @@ export function simulateTick(
                  ensureStats(a.id);
                  newPlayerStats[a.id].AST += 1;
                  if (hasBaseSkill(a, "Connector Hub") && rollBaseSkill(aiLineup, "Connector Hub", newStamina)) {
-                   recoverSkillStamina(scorer, 35);
+                   const connectorScale = 0.85 + (getAssistRating(a) / 100) * 0.30;
+                   recoverSkillStamina(scorer, 35 * connectorScale);
                    skillLog(`${a.name}'s Connector Hub restores ${scorer.name}'s stamina`, false);
                  }
                  if (rollBaseSkill(aiLineup, "Share Rhythm", newStamina)) {
