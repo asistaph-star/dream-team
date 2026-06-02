@@ -27,6 +27,8 @@ export interface NbaSeasonStats {
   threeMadePerGame?: number;
   threeAttemptedPerGame?: number;
   ftPct?: number;
+  freeThrowsMadePerGame?: number;
+  freeThrowsAttemptedPerGame?: number;
   usagePct?: number;
   trueShootingPct?: number;
   offensiveReboundPct?: number;
