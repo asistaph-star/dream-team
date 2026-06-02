@@ -5,7 +5,8 @@ import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRig
 import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain } from "@/lib/utils/starGrowth";
 import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
 import { SkillBadge } from "@/components/skills/SkillBadge";
-import { isSkillQuality } from "@/lib/skills/skillCatalog";
+import { isSkillQuality, SPECIAL_SKILL_RATES } from "@/lib/skills/skillCatalog";
+import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
 
@@ -17,7 +18,7 @@ interface PlayerHexProfileModalProps {
 }
 
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
-  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice } = useGameState();
+  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice, rerollSpecialLearnSkill, rollSpecialLearnSkill } = useGameState();
   
   // Ensure the modal always reads the absolute latest player state from the roster,
   // fixing the issue where the modal wouldn't update after a successful Star Up.
@@ -199,6 +200,9 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   const locked = isStarLocked;
                   const savedQuality = player.skillRarities?.[skillName];
                   const quality = isSkillQuality(savedQuality) ? savedQuality : "Common";
+                  const hasLearnedSkill = Boolean(skill);
+                  const maxRate = hasLearnedSkill ? SPECIAL_SKILL_RATES[skillName as SpecialSkillName] : undefined;
+                  const skillTapeCount = inventory.materials.skill_tape ?? 0;
 
                   return (
                     <div key={`spec-${idx}`} className="transform scale-[1.35] origin-center">
@@ -208,6 +212,20 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         locked={locked}
                         unlockText={`Star ${unlockStar}`}
                         quality={quality}
+                        maxRate={maxRate}
+                        tapeCount={skillTapeCount}
+                        onClick={!locked ? () => {
+                          if (hasLearnedSkill) {
+                            if ((quality === "Epic" || quality === "Legendary") && typeof window !== "undefined") {
+                              const confirmed = window.confirm(`Are you sure you want to spend 1 Tape to reroll this ${quality} special skill? You can still choose to keep it after rolling.`);
+                              if (!confirmed) return;
+                            }
+                            rerollSpecialLearnSkill(player.id, idx as 0 | 1);
+                          } else {
+                            rollSpecialLearnSkill(player.id, idx as 0 | 1);
+                          }
+                        } : undefined}
+                        actionLabel={hasLearnedSkill ? "Click reroll" : "Click summon"}
                       />
                     </div>
                   );

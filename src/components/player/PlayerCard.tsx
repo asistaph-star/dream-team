@@ -565,20 +565,6 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
                   locked={locked}
                   unlockText={`Star ${unlockStar}`}
                   quality={quality}
-                  maxRate={maxRate}
-                  tapeCount={skillTapeCount}
-                  onClick={!locked ? () => {
-                    if (hasLearnedSkill) {
-                      if ((quality === "Epic" || quality === "Legendary") && typeof window !== "undefined") {
-                        const confirmed = window.confirm(`Are you sure you want to spend 1 Tape to reroll this ${quality} special skill? You can still choose to keep it after rolling.`);
-                        if (!confirmed) return;
-                      }
-                      rerollSpecialLearnSkill(player.id, index as 0 | 1);
-                    } else {
-                      rollSpecialLearnSkill(player.id, index as 0 | 1);
-                    }
-                  } : undefined}
-                  actionLabel={hasLearnedSkill ? "Click reroll" : "Click summon"}
                 />
               );
             })}
