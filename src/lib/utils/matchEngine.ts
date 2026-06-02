@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1386,7 +1386,7 @@ export function simulateTick(
   const tryBlock = (defLineup: Player[], shooter: Player, isDefUser: boolean, shotType: ShotType = 'pullUpMid', is3PT = false): boolean => {
     const candidate = pickBlocker(defLineup);
     const rimWardenTriggered = rollBaseSkill(defLineup, "Rim Warden", newStamina);
-    const baseBlockChance = (candidate.defense / 100) * (rimWardenTriggered ? 0.095 : 0.055);
+    const baseBlockChance = (getBlockRating(candidate) / 100) * (rimWardenTriggered ? 0.095 : 0.055);
     const stamMod = getPlayerStaminaMod(candidate, newStamina[candidate.id]);
     const blockChance = baseBlockChance * stamMod;
     const blockRoll = Math.random();
