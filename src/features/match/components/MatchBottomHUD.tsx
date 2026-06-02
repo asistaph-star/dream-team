@@ -42,7 +42,7 @@ export function MatchBottomHUD({
               <button className="bg-gray-700 px-3 py-1 text-[10px] rounded font-bold uppercase">Global</button>
               <button className="bg-blue-600 px-3 py-1 text-[10px] rounded font-bold uppercase">Match</button>
           </div>
-          <div className="h-28 bg-black/40 p-2 text-[11px] overflow-y-auto font-mono">
+          <div className="h-28 bg-black/40 p-2 text-[11px] overflow-y-auto ">
               <p><span className="text-blue-400">System:</span> Match started!</p>
           </div>
       </div>

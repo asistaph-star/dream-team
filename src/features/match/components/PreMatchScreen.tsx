@@ -18,7 +18,7 @@ export const PreMatchScreen: React.FC<PreMatchScreenProps> = ({
   setViewState,
 }) => {
   return (
-    <div className="fixed inset-0 z-[200] bg-[#070b13] flex flex-col items-center justify-between p-8 font-mono animate-[fadeIn_0.3s_ease-out] overflow-y-auto">
+    <div className="fixed inset-0 z-[200] bg-[#070b13] flex flex-col items-center justify-between p-8  animate-[fadeIn_0.3s_ease-out] overflow-y-auto">
       {/* Neon scanlines */}
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_bottom,rgba(255,255,255,0),rgba(255,255,255,0)_50%,rgba(0,0,0,0.3)_50%,rgba(0,0,0,0.3))] bg-[length:100%_4px]" />
       

@@ -296,7 +296,7 @@ export function PlayerCard({
             className={`w-[380px] p-6 bg-[#0a0f1d]/95 border-2 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center backdrop-blur-md relative ${player.starLevel === 5 ? 'border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-red-500/40 shadow-[0_0_50px_rgba(239,68,68,0.3)]'}`}
           >
             <h3 className={`text-xl font-black tracking-widest mb-1 uppercase bg-clip-text text-transparent ${player.starLevel === 5 ? 'bg-gradient-to-r from-orange-400 to-amber-600' : 'bg-gradient-to-r from-red-400 to-rose-500'}`}>Dismiss Roster Card?</h3>
-            <p className="text-xs text-gray-400 font-mono mb-4">Are you sure you want to dismiss this asset from your squad?</p>
+            <p className="text-xs text-gray-400  mb-4">Are you sure you want to dismiss this asset from your squad?</p>
 
             {/* Player Mini-Card Preview */}
             <div className="flex items-center gap-4 bg-black/50 p-3 rounded-lg border border-red-500/20 w-full mb-6">
@@ -309,12 +309,12 @@ export function PlayerCard({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-black text-sm truncate leading-tight">{player.name}</div>
-                <div className="text-[10px] text-gray-400 font-mono mt-0.5 uppercase tracking-wide">{player.position} | OVR {player.ovr}</div>
+                <div className="text-[10px] text-gray-400  mt-0.5 uppercase tracking-wide">{player.position} | OVR {player.ovr}</div>
               </div>
             </div>
 
             {/* Financial breakdown */}
-            <div className="w-full bg-[#060b13] border border-white/5 rounded-xl p-3 mb-4 text-left font-mono text-xs flex flex-col gap-1.5">
+            <div className="w-full bg-[#060b13] border border-white/5 rounded-xl p-3 mb-4 text-left  text-xs flex flex-col gap-1.5">
               <div className="flex justify-between">
                 <span className="text-gray-400">Market Price:</span>
                 <span className="text-white font-bold">{player.price ?? 2500} TF</span>
@@ -427,7 +427,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
       )}
 
       {/* Economy and calculated Attributes */}
-      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10.5px] text-gray-300 font-mono py-1 leading-tight">
+      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10.5px] text-gray-300  py-1 leading-tight">
         <div className="flex gap-1 items-center">
           <span className="text-gray-400 font-semibold font-sans">Rating:</span>
           <span style={{ color: tierColor }} className="font-black">{tierRating}</span>
@@ -462,7 +462,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
       <div className="h-[1px] bg-white/20 my-1" />
 
       {/* Core Peak Basketball Stats Grid */}
-      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10.5px] font-mono text-gray-200 leading-tight">
+      <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10.5px]  text-gray-200 leading-tight">
         <div className="flex gap-1 items-center">
           <span className="text-gray-400">PPG:</span>
           <span className="font-extrabold text-white">{player.ppg?.toFixed(1) ?? '0.0'}</span>

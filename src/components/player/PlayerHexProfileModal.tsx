@@ -180,7 +180,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   <div key={stat.label} className="flex flex-col gap-1.5">
                     <div className="flex justify-between items-end">
                       <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
-                      <span className="text-[12px] font-black text-white font-mono">{stat.val}</span>
+                      <span className="text-[12px] font-black text-white ">{stat.val}</span>
                     </div>
                     <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
                       <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
@@ -205,7 +205,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       className="ml-auto px-4 py-1.5 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
                     >
                       <span className="text-[11px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
-                      <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
+                      <div className="text-[10px]  font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
                     </button>
                   ) : (
                     <button
@@ -216,7 +216,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
                     >
                       <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
-                      <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                      <div className="text-[10px]  font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
                     </button>
                   )
                 ) : null}
@@ -436,7 +436,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                             <>
                               <div className="flex justify-between items-center relative">
                                 <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">All Attributes</span>
-                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                <div className="flex items-center gap-3  text-[14px] font-bold">
                                   <span className="text-white">{currentGrowth.attributeGain}</span>
                                   <ArrowRight className="w-3 h-3 text-zinc-600" />
                                   <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.attributeGain}</span>
@@ -446,7 +446,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
                               <div className="flex justify-between items-center relative">
                                 <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">Stamina</span>
-                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                <div className="flex items-center gap-3  text-[14px] font-bold">
                                   <span className="text-white">{currentGrowth.staminaGain}</span>
                                   <ArrowRight className="w-3 h-3 text-zinc-600" />
                                   <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.staminaGain}</span>
@@ -456,7 +456,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
                               <div className="flex justify-between items-center relative">
                                 <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">{row3Label}</span>
-                                <div className="flex items-center gap-3 font-mono text-[14px] font-bold">
+                                <div className="flex items-center gap-3  text-[14px] font-bold">
                                   <span className="text-white">{row3Cur}</span>
                                   <ArrowRight className="w-3 h-3 text-zinc-600" />
                                   <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{row3Proj}</span>
@@ -481,7 +481,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           <div className="w-[85px] h-[85px] bg-zinc-900 border border-white/10 rounded-lg shadow-inner relative flex items-center justify-center overflow-hidden mb-3">
                             <Activity className="w-10 h-10 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] z-10" />
                             <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 text-center z-20 border-t border-white/5">
-                              <span className="text-white text-[10px] font-bold font-mono tracking-wider">{ownedMats}/{matCost}</span>
+                              <span className="text-white text-[10px] font-bold  tracking-wider">{ownedMats}/{matCost}</span>
                             </div>
                           </div>
                           <span className="text-zinc-400 text-[10px] font-black tracking-widest uppercase">Upgrade MAT</span>
@@ -496,7 +496,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                                 Req
                               </div>
                               <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 text-center z-20 border-t border-white/5">
-                                <span className="text-white text-[10px] font-bold font-mono tracking-wider">
+                                <span className="text-white text-[10px] font-bold  tracking-wider">
                                   <span className={hasEnoughDuplicates ? "text-white" : "text-red-500"}>{dupCandidates.length}/{requiredDuplicates}</span>
                                 </span>
                               </div>
@@ -576,7 +576,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           {pendingAscendSacrificeWarning.learnedSkills.map((s, idx) => (
                             <div key={idx} className="flex items-center gap-3 mb-2 last:mb-0 border-b border-white/5 pb-2 last:border-0 last:pb-0">
                               <div className="flex-1">
-                                <div className="text-white text-xs font-bold">{s.playerName} <span className="text-zinc-500 font-mono text-[9px] font-normal">(Slot {s.slotNumber})</span></div>
+                                <div className="text-white text-xs font-bold">{s.playerName} <span className="text-zinc-500  text-[9px] font-normal">(Slot {s.slotNumber})</span></div>
                                 <div className="text-emerald-400 text-sm font-black italic tracking-wide">{s.skillName}</div>
                               </div>
                               <div className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
@@ -918,7 +918,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                    <svg className="w-3.5 h-3.5 text-gray-500 group-hover/reroll:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                    <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest group-hover/reroll:text-white italic">Reroll</span>
                 </div>
-                <div className="text-[9px] font-mono font-bold text-gray-500 mt-0.5 group-hover/reroll:text-[#d61e38]">Cost: 1 Tape</div>
+                <div className="text-[9px]  font-bold text-gray-500 mt-0.5 group-hover/reroll:text-[#d61e38]">Cost: 1 Tape</div>
               </button>
             </div>
 
@@ -1170,7 +1170,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     className="w-full py-3 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
                   >
                     <span className="text-[12px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
-                    <div className="text-[10px] font-mono font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
+                    <div className="text-[10px]  font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
                   </button>
                 ) : (
                   <button
@@ -1185,7 +1185,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     className="w-full py-3 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center justify-center gap-3 transition-colors cursor-pointer group"
                   >
                     <span className="text-[12px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Reroll This Slot</span>
-                    <div className="text-[10px] font-mono font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                    <div className="text-[10px]  font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
                   </button>
                 )}
               </div>

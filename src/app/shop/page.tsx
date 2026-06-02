@@ -8,7 +8,7 @@ export default function ShopPage() {
       {/* Top Header */}
       <div className="p-4 bg-dt-navy-dark border-b border-dt-surface-border sticky top-0 z-10">
         <h1 className="text-xl font-bold text-dt-gold leading-tight drop-shadow-md">Draft & Shop</h1>
-        <p className="text-xs text-gray-400 font-mono">Recruit new talent for your Dream Team.</p>
+        <p className="text-xs text-gray-400 ">Recruit new talent for your Dream Team.</p>
       </div>
 
       {/* Content */}
@@ -18,7 +18,7 @@ export default function ShopPage() {
             <ShoppingCart className="text-gray-500 w-10 h-10" />
           </div>
           <h2 className="text-2xl font-black text-white italic tracking-widest uppercase mb-2">Coming Soon</h2>
-          <p className="text-sm text-gray-400 text-center font-mono">
+          <p className="text-sm text-gray-400 text-center ">
             We are working on a new shop experience. Gacha mechanics have been completely removed!
           </p>
         </div>

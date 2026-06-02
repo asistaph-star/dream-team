@@ -463,7 +463,7 @@ export default function AuthenticLobby() {
                 <ShieldAlert className="w-6 h-6 text-red-500 drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-red-500 font-mono font-bold text-[10px] tracking-[0.3em] uppercase leading-none mb-1">Tactical Alert</span>
+                <span className="text-red-500  font-bold text-[10px] tracking-[0.3em] uppercase leading-none mb-1">Tactical Alert</span>
                 <span className="text-white font-[family-name:var(--font-outfit)] font-black text-lg tracking-widest leading-none drop-shadow-md">
                   OUT OF POSITION PENALTY
                 </span>
@@ -508,7 +508,7 @@ export default function AuthenticLobby() {
           </div>
           
           <div className="relative z-10 flex items-center">
-             <span className="text-white font-mono font-black text-[15px] tracking-wider drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] mt-0.5">240</span>
+             <span className="text-white  font-black text-[15px] tracking-wider drop-shadow-[0_0_5px_rgba(255,255,255,0.5)] mt-0.5">240</span>
           </div>
         </div>
 
@@ -572,7 +572,7 @@ export default function AuthenticLobby() {
           {/* Slanted header banner */}
           <div className="relative bg-gradient-to-r from-zinc-800/80 to-zinc-900/60 border-b border-white/20 pb-1.5 mb-2.5 shrink-0 flex items-center justify-between px-1 z-10">
             <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[12px] tracking-wider uppercase italic leading-none mt-1">RESERVES</span>
-            <span className="text-white font-mono font-bold text-[9px] leading-none bg-white/10 border border-white/20 px-1.5 py-[3px] rounded shadow-[0_0_8px_rgba(255,255,255,0.1)] flex items-center justify-center mt-0.5">
+            <span className="text-white  font-bold text-[9px] leading-none bg-white/10 border border-white/20 px-1.5 py-[3px] rounded shadow-[0_0_8px_rgba(255,255,255,0.1)] flex items-center justify-center mt-0.5">
               {activeReserves.length} CARDS
             </span>
           </div>

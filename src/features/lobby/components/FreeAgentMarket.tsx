@@ -166,7 +166,7 @@ export function FreeAgentMarket({
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] text-zinc-400 font-mono">
+                          <span className="text-[10px] text-zinc-400 ">
                             Fee: <span className="text-emerald-400 font-bold">${((player.price || 500) * 10000).toLocaleString()}</span>
                           </span>
                           
@@ -223,12 +223,12 @@ export function FreeAgentMarket({
                       <div className="flex items-center gap-4 mt-2">
                         <div>
                           <div className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Salary Impact</div>
-                          <div className="text-xs font-mono font-bold text-white">+{Math.round(selectedFaPlayer.ovr * 12.5)} points</div>
+                          <div className="text-xs  font-bold text-white">+{Math.round(selectedFaPlayer.ovr * 12.5)} points</div>
                         </div>
                         <div className="w-px h-6 bg-white/10" />
                         <div>
                           <div className="text-[8px] text-zinc-500 font-bold uppercase tracking-wider">Acquisition Cost</div>
-                          <div className="text-sm font-mono font-black text-emerald-400">${((selectedFaPlayer.price || 500) * 10000).toLocaleString()}</div>
+                          <div className="text-sm  font-black text-emerald-400">${((selectedFaPlayer.price || 500) * 10000).toLocaleString()}</div>
                         </div>
                       </div>
                     </div>
@@ -257,27 +257,27 @@ export function FreeAgentMarket({
                   <div className="grid grid-cols-6 gap-2 bg-zinc-950 border border-white/5 rounded-xl p-2.5 mb-4 text-center shrink-0">
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">PPG</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.ppg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.ppg || 0.0}</div>
                     </div>
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">RPG</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.rpg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.rpg || 0.0}</div>
                     </div>
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">APG</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.apg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.apg || 0.0}</div>
                     </div>
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">SPG</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.spg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.spg || 0.0}</div>
                     </div>
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">BPG</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.bpg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.bpg || 0.0}</div>
                     </div>
                     <div>
                       <div className="text-[7px] text-zinc-500 font-black uppercase">TO</div>
-                      <div className="text-xs font-bold text-white font-mono">{selectedFaPlayer.topg || 0.0}</div>
+                      <div className="text-xs font-bold text-white ">{selectedFaPlayer.topg || 0.0}</div>
                     </div>
                   </div>
 
@@ -297,7 +297,7 @@ export function FreeAgentMarket({
                       <div key={attr.label}>
                         <div className="flex justify-between items-center text-[10px] mb-1 font-semibold">
                           <span className="text-zinc-400 font-sans">{attr.label}</span>
-                          <span className="text-white font-mono font-bold">{attr.val} / {attr.max}</span>
+                          <span className="text-white  font-bold">{attr.val} / {attr.max}</span>
                         </div>
                         <div className="h-1.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5 relative">
                           <div 
@@ -343,7 +343,7 @@ export function FreeAgentMarket({
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2.5">
                 <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Market Refresh Clock</span>
-                <span className="text-xs font-mono font-black text-white bg-white/5 border border-white/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(255,255,255,0.05)]">
+                <span className="text-xs  font-black text-white bg-white/5 border border-white/20 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(255,255,255,0.05)]">
                   {formatFaTime(faTimeLeft)}
                 </span>
               </div>
@@ -353,7 +353,7 @@ export function FreeAgentMarket({
                 <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest" title="Guaranteed Mythic on 50th paid refresh">Pity Status</span>
                 <div className="bg-zinc-900 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1.5 shadow-inner">
                   <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-                  <span className="text-xs font-mono font-black text-white">
+                  <span className="text-xs  font-black text-white">
                     {faPityCounter} / 50
                   </span>
                 </div>

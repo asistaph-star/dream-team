@@ -110,13 +110,13 @@ export function MatchScoreboard({
         <div className={`bg-[#0c0c0e]/95 border p-2 rounded-lg flex items-center justify-around w-28 text-white transition-all duration-300 ${isPreviewMode ? 'border-cyan-400 shadow-[0_0_15px_#06b6d4] scale-105' : hasWarnings ? 'border-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.3)] animate-pulse' : 'border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.2)]'}`}>
           <div className="flex flex-col items-center leading-tight">
             <span className="text-[9px] text-gray-400 font-black tracking-widest">OFF</span>
-            <span className="text-sm font-extrabold text-cyan-400 font-mono">{uOff}</span>
+            <span className="text-sm font-extrabold text-cyan-400 ">{uOff}</span>
             <span className={`text-[10px] font-bold ${uOffDir === '▲' ? 'text-green-400' : uOffDir === '▼' ? 'text-red-400' : 'text-gray-500'}`}>{uOffDir || '•'}</span>
           </div>
           <div className="h-6 w-px bg-gray-800/80" />
           <div className="flex flex-col items-center leading-tight">
             <span className="text-[9px] text-gray-400 font-black tracking-widest">DEF</span>
-            <span className="text-sm font-extrabold text-cyan-400 font-mono">{uDef}</span>
+            <span className="text-sm font-extrabold text-cyan-400 ">{uDef}</span>
             <span className={`text-[10px] font-bold ${uDefDir === '▲' ? 'text-green-400' : uDefDir === '▼' ? 'text-red-400' : 'text-gray-500'}`}>{uDefDir || '•'}</span>
           </div>
         </div>
@@ -140,11 +140,11 @@ export function MatchScoreboard({
           <div className="w-[230px] h-[28px] bg-gradient-to-t from-[#0c0c0e]/95 to-cyan-950/60 border-t border-x border-cyan-500/30 rounded-t-lg flex items-center justify-between px-3 shadow-[0_-5px_15px_rgba(6,182,212,0.1)]">
             <div className="flex items-center gap-1.5 truncate">
               <span className="text-[10px] text-yellow-400">👑</span>
-              <span className="text-[10px] font-black tracking-widest text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.85)] truncate font-mono uppercase">
+              <span className="text-[10px] font-black tracking-widest text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.85)] truncate  uppercase">
                 nfrignaciostudent
               </span>
             </div>
-            <span className="text-[8px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded px-1 font-mono font-bold">HOME</span>
+            <span className="text-[8px] bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded px-1  font-bold">HOME</span>
           </div>
 
           {/* Connector bridge */}
@@ -154,8 +154,8 @@ export function MatchScoreboard({
 
           {/* AI Opponent Name Pill with matching difficulty-themed glows */}
           <div className={`w-[230px] h-[28px] bg-gradient-to-t from-[#0c0c0e]/95 ${getAiHeaderGrad()} border-t border-x border-red-500/30 rounded-t-lg flex items-center justify-between px-3 shadow-[0_-5px_15px_rgba(239,68,68,0.1)]`}>
-            <span className="text-[8px] bg-red-500/20 text-red-300 border border-red-400/30 rounded px-1 font-mono font-bold">AWAY</span>
-            <span className="text-[10px] font-black tracking-widest text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.85)] truncate font-mono uppercase text-right">
+            <span className="text-[8px] bg-red-500/20 text-red-300 border border-red-400/30 rounded px-1  font-bold">AWAY</span>
+            <span className="text-[10px] font-black tracking-widest text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.85)] truncate  uppercase text-right">
               {aiTeam.name}
             </span>
           </div>
@@ -171,7 +171,7 @@ export function MatchScoreboard({
               {matchState.possessionTeam === 'user' && (
                 <span className="text-[11px] filter drop-shadow-[0_0_5px_rgba(249,115,22,1)] animate-pulse select-none">🏀</span>
               )}
-              <span className="text-3xl font-black font-mono tracking-tight text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
+              <span className="text-3xl font-black  tracking-tight text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
                 {displayUserScore}
               </span>
             </div>
@@ -205,25 +205,25 @@ export function MatchScoreboard({
             ) : (
               <>
                 {/* Minimal live indicator */}
-                <div className="text-[7px] font-black text-gray-500 tracking-[0.25em] flex items-center gap-1.5 uppercase mb-0.5 select-none font-mono">
+                <div className="text-[7px] font-black text-gray-500 tracking-[0.25em] flex items-center gap-1.5 uppercase mb-0.5 select-none ">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
                   <span>LIVE</span>
                 </div>
 
                 {/* Big Game Clock */}
-                <div className="text-xl font-black font-mono tracking-tight text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] leading-none my-0.5">
+                <div className="text-xl font-black  tracking-tight text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] leading-none my-0.5">
                   {Math.floor(displayClock / 60)}:{(displayClock % 60).toString().padStart(2, '0')}
                 </div>
 
                 {/* Bottom Row */}
                 <div className="w-full flex items-center justify-between px-3 mt-1 text-gray-400">
                   {/* Quarter */}
-                  <span className="text-[9px] font-black font-mono text-gray-300 tracking-wider">
+                  <span className="text-[9px] font-black  text-gray-300 tracking-wider">
                     {getQText(matchState.quarter)}
                   </span>
                   {/* Shot Clock (Possession Clock) */}
                   {displayPossClock < displayClock && displayClock > 0 ? (
-                    <span className={`text-[10px] font-black font-mono px-1 rounded tabular-nums ${displayPossClock <= 5 ? 'text-red-500 bg-red-500/10 border border-red-500/30 animate-pulse font-extrabold shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'text-amber-400 font-bold'}`}>
+                    <span className={`text-[10px] font-black  px-1 rounded tabular-nums ${displayPossClock <= 5 ? 'text-red-500 bg-red-500/10 border border-red-500/30 animate-pulse font-extrabold shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'text-amber-400 font-bold'}`}>
                       {Math.ceil(displayPossClock)}
                     </span>
                   ) : (
@@ -238,7 +238,7 @@ export function MatchScoreboard({
           <div className={`flex-1 bg-gradient-to-l ${getAiGradient()} flex items-center justify-between px-3 border-l border-black/35 relative transition-all duration-500`}>
             {/* Big Digital Score */}
             <div className="flex-1 flex justify-start items-center pl-1 gap-2">
-              <span className="text-3xl font-black font-mono tracking-tight text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
+              <span className="text-3xl font-black  tracking-tight text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
                 {displayAiScore}
               </span>
               {matchState.possessionTeam === 'ai' && (
@@ -270,7 +270,7 @@ export function MatchScoreboard({
 
         {/* Dynamic Cheer/Rally Progress Bar under Scoreboard */}
         <div className="w-[500px] px-4 py-2 bg-[#0a0c0e]/95 border-x-2 border-b-2 border-gray-800/80 rounded-b-xl flex flex-col gap-1 shadow-lg">
-          <div className="flex justify-between items-center text-[7px] font-black tracking-widest font-mono">
+          <div className="flex justify-between items-center text-[7px] font-black tracking-widest ">
             <span className={`${isHomeGame ? 'text-cyan-400 animate-pulse' : 'text-gray-400'}`}>MY TEAM CROWD ENERGY{isHomeGame ? ' [HOME]' : ''}</span>
             <span className={`${!isHomeGame ? 'text-red-400 animate-pulse' : 'text-gray-400'}`}>{aiTeam.name.toUpperCase()} CROWD ENERGY{!isHomeGame ? ' [HOME]' : ''}</span>
           </div>
@@ -293,13 +293,13 @@ export function MatchScoreboard({
         <div className="bg-[#0c0c0e]/95 border border-red-500/80 shadow-[0_0_10px_rgba(239,68,68,0.2)] p-2 rounded-lg flex items-center justify-around w-28 text-white">
           <div className="flex flex-col items-center leading-tight">
             <span className="text-[9px] text-gray-400 font-black tracking-widest">OFF</span>
-            <span className="text-sm font-extrabold text-red-400 font-mono">{aOff}</span>
+            <span className="text-sm font-extrabold text-red-400 ">{aOff}</span>
             <span className={`text-[10px] font-bold ${aOffDir === '▲' ? 'text-green-400' : aOffDir === '▼' ? 'text-red-400' : 'text-gray-500'}`}>{aOffDir || '•'}</span>
           </div>
           <div className="h-6 w-px bg-gray-800/80" />
           <div className="flex flex-col items-center leading-tight">
             <span className="text-[9px] text-gray-400 font-black tracking-widest">DEF</span>
-            <span className="text-sm font-extrabold text-red-400 font-mono">{aDef}</span>
+            <span className="text-sm font-extrabold text-red-400 ">{aDef}</span>
             <span className={`text-[10px] font-bold ${aDefDir === '▲' ? 'text-green-400' : aDefDir === '▼' ? 'text-red-400' : 'text-gray-500'}`}>{aDefDir || '•'}</span>
           </div>
         </div>

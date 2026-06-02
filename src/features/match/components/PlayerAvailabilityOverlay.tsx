@@ -18,7 +18,7 @@ export const PlayerAvailabilityOverlay: React.FC<PlayerAvailabilityOverlayProps>
       )}
       {isFouledOut && (
         <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-[65] rounded-xl backdrop-blur-[2px]">
-          <span className="text-red-500 text-2xl font-black tracking-widest font-mono">DQ</span>
+          <span className="text-red-500 text-2xl font-black tracking-widest ">DQ</span>
           <span className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mt-1">6 FOULS</span>
         </div>
       )}

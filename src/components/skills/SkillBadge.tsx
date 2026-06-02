@@ -93,7 +93,7 @@ export function SkillBadge({
       <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-32 -translate-x-1/2 rounded border border-white/10 bg-black/95 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow-xl group-hover/skill:block">
         <div className="whitespace-nowrap">{locked ? lockLabel : shortName}</div>
         {!locked && color === "special" && maxRate && (
-          <div className="mt-1 grid gap-0.5 text-left font-mono text-[7px] normal-case tracking-normal">
+          <div className="mt-1 grid gap-0.5 text-left  text-[7px] normal-case tracking-normal">
             {SKILL_QUALITY_ORDER.map((tier) => (
               <div
                 key={tier}

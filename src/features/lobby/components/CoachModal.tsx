@@ -188,7 +188,7 @@ export function CoachModal({
                             <p className="text-[10px] text-zinc-400 leading-relaxed font-sans mb-1.5">{strat.desc}</p>
                             
                             {/* Dynamic attribute badges */}
-                            <div className="flex flex-wrap gap-2 text-[9px] font-bold font-mono">
+                            <div className="flex flex-wrap gap-2 text-[9px] font-bold ">
                               <span className="bg-zinc-950/80 px-2 py-0.5 rounded border border-white/5 text-white">
                                 FOCUS: {strat.focus.toUpperCase()}
                               </span>
@@ -228,7 +228,7 @@ export function CoachModal({
                               {!isMax && <div className="absolute top-0 right-0 w-4 h-full bg-white/40 animate-pulse blur-[1px]"></div>}
                             </div>
                           </div>
-                          <span className="text-[10px] font-black text-zinc-400 font-mono whitespace-nowrap tracking-wider">
+                          <span className="text-[10px] font-black text-zinc-400  whitespace-nowrap tracking-wider">
                             {isMax ? 'MAX MASTERED' : `${current.exp} / ${req} EXP`}
                           </span>
                         </div>
