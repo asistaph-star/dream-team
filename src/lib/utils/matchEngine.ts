@@ -1860,7 +1860,8 @@ export function simulateTick(
           let sfChance = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf) * foulDrawMod) + clutchFoulBoost; // NBA avg ~20-25 FTA/team/game
           if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance += 0.035;
           if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(userLineup, "Foul Magnet", newStamina)) {
-            sfChance += 0.035;
+            const foulMagnetScale = 0.90 + getFoulDrawTendency(scorer) * 0.25;
+            sfChance += 0.035 * foulMagnetScale;
             skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, true);
           }
           if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(userLineup, "Flop X", newStamina)) {
@@ -2571,7 +2572,8 @@ export function simulateTick(
             let sfChance_ai = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf_ai) * foulDrawMod) + aiClutchFoulBoost; // NBA avg ~20-25 FTA/team/game
             if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance_ai += 0.035;
             if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(aiLineup, "Foul Magnet", newStamina)) {
-              sfChance_ai += 0.035;
+              const foulMagnetScale = 0.90 + getFoulDrawTendency(scorer) * 0.25;
+              sfChance_ai += 0.035 * foulMagnetScale;
               skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, false);
             }
             if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecial(aiLineup, "Flop X", newStamina)) {
