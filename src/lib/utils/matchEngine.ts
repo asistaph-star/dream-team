@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1473,7 +1473,7 @@ export function simulateTick(
   };
 
   const getAssistChance = (passer: Player): number => {
-    return Math.max(0.38, Math.min(0.72, 0.38 + ((passer.playmaking ?? 70) / 330)));
+    return Math.max(0.38, Math.min(0.72, 0.38 + ((getAssistRating(passer) ?? 70) / 330)));
   };
 
   // ═══ STEP 7: CLUTCH HELPERS (Layers 2, 3, 8) ═══
@@ -2340,7 +2340,7 @@ export function simulateTick(
           newEvents.push(makeEvent(newQuarter, newClock, trapNarrative(scorer.name, true), false, 2, scorer.id));
           const tm = aiLineup.filter(p => p.id !== scorer.id);
             if (tm.length > 0) {
-              const ws = tm.map(p => p.playmaking || 50);
+              const ws = tm.map(p => getAssistRating(p) || 50);
               const tw = ws.reduce((s, w) => s + w, 0);
               let r = Math.random() * tw;
               let a = tm[tm.length - 1];
@@ -2454,7 +2454,7 @@ export function simulateTick(
               if (clutchSituation.active) { const fb = clutchSituation.intensity === 'high' ? 0.04 : 0.02; newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + fb); }
               const tm = aiLineup.filter(p => p.id !== scorer.id);
             if (tm.length > 0) {
-              const ws = tm.map(p => p.playmaking || 50);
+              const ws = tm.map(p => getAssistRating(p) || 50);
               const tw = ws.reduce((s, w) => s + w, 0);
               let r = Math.random() * tw;
               let a = tm[tm.length - 1];
@@ -2726,7 +2726,7 @@ export function simulateTick(
               nextLastPlayCategory = 'made_shot';
               const tm = aiLineup.filter(p => p.id !== scorer.id);
             if (tm.length > 0) {
-              const ws = tm.map(p => p.playmaking || 50);
+              const ws = tm.map(p => getAssistRating(p) || 50);
               const tw = ws.reduce((s, w) => s + w, 0);
               let r = Math.random() * tw;
               let a = tm[tm.length - 1];
