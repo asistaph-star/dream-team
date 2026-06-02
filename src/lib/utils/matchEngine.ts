@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -877,11 +877,12 @@ export function simulateTick(
   [...userLineup, ...aiLineup].forEach(p => {
     const team = userLineup.some(u => u.id === p.id) ? userLineup : aiLineup;
     const isUserTeam = team === userLineup;
-    const currentStamina = newStamina[p.id] ?? 100;
     const currentStaminaPct = staminaPct(p);
-    const ironMotorRate = p.ovr >= 85 ? 95 : 65;
-    if (hasBaseSkill(p, "Iron Motor") && currentStaminaPct <= 70 && Math.random() * 1000 < ironMotorRate) {
-      recoverSkillStamina(p, 12);
+    const ironMotorIdentity = getStaminaRating(p);
+    const ironMotorTriggerRate = Math.max(60, Math.min(95, 55 + ironMotorIdentity * 0.40));
+    if (hasBaseSkill(p, "Iron Motor") && currentStaminaPct <= 70 && Math.random() * 1000 < ironMotorTriggerRate) {
+      const ironMotorScale = 0.85 + (ironMotorIdentity / 100) * 0.30;
+      recoverSkillStamina(p, 12 * ironMotorScale);
       if (currentStaminaPct <= 45) skillLog(`${p.name}'s Iron Motor restores stamina`, isUserTeam);
     }
   });

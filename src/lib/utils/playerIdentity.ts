@@ -20,6 +20,10 @@ export const getOffenseRating = (player: Player): number => {
   return player.offense;
 };
 
+export const getStaminaRating = (player: Player): number => {
+  return player.stamina ?? Math.round((player.speed + player.strength) / 2);
+};
+
 export const getThreePtRating = (player: Player): number => {
   return player.threePt ?? player.shooting;
 };
