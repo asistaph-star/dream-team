@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getReboundRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1433,14 +1433,14 @@ export function simulateTick(
   // ═══ REBOUND HELPER ═══
   const REB_W: Record<string, number> = { C: 2.0, PF: 1.6, SF: 1.0, SG: 0.6, PG: 0.4 };
   const teamRebScore = (lineup: Player[]): number =>
-    lineup.reduce((s, p) => s + p.defense * (REB_W[p.position] || 1.0) * getPlayerStaminaMod(p, newStamina[p.id]), 0);
+    lineup.reduce((s, p) => s + getReboundRating(p) * (REB_W[p.position] || 1.0) * getPlayerStaminaMod(p, newStamina[p.id]), 0);
   const getOffensiveReboundChance = (attReb: number, defReb: number, glassTouch: boolean, paintBarrier: boolean): number => {
     const share = attReb / Math.max(1, attReb + defReb);
     const matchupSwing = (share - 0.5) * 0.34;
     return Math.min(Math.max(0.23 + matchupSwing + (glassTouch ? 0.055 : 0) - (paintBarrier ? 0.06 : 0), 0.10), 0.36);
   };
   const pickRebounder = (lineup: Player[]): Player => {
-    const ws = lineup.map(p => (REB_W[p.position] || 1.0) * p.defense);
+    const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
     const tw = ws.reduce((s, w) => s + w, 0);
     let r = Math.random() * tw;
     for (let i = 0; i < lineup.length; i++) { r -= ws[i]; if (r <= 0) return lineup[i]; }
