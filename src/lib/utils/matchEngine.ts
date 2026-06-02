@@ -33,6 +33,10 @@ export { createInitialMatchState, getStaminaMod, getPlayerStaminaMod, getStamina
 
 const MAX_3PT_POSITIVE_ADDITIVE_BONUS = 0.08;
 
+function getIndividualThreePointShotMod(shooting: number | undefined): number {
+  return Math.max(0.72, Math.min(1.0, 0.72 + ((shooting ?? 50) / 100) * 0.35));
+}
+
 const isShaiGilgeousAlexander = (player: Player): boolean => {
   return player.name.toLowerCase().includes("shai gilgeous-alexander");
 };
@@ -1963,7 +1967,10 @@ export function simulateTick(
             ? Math.min(additiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
             : additiveBonusSum;
 
-          const finalScoringChance = Math.max(0.15, Math.min(0.85, (clutchAdjustedChance * decisionWeightMod) + cappedAdditiveBonus + shotValueDifficulty));
+          const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
+          const adjustedChanceWithIndividual3PT = (clutchAdjustedChance * decisionWeightMod) * individual3ptMod;
+
+          const finalScoringChance = Math.max(0.15, Math.min(0.85, adjustedChanceWithIndividual3PT + cappedAdditiveBonus + shotValueDifficulty));
           const isSuccess = Math.random() < finalScoringChance;
           if (is3PT) {
             const baseHalfWidth = 2.0;
@@ -2386,7 +2393,10 @@ export function simulateTick(
               ? Math.min(aiBlitzAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
               : aiBlitzAdditiveBonusSum;
 
-            const aiBlitzFinalChance = Math.max(0.15, Math.min(0.80, aiBlitzAdjustedChance + aiBlitzCappedAdditiveBonus + aiBlitzShotValueDifficulty));
+            const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
+            const adjustedChanceWithIndividual3PT = aiBlitzAdjustedChance * individual3ptMod;
+
+            const aiBlitzFinalChance = Math.max(0.15, Math.min(0.80, adjustedChanceWithIndividual3PT + aiBlitzCappedAdditiveBonus + aiBlitzShotValueDifficulty));
             const isSuccess = Math.random() < aiBlitzFinalChance;
             if (is3PT) {
               const baseHalfWidth = 2.0;
@@ -2638,7 +2648,10 @@ export function simulateTick(
             ? Math.min(aiAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
             : aiAdditiveBonusSum;
 
-          const aiFinalChance = Math.max(0.15, Math.min(0.85, aiAdjustedChance + aiCappedAdditiveBonus + aiShotValueDifficulty));
+          const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
+          const adjustedChanceWithIndividual3PT = aiAdjustedChance * individual3ptMod;
+
+          const aiFinalChance = Math.max(0.15, Math.min(0.85, adjustedChanceWithIndividual3PT + aiCappedAdditiveBonus + aiShotValueDifficulty));
           const isSuccess = Math.random() < aiFinalChance;
           if (is3PT) {
             const baseHalfWidth = 2.0;
