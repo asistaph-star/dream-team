@@ -25,6 +25,7 @@ import {
   removeOldestMark,
   rollBaseSkill,
   rollSpecial,
+  rollSpecialMechanic,
 } from "../skills/skillResolver";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 
@@ -716,7 +717,7 @@ export function simulateTick(
     if (teamAvgStamina >= 65 && markedPlayers.length === 0) return;
     const useKey = `Cold Timeout X Q${newQuarter}`;
     if (hasTeamSkillUsed(isUserTeam, useKey)) return;
-    if (!rollSpecial(team, "Cold Timeout X", newStamina, (h) => {
+    if (!rollSpecialMechanic(team, "TIMEOUT_RESET_CLEANSE", newStamina, (h) => {
       const coldTimeoutIdentity = (getCalmRating(h) + getStaminaRating(h)) / 2;
       return 0.90 + (coldTimeoutIdentity / 100) * 0.20;
     })) return;
@@ -1965,11 +1966,11 @@ export function simulateTick(
             const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
             return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
           })) {
-            const composed = rollSpecial(aiLineup, "Composure X", newStamina, (h) => {
+            const composed = rollSpecialMechanic(aiLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
               const composureIdentity = getCalmRating(h);
               return 0.90 + (composureIdentity / 100) * 0.20;
             });
-            const cleanContest = !composed && rollSpecial(aiLineup, "Clean Contest X", newStamina, (h) => {
+            const cleanContest = !composed && rollSpecialMechanic(aiLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
               const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
               return 0.90 + (cleanContestIdentity / 100) * 0.20;
             });
@@ -2745,11 +2746,11 @@ export function simulateTick(
               const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
               return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
             })) {
-              const composed = rollSpecial(userLineup, "Composure X", newStamina, (h) => {
+              const composed = rollSpecialMechanic(userLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
                 const composureIdentity = getCalmRating(h);
                 return 0.90 + (composureIdentity / 100) * 0.20;
               });
-              const cleanContest = !composed && rollSpecial(userLineup, "Clean Contest X", newStamina, (h) => {
+              const cleanContest = !composed && rollSpecialMechanic(userLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
                 const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
                 return 0.90 + (cleanContestIdentity / 100) * 0.20;
               });
