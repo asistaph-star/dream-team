@@ -96,7 +96,7 @@ interface GameState {
   pendingSkillTraining: PendingSkillTraining | null;
   acceptSkillTraining: (slotIndex: 0 | 1) => { success: boolean; error?: string };
   rejectSkillTraining: () => { success: boolean; error?: string };
-  trainSpecialSkill: (playerId: string) => { success: boolean; skill?: string; quality?: string; error?: string };
+  trainSpecialSkill: (playerId: string, options?: { force?: boolean }) => { success: boolean; skill?: string; quality?: string; error?: string };
   resetRosterProgress: () => void;
 }
 
@@ -843,12 +843,13 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
   };
 
   const trainSpecialSkill = (
-    playerId: string
+    playerId: string,
+    options?: { force?: boolean }
   ): { success: boolean; skill?: string; quality?: string; error?: string } => {
     const player = roster.find(p => p.id === playerId);
     if (!player) return { success: false, error: "Player not found on your roster!" };
 
-    if (pendingSkillTraining) {
+    if (pendingSkillTraining && !options?.force) {
       return { success: false, error: "Please resolve your pending training before rolling again." };
     }
 

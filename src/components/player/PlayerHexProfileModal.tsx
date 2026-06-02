@@ -886,6 +886,16 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   <span className="text-gray-300 font-bold">Max Level Effect:</span> When in a game, there's a 100 rate to trigger... (Up to 100 rate at max level).
                 </p>
               </div>
+
+              {/* Reroll Instantly Button */}
+              <button 
+                onClick={() => trainSpecialSkill(player.id, { force: true })}
+                disabled={(inventory.materials.skill_tape ?? 0) < 1}
+                className="ml-auto px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 rounded-sm flex flex-col items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed group/reroll z-10 mr-2"
+              >
+                <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest group-hover/reroll:text-amber-400">Reroll Again</span>
+                <span className="text-[9px] font-mono text-amber-500/70">1 Tape</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-3 mt-6 mb-4 px-1">
