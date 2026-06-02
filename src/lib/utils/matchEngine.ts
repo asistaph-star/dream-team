@@ -685,7 +685,7 @@ export function simulateTick(
     isTriggerUser: boolean
   ) => {
     if (!hasMark(newSkillMarks, target.id, "Debt")) return;
-    if (!rollSpecial(triggerTeam, "Debt Collector X", newStamina, (h) => {
+    if (!rollSpecialMechanic(triggerTeam, "GAMEPLAN_DEBT_COLLECTOR", newStamina, (h) => {
       const debtCollectorIdentity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
       return 0.90 + (debtCollectorIdentity / 100) * 0.20;
     })) return;
@@ -772,7 +772,7 @@ export function simulateTick(
     return true;
   };
   const applyPressureCoach = (sourceTeam: Player[], targetTeam: Player[], isSourceUser: boolean) => {
-    if (!rollSpecial(sourceTeam, "Pressure Coach X", newStamina, (h) => {
+    if (!rollSpecialMechanic(sourceTeam, "GAMEPLAN_PRESSURE_COACH", newStamina, (h) => {
       const pressureCoachIdentity = (getAssistRating(h) + getOnBallDefenseRating(h) + getStaminaRating(h)) / 3;
       return 0.90 + (pressureCoachIdentity / 100) * 0.20;
     })) return;
