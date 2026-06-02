@@ -1401,10 +1401,10 @@ export function simulateTick(
   const REB_W: Record<string, number> = { C: 2.0, PF: 1.6, SF: 1.0, SG: 0.6, PG: 0.4 };
   const teamRebScore = (lineup: Player[]): number =>
     lineup.reduce((s, p) => s + getReboundRating(p) * (REB_W[p.position] || 1.0) * getPlayerStaminaMod(p, newStamina[p.id]), 0);
-  const getOffensiveReboundChance = (attReb: number, defReb: number, glassTouch: boolean, paintBarrier: boolean): number => {
+  const getOffensiveReboundChance = (attReb: number, defReb: number, glassScale: number, barrierScale: number): number => {
     const share = attReb / Math.max(1, attReb + defReb);
     const matchupSwing = (share - 0.5) * 0.34;
-    return Math.min(Math.max(0.23 + matchupSwing + (glassTouch ? 0.055 : 0) - (paintBarrier ? 0.06 : 0), 0.10), 0.36);
+    return Math.min(Math.max(0.23 + matchupSwing + (glassScale > 0 ? 0.055 * glassScale : 0) - (barrierScale > 0 ? 0.06 * barrierScale : 0), 0.10), 0.36);
   };
   const pickRebounder = (lineup: Player[]): Player => {
     const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
@@ -2073,7 +2073,19 @@ export function simulateTick(
             const defReb = teamRebScore(aiLineup);
             const glassTouch = rollBaseSkill(userLineup, "Glass Touch", newStamina);
             const paintBarrier = rollBaseSkill(aiLineup, "Paint Barrier", newStamina);
-            const orebChance = getOffensiveReboundChance(attReb, defReb, glassTouch, paintBarrier);
+            let glassScale = 0;
+            if (glassTouch) {
+              const holders = userLineup.filter(p => hasBaseSkill(p, "Glass Touch"));
+              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
+              glassScale = 0.85 + (maxRating / 100) * 0.30;
+            }
+            let barrierScale = 0;
+            if (paintBarrier) {
+              const holders = aiLineup.filter(p => hasBaseSkill(p, "Paint Barrier"));
+              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
+              barrierScale = 0.85 + (maxRating / 100) * 0.30;
+            }
+            const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale);
             if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, false);
             if (Math.random() < orebChance) {
               const reb = pickRebounder(userLineup);
@@ -2763,7 +2775,19 @@ export function simulateTick(
       const defReb = teamRebScore(userLineup);
       const glassTouch = rollBaseSkill(aiLineup, "Glass Touch", newStamina);
       const paintBarrier = rollBaseSkill(userLineup, "Paint Barrier", newStamina);
-      const orebChance = getOffensiveReboundChance(attReb, defReb, glassTouch, paintBarrier);
+      let glassScale = 0;
+      if (glassTouch) {
+        const holders = aiLineup.filter(p => hasBaseSkill(p, "Glass Touch"));
+        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
+        glassScale = 0.85 + (maxRating / 100) * 0.30;
+      }
+      let barrierScale = 0;
+      if (paintBarrier) {
+        const holders = userLineup.filter(p => hasBaseSkill(p, "Paint Barrier"));
+        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
+        barrierScale = 0.85 + (maxRating / 100) * 0.30;
+      }
+      const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale);
       if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, true);
       if (Math.random() < orebChance) {
         const reb = pickRebounder(aiLineup);
