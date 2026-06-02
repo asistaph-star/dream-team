@@ -7,6 +7,7 @@ import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard"
 import { SkillBadge } from "@/components/skills/SkillBadge";
 import { isSkillQuality } from "@/lib/skills/skillCatalog";
 import { useGameState } from "@/lib/context/GameStateContext";
+import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
 
 interface PlayerHexProfileModalProps {
   player: Player;
@@ -270,20 +271,15 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               const ownedMats = inventory?.materials?.mat_upgrade ?? 0;
               const hasEnoughMats = ownedMats >= matCost;
 
-              let needsDuplicate = false;
-              if (targetInfo.tier === "Silver" && (targetInfo.level === 1 || targetInfo.level === 5)) needsDuplicate = true;
-              else if (targetInfo.tier === "Blue" && targetInfo.level === 5) needsDuplicate = true;
-              else if (targetInfo.tier === "Violet" && (targetInfo.level === 3 || targetInfo.level === 5)) needsDuplicate = true;
-              else if (targetInfo.tier === "Orange" && (targetInfo.level === 3 || targetInfo.level === 4 || targetInfo.level === 5)) needsDuplicate = true;
-              else if (targetInfo.tier === "Red" && (targetInfo.level === 1 || targetInfo.level === 3 || targetInfo.level === 5)) needsDuplicate = true;
+              const requiredDuplicates = getRequiredDuplicateCount(targetInfo.tier, targetInfo.level);
 
               const dupCandidates = roster.filter(
                 p => p.name === player.name && 
                 p.id !== player.id && 
                 !activeLineup.some(al => al.id === p.id)
               );
-              const hasDuplicate = dupCandidates.length > 0;
-              const canAscend = hasEnoughMats && (!needsDuplicate || hasDuplicate);
+              const hasEnoughDuplicates = dupCandidates.length >= requiredDuplicates;
+              const canAscend = hasEnoughMats && hasEnoughDuplicates;
 
               // Calculate projected player attributes for Effect Preview
               const projectedPlayer = applyStarGrowth(player, targetStars);
@@ -418,7 +414,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         </div>
 
                         {/* Duplicate Box */}
-                        {needsDuplicate && (
+                        {requiredDuplicates > 0 && (
                           <div className="flex flex-col items-center w-[100px]">
                             <div className="w-[85px] h-[85px] bg-zinc-900 border border-white/10 rounded-lg shadow-inner relative overflow-hidden flex items-center justify-center mb-3">
                               <img src={player.imageUrl || "/players/placeholder.png"} className={`w-full h-full object-cover object-top opacity-80`} />
@@ -427,7 +423,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                               </div>
                               <div className="absolute bottom-0 left-0 right-0 bg-black/80 py-1 text-center z-20 border-t border-white/5">
                                 <span className="text-white text-[10px] font-bold font-mono tracking-wider">
-                                  <span className={hasDuplicate ? "text-white" : "text-red-500"}>{dupCandidates.length}/1</span>
+                                  <span className={hasEnoughDuplicates ? "text-white" : "text-red-500"}>{dupCandidates.length}/{requiredDuplicates}</span>
                                 </span>
                               </div>
                             </div>

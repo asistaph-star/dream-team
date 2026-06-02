@@ -8,6 +8,7 @@ import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
+import { getRequiredDuplicateCount, hasLearnedSkills } from "@/lib/utils/starRequirements";
 
 const getStarTierAndLevel = (starLevel: number) => {
   if (!starLevel || starLevel === 0) return { tier: "None", level: 0 };
@@ -993,28 +994,30 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: `Not enough Upgrade MATs! Required: ${matCost}, Owned: ${inventory.materials.mat_upgrade}` };
     }
 
-    let needsDuplicate = false;
-    if (tier === "Silver" && (lvl === 1 || lvl === 5)) needsDuplicate = true;
-    else if (tier === "Blue" && lvl === 5) needsDuplicate = true;
-    else if (tier === "Violet" && (lvl === 3 || lvl === 5)) needsDuplicate = true;
-    else if (tier === "Orange" && (lvl === 3 || lvl === 4 || lvl === 5)) needsDuplicate = true;
-    else if (tier === "Red" && (lvl === 1 || lvl === 3 || lvl === 5)) needsDuplicate = true;
+    const requiredDuplicates = getRequiredDuplicateCount(tier, lvl);
 
-    let duplicateToSacrifice: Player | null = null;
-    if (needsDuplicate) {
+    let duplicatesToSacrifice: Player[] = [];
+    if (requiredDuplicates > 0) {
       const dupCandidates = roster.filter(
         p => p.name === player.name && 
         p.id !== player.id && 
         !activeLineup.some(al => al.id === p.id)
       );
 
-      if (dupCandidates.length === 0) {
+      if (dupCandidates.length < requiredDuplicates) {
         return { 
           success: false, 
-          error: `Ascension requires sacrificing 1 exact Duplicate of ${player.name} that is NOT in your active starting 5 lineup!` 
+          error: `Ascension requires sacrificing ${requiredDuplicates} exact Duplicate(s) of ${player.name} that are NOT in your active starting 5 lineup!` 
         };
       }
-      duplicateToSacrifice = dupCandidates[0];
+      
+      const sortedDupCandidates = [...dupCandidates].sort((a, b) => {
+        const aHasSkills = hasLearnedSkills(a) ? 1 : 0;
+        const bHasSkills = hasLearnedSkills(b) ? 1 : 0;
+        return aHasSkills - bHasSkills;
+      });
+      
+      duplicatesToSacrifice = sortedDupCandidates.slice(0, requiredDuplicates);
     }
 
     // Success rate calculation based on Star Color Tier
@@ -1053,7 +1056,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
     if (isSuccess) {
       setRoster(prev => {
-        const afterSacrifice = duplicateToSacrifice ? prev.filter(p => p.id !== duplicateToSacrifice.id) : prev;
+        const idsToRemove = new Set(duplicatesToSacrifice.map(d => d.id));
+        const afterSacrifice = prev.filter(p => !idsToRemove.has(p.id));
         return afterSacrifice.map(p => {
           if (p.id === playerId) {
             return unlockSpecialSkillQualities(applyStarGrowth(p, targetStars), targetStars);
