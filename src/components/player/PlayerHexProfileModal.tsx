@@ -5,8 +5,8 @@ import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRig
 import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain } from "@/lib/utils/starGrowth";
 import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
 import { SkillBadge } from "@/components/skills/SkillBadge";
-import { isSkillQuality, SPECIAL_SKILL_RATES } from "@/lib/skills/skillCatalog";
-import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
+import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEXT, getSkillQualityRate, BASE_SKILL_RATES } from "@/lib/skills/skillCatalog";
+import { SpecialSkillName, BaseSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
 
@@ -883,7 +883,8 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 </div>
                 <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
                 <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
-                  <span className="text-gray-300 font-bold">Max Level Effect:</span> When in a game, there's a 100 rate to trigger... (Up to 100 rate at max level).
+                  <span className="text-gray-300 font-bold">Effect:</span> {SPECIAL_SKILL_TEXT[pendingSkillTraining.newSkill as SpecialSkillName]} 
+                  <span className="text-emerald-400 font-mono ml-1">(Power: {getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)})</span>
                 </p>
               </div>
 
@@ -1135,7 +1136,13 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     </div>
                     <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{showSkillInfo.name}</h2>
                     <p className="text-gray-400 text-[11px] leading-relaxed mt-2 border-t border-white/10 pt-2">
-                      <span className="text-gray-300 font-bold">Effect:</span> Provides standard boosts depending on position and rarity during matches.
+                      <span className="text-gray-300 font-bold">Effect:</span> {showSkillInfo.isSpecial ? SPECIAL_SKILL_TEXT[showSkillInfo.name as SpecialSkillName] : BASE_SKILL_TEXT[showSkillInfo.name as BaseSkillName] || "Provides standard boosts during matches."}
+                      {showSkillInfo.isSpecial && (
+                        <span className="text-emerald-400 font-mono ml-1">(Power: {getSkillQualityRate(SPECIAL_SKILL_RATES[showSkillInfo.name as SpecialSkillName] ?? 0, showSkillInfo.quality as any)})</span>
+                      )}
+                      {!showSkillInfo.isSpecial && BASE_SKILL_RATES[showSkillInfo.name as BaseSkillName] && (
+                        <span className="text-blue-400 font-mono ml-1">(Power: {BASE_SKILL_RATES[showSkillInfo.name as BaseSkillName]?.[2] || 0})</span>
+                      )}
                     </p>
                   </>
                 )}
