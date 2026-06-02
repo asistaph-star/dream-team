@@ -8,6 +8,7 @@ import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
+import { wouldCreateDuplicateFamily } from "@/lib/skills/skillMigration";
 import { getRequiredDuplicateCount, hasLearnedSkills, getLearnedSkillSummary } from "@/lib/utils/starRequirements";
 
 export interface PendingAscendWarning {
@@ -864,8 +865,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     const specialSkillSlots = [...(player.specialSkillSlots ?? [null, null])] as (string | null)[];
     
     let skill = rollSpecialSkillName();
-    // Duplicate Protection: Do not roll a skill they already have equipped
-    while (specialSkillSlots.includes(skill)) {
+    // Duplicate Protection: Do not roll a skill they already have equipped, or a skill from the same family
+    while (specialSkillSlots.includes(skill) || wouldCreateDuplicateFamily(player, skill)) {
       skill = rollSpecialSkillName();
     }
     const quality = rollSkillQuality();
