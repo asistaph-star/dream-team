@@ -684,7 +684,10 @@ export function simulateTick(
     isTriggerUser: boolean
   ) => {
     if (!hasMark(newSkillMarks, target.id, "Debt")) return;
-    if (!rollSpecial(triggerTeam, "Debt Collector X", newStamina)) return;
+    if (!rollSpecial(triggerTeam, "Debt Collector X", newStamina, (h) => {
+      const debtCollectorIdentity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+      return 0.90 + (debtCollectorIdentity / 100) * 0.20;
+    })) return;
     newSkillMarks = consumeMark(newSkillMarks, target.id, "Debt");
     const splashTargets = targetTeam
       .filter(p => p.id !== target.id)
@@ -698,7 +701,10 @@ export function simulateTick(
     targetTeam: Player[],
     isTriggerUser: boolean
   ) => {
-    if (!rollSpecial(triggerTeam, "Five-Man Squeeze X", newStamina)) return;
+    if (!rollSpecial(triggerTeam, "Five-Man Squeeze X", newStamina, (h) => {
+      const fiveManIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStealRating(h)) / 3;
+      return 0.90 + (fiveManIdentity / 100) * 0.20;
+    })) return;
     const markedCount = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id)).length;
     const amount = markedCount >= 3 ? 60 : 40;
     targetTeam.forEach(p => drainStamina(newStamina, p, targetTeam, amount));
@@ -765,7 +771,10 @@ export function simulateTick(
     return true;
   };
   const applyPressureCoach = (sourceTeam: Player[], targetTeam: Player[], isSourceUser: boolean) => {
-    if (!rollSpecial(sourceTeam, "Pressure Coach X", newStamina)) return;
+    if (!rollSpecial(sourceTeam, "Pressure Coach X", newStamina, (h) => {
+      const pressureCoachIdentity = (getAssistRating(h) + getOnBallDefenseRating(h) + getStaminaRating(h)) / 3;
+      return 0.90 + (pressureCoachIdentity / 100) * 0.20;
+    })) return;
     const targets = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id));
     if (targets.length === 0) return;
     targets.forEach(p => drainStamina(newStamina, p, targetTeam, 12));
@@ -2095,7 +2104,10 @@ export function simulateTick(
               ? clutchScoreText(scorer, shotType, clutchSituation)
               : scoreText(scorer, shotType, currentOff, momentumActive);
             newEvents.push(makeEvent(newQuarter, newClock, evtText, true, pointsScored, scorer.id));
-            if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(userLineup, "Lung Burner X", newStamina)) {
+            if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(userLineup, "Lung Burner X", newStamina, (h) => {
+              const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
+              return 0.90 + (lungBurnerIdentity / 100) * 0.20;
+            })) {
               const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
               const drain = drainStamina(newStamina, primaryDefender, aiLineup, hadDebt ? 190 : 110);
               skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, true);
@@ -2856,7 +2868,10 @@ export function simulateTick(
               if (is3PT) { newPlayerStats[scorer.id].TPM = (newPlayerStats[scorer.id].TPM ?? 0) + 1; newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1; }
               const aiEvtText = clutchSituation.active ? clutchScoreText(scorer, shotType, clutchSituation) : scoreText(scorer, shotType, state.aiOffStrategy, false);
               newEvents.push(makeEvent(newQuarter, newClock, aiEvtText, false, pointsScored, scorer.id));
-              if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(aiLineup, "Lung Burner X", newStamina)) {
+              if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(aiLineup, "Lung Burner X", newStamina, (h) => {
+                const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
+                return 0.90 + (lungBurnerIdentity / 100) * 0.20;
+              })) {
                 const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
                 const drain = drainStamina(newStamina, primaryDefender, userLineup, hadDebt ? 190 : 110);
                 skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, false);
