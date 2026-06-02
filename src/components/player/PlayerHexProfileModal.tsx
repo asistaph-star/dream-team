@@ -178,9 +178,13 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      const result = trainSpecialSkill(player.id);
-                      if (!result.success && result.error && typeof window !== 'undefined') {
-                        window.alert(result.error);
+                      if (typeof window !== "undefined") {
+                        const confirmed = window.confirm("Use 1 Skill Tape to train a new Signature Skill?");
+                        if (!confirmed) return;
+                        const result = trainSpecialSkill(player.id);
+                        if (!result.success && result.error) {
+                          window.alert(result.error);
+                        }
                       }
                     }}
                     className="ml-4 px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/50 rounded flex items-center gap-2 transition-colors cursor-pointer group"
@@ -229,13 +233,18 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         quality={quality}
                         maxRate={maxRate}
                         onClick={!locked ? () => {
-                          if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary") && typeof window !== "undefined") {
-                            const confirmed = window.confirm(`Are you sure you want to spend 1 Tape to roll a new skill? You currently have a ${quality} special skill, but you can choose to keep it after rolling.`);
+                          if (typeof window !== "undefined") {
+                            let confirmMsg = "Use 1 Skill Tape to train a new Signature Skill?";
+                            if (hasLearnedSkill && (quality === "Epic" || quality === "Legendary")) {
+                              confirmMsg = `Are you sure? You currently have a ${quality} special skill, but you can choose to keep it after rolling.`;
+                            }
+                            const confirmed = window.confirm(confirmMsg);
                             if (!confirmed) return;
-                          }
-                          const result = trainSpecialSkill(player.id);
-                          if (!result.success && result.error && typeof window !== 'undefined') {
-                            window.alert(result.error);
+                            
+                            const result = trainSpecialSkill(player.id);
+                            if (!result.success && result.error) {
+                              window.alert(result.error);
+                            }
                           }
                         } : undefined}
                         actionLabel={hasLearnedSkill ? "Click to Train" : "Click to Learn"}
@@ -804,7 +813,10 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
     {/* Pending Training Modal Overlay */}
     {pendingSkillTraining && pendingSkillTraining.playerId === player.id && (
-      <div className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center pointer-events-auto backdrop-blur-sm">
+      <div 
+        className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center pointer-events-auto backdrop-blur-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
         <style>{`
           @keyframes modalPopIn {
             0% { transform: scale(0.95); opacity: 0; }
