@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1886,7 +1886,9 @@ export function simulateTick(
           // ═══ ROLL F: SHOOTING FOUL CHECK ═══
           const defAvg_sf = avgStamina(aiLineup, newStamina);
           const clutchFoulBoost = clutchSituation.active ? getClutchRating(scorer) * 0.5 : 0;
-          let sfChance = (is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf) + clutchFoulBoost; // NBA avg ~20-25 FTA/team/game
+          const foulDrawTendency = scorer ? getFoulDrawTendency(scorer) : 0.4;
+          const foulDrawMod = 0.90 + foulDrawTendency * 0.25;
+          let sfChance = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf) * foulDrawMod) + clutchFoulBoost; // NBA avg ~20-25 FTA/team/game
           if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance += 0.035;
           if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(userLineup, "Foul Magnet", newStamina)) {
             sfChance += 0.035;
@@ -1915,6 +1917,8 @@ export function simulateTick(
               skillLog(`Four-Point Bait X pressures the Exposed defender`, true);
             }
           }
+          const MAX_SHOOTING_FOUL_CHANCE = 0.28;
+          sfChance = Math.min(MAX_SHOOTING_FOUL_CHANCE, sfChance);
           if (Math.random() < sfChance) {
             shootingFoulOccurred = true;
             trackShotStamina(scorer.id, shotType, is3PT, 'foul');
@@ -2575,7 +2579,9 @@ export function simulateTick(
           if (!blockOccurred) {
             const defAvg_sf_ai = avgStamina(userLineup, newStamina);
             const aiClutchFoulBoost = clutchSituation.active ? getClutchRating(scorer) * 0.5 : 0;
-            let sfChance_ai = (is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf_ai) + aiClutchFoulBoost; // NBA avg ~20-25 FTA/team/game
+            const foulDrawTendency = scorer ? getFoulDrawTendency(scorer) : 0.4;
+            const foulDrawMod = 0.90 + foulDrawTendency * 0.25;
+            let sfChance_ai = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf_ai) * foulDrawMod) + aiClutchFoulBoost; // NBA avg ~20-25 FTA/team/game
             if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance_ai += 0.035;
             if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(aiLineup, "Foul Magnet", newStamina)) {
               sfChance_ai += 0.035;
@@ -2604,6 +2610,8 @@ export function simulateTick(
                 skillLog(`Four-Point Bait X pressures the Exposed defender`, false);
               }
             }
+            const MAX_SHOOTING_FOUL_CHANCE = 0.28;
+            sfChance_ai = Math.min(MAX_SHOOTING_FOUL_CHANCE, sfChance_ai);
             if (Math.random() < sfChance_ai) {
               shootingFoulOccurred = true;
               const committer = pickFoulCommitter(userLineup);
