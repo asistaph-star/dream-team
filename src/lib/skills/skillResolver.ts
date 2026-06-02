@@ -156,12 +156,17 @@ export const rollBaseSkill = (
 export const rollSpecial = (
   lineup: Player[],
   skill: SpecialSkillName,
-  stamina: Record<string, number>
+  stamina: Record<string, number>,
+  scaleFn?: (holder: Player) => number
 ): boolean => {
   const holders = lineup.filter(p => getSpecialSkills(p).includes(skill));
   if (holders.length === 0) return false;
   const maxRate = Math.max(
-    ...holders.map(p => getSkillQualityRate(SPECIAL_SKILL_RATES[skill], getSpecialSkillQuality(p, skill)))
+    ...holders.map(p => {
+      const base = getSkillQualityRate(SPECIAL_SKILL_RATES[skill], getSpecialSkillQuality(p, skill));
+      const scale = scaleFn ? scaleFn(p) : 1.0;
+      return base * scale;
+    })
   );
   return Math.random() * 1000 < maxRate * getTriggerBoost(lineup, stamina);
 };

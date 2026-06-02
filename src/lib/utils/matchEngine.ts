@@ -12,7 +12,7 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -710,7 +710,10 @@ export function simulateTick(
     if (teamAvgStamina >= 65 && markedPlayers.length === 0) return;
     const useKey = `Cold Timeout X Q${newQuarter}`;
     if (hasTeamSkillUsed(isUserTeam, useKey)) return;
-    if (!rollSpecial(team, "Cold Timeout X", newStamina)) return;
+    if (!rollSpecial(team, "Cold Timeout X", newStamina, (h) => {
+      const coldTimeoutIdentity = (getCalmRating(h) + getStaminaRating(h)) / 2;
+      return 0.90 + (coldTimeoutIdentity / 100) * 0.20;
+    })) return;
     markTeamSkillUsed(isUserTeam, useKey);
     let cleansed = 0;
     markedPlayers.forEach(p => {
@@ -1932,8 +1935,14 @@ export function simulateTick(
             skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
           }
           if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(userLineup, "Four-Point Bait X", newStamina)) {
-            const composed = rollSpecial(aiLineup, "Composure X", newStamina);
-            const cleanContest = !composed && rollSpecial(aiLineup, "Clean Contest X", newStamina);
+            const composed = rollSpecial(aiLineup, "Composure X", newStamina, (h) => {
+              const composureIdentity = getCalmRating(h);
+              return 0.90 + (composureIdentity / 100) * 0.20;
+            });
+            const cleanContest = !composed && rollSpecial(aiLineup, "Clean Contest X", newStamina, (h) => {
+              const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
+              return 0.90 + (cleanContestIdentity / 100) * 0.20;
+            });
             const disciplineWall = !cleanContest && rollBaseSkill(aiLineup, "Discipline Wall", newStamina);
             if (composed) {
               skillLog(`Composure X cancels the forced foul pressure`, false);
@@ -2682,8 +2691,14 @@ export function simulateTick(
               skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
             }
             if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecial(aiLineup, "Four-Point Bait X", newStamina)) {
-              const composed = rollSpecial(userLineup, "Composure X", newStamina);
-              const cleanContest = !composed && rollSpecial(userLineup, "Clean Contest X", newStamina);
+              const composed = rollSpecial(userLineup, "Composure X", newStamina, (h) => {
+                const composureIdentity = getCalmRating(h);
+                return 0.90 + (composureIdentity / 100) * 0.20;
+              });
+              const cleanContest = !composed && rollSpecial(userLineup, "Clean Contest X", newStamina, (h) => {
+                const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
+                return 0.90 + (cleanContestIdentity / 100) * 0.20;
+              });
               const disciplineWall = !cleanContest && rollBaseSkill(userLineup, "Discipline Wall", newStamina);
               if (composed) {
                 skillLog(`Composure X cancels the forced foul pressure`, true);
