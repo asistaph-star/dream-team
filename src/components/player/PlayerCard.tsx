@@ -124,8 +124,8 @@ export const getStarTierAndLevel = (starLevel: number) => {
 };
 
 export function PlayerCard({ 
-  player, 
-  tooltipDirection = "none", 
+  player: initialPlayer, 
+  tooltipDirection = "right", 
   tooltipScale, 
   isDragOverlay = false, 
   staminaMax,
@@ -137,8 +137,9 @@ export function PlayerCard({
   const [showFireConfirm, setShowFireConfirm] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
-  const { firePlayer } = useGameState();
+  const { roster, firePlayer, pendingSkillReroll, acceptSkillReroll, rejectSkillReroll } = useGameState();
 
+  const player = roster.find(p => p.id === initialPlayer.id) || initialPlayer;
   const tierRating = getTierRating(player.ovr);
   const tierColor = getTierColor(tierRating);
   const mainStarInfo = getStarTierAndLevel(player.starLevel ?? 0);
@@ -362,6 +363,58 @@ export function PlayerCard({
           </div>
         </div>
       )}
+
+      {/* 6. PENDING REROLL MODAL OVERLAY */}
+      {pendingSkillReroll && pendingSkillReroll.playerId === player.id && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="fixed inset-0 z-[99999] bg-black/80 backdrop-blur-[3px] flex items-center justify-center font-sans"
+        >
+          <div className="w-[380px] p-6 bg-[#0a0f1d]/95 border-2 border-purple-500/50 rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.3)] flex flex-col items-center text-center backdrop-blur-md">
+            <h3 className="text-xl font-black tracking-widest mb-1 uppercase bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-fuchsia-500">
+              Skill Rerolled
+            </h3>
+            <div className="text-[10px] text-gray-400 font-mono mb-4 flex flex-col gap-0.5 bg-black/30 p-2 rounded border border-white/5">
+              <span>⚠️ Skill Tape is consumed when you reroll.</span>
+              <span>⚠️ Keeping current does not refund Skill Tape.</span>
+              <span>⚠️ New roll will replace current only if accepted.</span>
+            </div>
+
+            <div className="flex gap-4 w-full mb-6 items-stretch">
+              <div className="flex-1 flex flex-col items-center gap-3 bg-black/40 p-4 rounded-xl border border-white/10 shadow-inner">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Keep Old</span>
+                <div className="transform scale-125 origin-center">
+                  <SkillBadge name={pendingSkillReroll.oldSkill} color="special" quality={pendingSkillReroll.oldQuality as any} />
+                </div>
+              </div>
+              <div className="flex items-center justify-center text-purple-500/50 font-black text-xl italic tracking-widest">
+                VS
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-3 bg-purple-900/20 p-4 rounded-xl border border-purple-500/30 shadow-[inset_0_0_20px_rgba(168,85,247,0.1)]">
+                <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest animate-pulse">Accept New</span>
+                <div className="transform scale-125 origin-center">
+                  <SkillBadge name={pendingSkillReroll.newSkill} color="special" quality={pendingSkillReroll.newQuality as any} />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex w-full gap-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); rejectSkillReroll(); }}
+                className="flex-1 py-2 rounded-xl bg-gray-800 text-white font-bold text-[10px] uppercase hover:bg-gray-700 transition-colors cursor-pointer border border-gray-600 shadow-md"
+              >
+                Keep Old
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); acceptSkillReroll(); }}
+                className="flex-1 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-700 text-white font-black text-[10px] uppercase shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:from-purple-500 hover:to-fuchsia-600 transition-all cursor-pointer"
+              >
+                Accept New
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -517,7 +570,7 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
                   onClick={!locked ? () => {
                     if (hasLearnedSkill) {
                       if ((quality === "Epic" || quality === "Legendary") && typeof window !== "undefined") {
-                        const confirmed = window.confirm(`Are you sure you want to reroll this ${quality} special skill?`);
+                        const confirmed = window.confirm(`Are you sure you want to spend 1 Tape to reroll this ${quality} special skill? You can still choose to keep it after rolling.`);
                         if (!confirmed) return;
                       }
                       rerollSpecialLearnSkill(player.id, index as 0 | 1);
