@@ -702,7 +702,7 @@ export function simulateTick(
     targetTeam: Player[],
     isTriggerUser: boolean
   ) => {
-    if (!rollSpecial(triggerTeam, "Five-Man Squeeze X", newStamina, (h) => {
+    if (!rollSpecialMechanic(triggerTeam, "DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE", newStamina, (h) => {
       const fiveManIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStealRating(h)) / 3;
       return 0.90 + (fiveManIdentity / 100) * 0.20;
     })) return;
@@ -2105,7 +2105,7 @@ export function simulateTick(
               ? clutchScoreText(scorer, shotType, clutchSituation)
               : scoreText(scorer, shotType, currentOff, momentumActive);
             newEvents.push(makeEvent(newQuarter, newClock, evtText, true, pointsScored, scorer.id));
-            if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(userLineup, "Lung Burner X", newStamina, (h) => {
+            if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecialMechanic(userLineup, "POSTER_SPARK_LUNG_BURNER", newStamina, (h) => {
               const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
               return 0.90 + (lungBurnerIdentity / 100) * 0.20;
             })) {
@@ -2869,7 +2869,7 @@ export function simulateTick(
               if (is3PT) { newPlayerStats[scorer.id].TPM = (newPlayerStats[scorer.id].TPM ?? 0) + 1; newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1; }
               const aiEvtText = clutchSituation.active ? clutchScoreText(scorer, shotType, clutchSituation) : scoreText(scorer, shotType, state.aiOffStrategy, false);
               newEvents.push(makeEvent(newQuarter, newClock, aiEvtText, false, pointsScored, scorer.id));
-              if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecial(aiLineup, "Lung Burner X", newStamina, (h) => {
+              if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecialMechanic(aiLineup, "POSTER_SPARK_LUNG_BURNER", newStamina, (h) => {
                 const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
                 return 0.90 + (lungBurnerIdentity / 100) * 0.20;
               })) {
