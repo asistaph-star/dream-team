@@ -170,6 +170,10 @@ export interface MatchState {
     possessionsLeft: number;
     sourceSkill: string;
   }[]>;
+  markImmunity: Record<string, {
+    mark: 'Exposed' | 'Debt' | 'Hooked' | 'Pinned' | 'Static' | 'Tilted';
+    possessionsLeft: number;
+  }[]>;
   skillUsedThisGame: Record<string, string[]>;
   flagrantFouls: Record<string, number>;
   ejectedPlayers: string[];
@@ -434,6 +438,7 @@ export const createInitialMatchState = (): MatchState => ({
   disabledSkills: {},
   blockedSkills: {},
   skillMarks: {},
+  markImmunity: {},
   skillUsedThisGame: {},
   flagrantFouls: {},
   ejectedPlayers: [],

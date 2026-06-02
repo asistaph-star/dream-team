@@ -65,8 +65,15 @@ function runAccurateFrontendMockWithStrategy(userDifficulty: 'EASY'|'NORMAL'|'HA
     ticks++;
   }
   
-  let uFGA=0, uFGM=0, u3PA=0, u3PM=0, uFTA=0, uFTM=0, uOREB=0, uTO=0;
-  let aFGA=0, aFGM=0, a3PA=0, a3PM=0, aFTA=0, aFTM=0, aOREB=0, aTO=0;
+  let uFGA=0, uFGM=0, u3PA=0, u3PM=0, uFTA=0, uFTM=0, uOREB=0, uTO=0, uSTL=0, uBLK=0, uAST=0;
+  let aFGA=0, aFGM=0, a3PA=0, a3PM=0, aFTA=0, aFTM=0, aOREB=0, aTO=0, aSTL=0, aBLK=0, aAST=0;
+  let uAnd1 = 0, aAnd1 = 0;
+  
+  state.events.forEach(e => {
+    if (e.text && e.text.includes("AND-1!")) {
+      if (e.isUserTeam) uAnd1++; else aAnd1++;
+    }
+  });
   let topScorer = { name: '', pts: 0 };
 
   Object.entries(state.playerStats).forEach(([playerId, s]) => {
@@ -76,9 +83,11 @@ function runAccurateFrontendMockWithStrategy(userDifficulty: 'EASY'|'NORMAL'|'HA
     if (isUser) {
       uFGA += (s.FGA ?? 0); uFGM += (s.FGM ?? 0); u3PA += (s.TPA ?? 0); u3PM += (s.TPM ?? 0);
       uFTA += (s.FTA ?? 0); uFTM += (s.FTM ?? 0); uOREB += (s.OREB ?? 0); uTO += (s.TOV ?? 0);
+      uSTL += (s.STL ?? 0); uBLK += (s.BLK ?? 0); uAST += (s.AST ?? 0);
     } else {
       aFGA += (s.FGA ?? 0); aFGM += (s.FGM ?? 0); a3PA += (s.TPA ?? 0); a3PM += (s.TPM ?? 0);
       aFTA += (s.FTA ?? 0); aFTM += (s.FTM ?? 0); aOREB += (s.OREB ?? 0); aTO += (s.TOV ?? 0);
+      aSTL += (s.STL ?? 0); aBLK += (s.BLK ?? 0); aAST += (s.AST ?? 0);
     }
 
     if ((s.PTS ?? 0) > topScorer.pts) topScorer = { name: name || 'Unknown', pts: s.PTS ?? 0 };
@@ -93,13 +102,27 @@ function runAccurateFrontendMockWithStrategy(userDifficulty: 'EASY'|'NORMAL'|'HA
   console.log(`User FTA/FT%: ${uFTA} / ${(uFTA?(uFTM/uFTA*100).toFixed(1):0)}%`);
   console.log(`Opponent FTA/FT%: ${aFTA} / ${(aFTA?(aFTM/aFTA*100).toFixed(1):0)}%`);
   console.log(`User OREB: ${uOREB} | Opponent OREB: ${aOREB}`);
+  console.log(`User Assists: ${uAST} | Opponent Assists: ${aAST}`);
   console.log(`User Turnovers: ${uTO} | Opponent Turnovers: ${aTO}`);
+  console.log(`User Steals: ${uSTL} | Opponent Steals: ${aSTL}`);
+  console.log(`User Blocks: ${uBLK} | Opponent Blocks: ${aBLK}`);
+  console.log(`User AND-1s: ${uAnd1} | Opponent AND-1s: ${aAnd1}`);
   console.log(`Top Scorer: ${topScorer.name} (${topScorer.pts} pts)`);
 }
 
-// 5 Test Matches showing realistic scoring range
+// 15 Test Matches for robust sample size
 runAccurateFrontendMockWithStrategy('EASY', 'EASY', 'Motion Offense');
+runAccurateFrontendMockWithStrategy('EASY', 'NORMAL', 'Pace and Space (3PT)');
+runAccurateFrontendMockWithStrategy('EASY', 'HARD', 'Isolation (ISO)');
+runAccurateFrontendMockWithStrategy('NORMAL', 'EASY', 'Seven Seconds');
 runAccurateFrontendMockWithStrategy('NORMAL', 'NORMAL', 'Motion Offense');
+runAccurateFrontendMockWithStrategy('NORMAL', 'HARD', 'Pick and Roll Focus');
+runAccurateFrontendMockWithStrategy('HARD', 'EASY', 'Post Isolation');
+runAccurateFrontendMockWithStrategy('HARD', 'NORMAL', 'Motion Offense');
 runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Motion Offense');
 runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Pace and Space (3PT)');
 runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Isolation (ISO)');
+runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Seven Seconds');
+runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Pick and Roll Focus');
+runAccurateFrontendMockWithStrategy('HARD', 'HARD', '5-Out Spacing');
+runAccurateFrontendMockWithStrategy('HARD', 'HARD', 'Motion Offense');

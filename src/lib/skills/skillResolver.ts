@@ -11,6 +11,7 @@ import {
 } from "./skillCatalog";
 
 export type SkillMarks = MatchState["skillMarks"];
+export type SkillMarkImmunity = MatchState["markImmunity"];
 
 export const getBaseSkills = (player: Player): [BaseSkillName, BaseSkillName, BaseSkillName] => {
   return (player.baseSkills as [BaseSkillName, BaseSkillName, BaseSkillName] | undefined) ?? assignBaseSkillsFromStats(player);
@@ -62,37 +63,66 @@ export const hasMark = (marks: SkillMarks, playerId: string, mark: SkillMark): b
   return (marks[playerId] ?? []).some(m => m.mark === mark);
 };
 
+export const isImmune = (immunity: SkillMarkImmunity, playerId: string, mark: SkillMark): boolean => {
+  return (immunity[playerId] ?? []).some(m => m.mark === mark);
+};
+
 export const addMark = (
   marks: SkillMarks,
+  immunity: SkillMarkImmunity,
   playerId: string,
   mark: SkillMark,
   sourceSkill: string,
   possessionsLeft = 2
 ): SkillMarks => {
+  if (isImmune(immunity, playerId, mark)) return marks;
   const current = [...(marks[playerId] ?? [])].filter(m => m.mark !== mark);
   current.push({ mark, possessionsLeft, sourceSkill });
   return { ...marks, [playerId]: current.slice(-2) };
 };
 
-export const removeOldestMark = (marks: SkillMarks, playerId: string): SkillMarks => {
+export const removeOldestMark = (marks: SkillMarks, playerId: string): { nextMarks: SkillMarks; cleansedMark?: SkillMark } => {
   const current = [...(marks[playerId] ?? [])];
-  current.shift();
-  return { ...marks, [playerId]: current };
+  const cleansed = current.shift();
+  return { nextMarks: { ...marks, [playerId]: current }, cleansedMark: cleansed?.mark };
 };
 
 export const consumeMark = (marks: SkillMarks, playerId: string, mark: SkillMark): SkillMarks => {
   return { ...marks, [playerId]: (marks[playerId] ?? []).filter(m => m.mark !== mark) };
 };
 
-export const decayMarks = (marks: SkillMarks): SkillMarks => {
-  const next: SkillMarks = {};
+export const decayMarks = (
+  marks: SkillMarks,
+  immunity: SkillMarkImmunity
+): { nextMarks: SkillMarks; nextImmunity: SkillMarkImmunity } => {
+  const nextMarks: SkillMarks = {};
+  const nextImmunity: SkillMarkImmunity = {};
+
+  Object.entries(immunity).forEach(([playerId, playerImmunities]) => {
+    const kept = playerImmunities
+      .map(m => ({ ...m, possessionsLeft: m.possessionsLeft - 1 }))
+      .filter(m => m.possessionsLeft > 0);
+    if (kept.length > 0) nextImmunity[playerId] = kept;
+  });
+
   Object.entries(marks).forEach(([playerId, playerMarks]) => {
     const kept = playerMarks
       .map(m => ({ ...m, possessionsLeft: m.possessionsLeft - 1 }))
-      .filter(m => m.possessionsLeft > 0);
-    if (kept.length > 0) next[playerId] = kept;
+      .filter(m => {
+        if (m.possessionsLeft <= 0) {
+          const currentImmunities = nextImmunity[playerId] ?? [];
+          if (!currentImmunities.some(im => im.mark === m.mark)) {
+            currentImmunities.push({ mark: m.mark, possessionsLeft: 1 });
+          }
+          nextImmunity[playerId] = currentImmunities;
+          return false;
+        }
+        return true;
+      });
+    if (kept.length > 0) nextMarks[playerId] = kept;
   });
-  return next;
+
+  return { nextMarks, nextImmunity };
 };
 
 export const getTriggerBoost = (lineup: Player[], stamina: Record<string, number>): number => {
