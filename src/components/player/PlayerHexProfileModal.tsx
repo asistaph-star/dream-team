@@ -804,124 +804,131 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
     {/* Pending Training Modal Overlay */}
     {pendingSkillTraining && pendingSkillTraining.playerId === player.id && (
-      <div className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center animate-[fadeIn_0.15s_ease-out] pointer-events-auto">
-        <div className="w-[850px] bg-[#e4e7ea] rounded-sm flex flex-col overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] relative" onClick={e => e.stopPropagation()}>
+      <div className="fixed inset-0 z-[25000] bg-black/90 flex items-center justify-center pointer-events-auto backdrop-blur-sm">
+        <style>{`
+          @keyframes modalPopIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
+        <div 
+          className="w-[550px] bg-[#313338] rounded-sm flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden"
+          style={{ 
+            backgroundImage: `url('${lowPolyBg}')`, 
+            backgroundSize: '100% 400px',
+            animation: 'modalPopIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.2) forwards'
+          }}
+          onClick={e => e.stopPropagation()}
+        >
           
           {/* Header */}
-          <div className="h-12 bg-gradient-to-r from-red-600 to-[#b91c1c] flex items-center px-6 relative z-10">
-            <span className="text-white font-black text-xl tracking-tight">Signature Skill Training</span>
+          <div className="h-12 bg-[#2a2b2f]/90 border-b border-white/5 flex items-center justify-between px-4 relative z-10" style={{ clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%)' }}>
+            <span className="text-emerald-400 font-black text-[13px] tracking-widest uppercase drop-shadow-sm">Signature Skill Training</span>
             <button 
               onClick={() => rejectSkillTraining()} 
-              className="absolute right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+              className="text-gray-400 hover:text-white transition-colors mr-1"
             >
-              <X size={24} strokeWidth={3} />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex flex-col relative z-10">
+          <div className="flex flex-col relative z-10 p-4">
+            
             {/* Top: New Skill */}
-            <div className="h-[220px] bg-[#f8f9fa] flex items-center justify-center gap-6 px-10">
-              <div className="w-32 h-32 flex-shrink-0 bg-white shadow-md border border-gray-200 flex items-center justify-center transform scale-[1.5] origin-center">
+            <div className="bg-emerald-950/30 border border-emerald-500/20 rounded p-4 flex gap-4 items-center shadow-inner relative overflow-hidden group">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.1),transparent_50%)] pointer-events-none" />
+              <div className="w-20 h-20 flex-shrink-0 bg-black/50 border border-white/10 rounded flex items-center justify-center transform scale-[1.15] origin-center shadow-[0_0_15px_rgba(0,0,0,0.5)]">
                 <SkillBadge name={pendingSkillTraining.newSkill} color="special" quality={pendingSkillTraining.newQuality as any} />
               </div>
-              <div className="flex flex-col flex-1 pl-4">
-                <h2 className="text-red-600 font-bold text-3xl mb-2 tracking-tight">New Skill Learned!</h2>
-                <p className="text-gray-600 text-lg leading-relaxed">
-                  <span className="font-bold text-gray-800">Max Level Effect:</span> When in a game, there's a 100 rate to trigger... (Up to 100 rate at max level).
+              <div className="flex flex-col flex-1 pl-2">
+                <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">New Skill Discovered</div>
+                <h2 className="text-white font-black text-xl mb-1 tracking-tight drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
+                <p className="text-gray-400 text-[11px] leading-relaxed font-[family-name:var(--font-outfit)]">
+                  <span className="text-gray-300 font-bold">Max Level Effect:</span> When in a game, there's a 100 rate to trigger... (Up to 100 rate at max level).
                 </p>
               </div>
             </div>
 
-            {/* Middle: Current Skills Header */}
-            <div className="h-10 bg-gray-500/90 text-white font-bold text-lg flex items-center px-6 shadow-[inset_0_4px_6px_rgba(0,0,0,0.2)]">
-              Current Signature Skill
+            <div className="flex items-center gap-3 mt-5 mb-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
+              <h3 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">Select Slot to Replace</h3>
             </div>
 
-            {/* Bottom: The Slots & Action Buttons */}
-            <div className="h-[260px] bg-[#e0e3e7] flex items-center px-8 relative">
-              <div className="flex gap-10 w-full">
-                
-                {/* Slot 1 */}
-                <div className="flex flex-col flex-1 gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-24 h-24 bg-white shadow-md border border-gray-200 flex items-center justify-center transform scale-[1.15] origin-center flex-shrink-0">
-                      {specialSkills[0] ? (
-                        <SkillBadge name={specialSkills[0]} color="special" quality={(player.skillRarities?.[specialSkills[0]] as any) || "Common"} />
-                      ) : (
-                        <div className="text-gray-400 text-sm font-bold">Empty</div>
-                      )}
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      {specialSkills[0] ? (
-                        <>
-                          <div className="text-gray-800 font-bold text-base mb-1">{specialSkills[0]}</div>
-                          <div className="text-gray-500 text-xs leading-tight">Max Level Effect: ...</div>
-                        </>
-                      ) : (
-                        <div className="text-gray-500 text-sm italic mt-2">Available Slot</div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => acceptSkillTraining(0)}
-                    className="w-[180px] h-12 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded shadow-sm transition-colors mx-auto mt-2 cursor-pointer"
-                  >
-                    Replace Skill1
-                  </button>
-                </div>
-
-                {/* Slot 2 */}
-                <div className="flex flex-col flex-1 gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-24 h-24 bg-[#cfd3d8] flex flex-col items-center justify-center transform scale-[1.15] origin-center flex-shrink-0">
-                      {(player.starLevel ?? 0) < 5 ? (
-                        <>
-                          <div className="w-6 h-6 mb-1 rounded bg-gray-400/50 flex items-center justify-center"><div className="w-3 h-4 border-2 border-white rounded-t-full relative after:absolute after:w-1 after:h-1.5 after:bg-white after:-bottom-2 after:left-0.5" /></div>
-                          <span className="text-gray-500 font-bold text-xs">Player5...</span>
-                        </>
-                      ) : specialSkills[1] ? (
-                        <SkillBadge name={specialSkills[1]} color="special" quality={(player.skillRarities?.[specialSkills[1]] as any) || "Common"} />
-                      ) : (
-                        <div className="text-gray-500 text-sm font-bold">Empty</div>
-                      )}
-                    </div>
-                    <div className="flex flex-col flex-1">
-                      {(player.starLevel ?? 0) < 5 ? (
-                        <div className="text-gray-400 text-sm italic mt-2">Unlocks at Star 5</div>
-                      ) : specialSkills[1] ? (
-                        <>
-                          <div className="text-gray-800 font-bold text-base mb-1">{specialSkills[1]}</div>
-                          <div className="text-gray-500 text-xs leading-tight">Max Level Effect: ...</div>
-                        </>
-                      ) : (
-                        <div className="text-gray-500 text-sm italic mt-2">Available Slot</div>
-                      )}
-                    </div>
-                  </div>
-                  {(player.starLevel ?? 0) >= 5 && (
-                    <button
-                      onClick={() => acceptSkillTraining(1)}
-                      className="w-[180px] h-12 bg-red-600 hover:bg-red-500 text-white font-bold text-lg rounded shadow-sm transition-colors mx-auto mt-2 cursor-pointer"
-                    >
-                      Replace Skill2
-                    </button>
+            {/* Bottom: The Slots */}
+            <div className="grid grid-cols-2 gap-4">
+              
+              {/* Slot 1 */}
+              <div 
+                className="bg-black/40 border border-white/5 hover:border-white/20 hover:bg-white/[0.02] transition-all rounded p-4 flex flex-col items-center gap-3 relative group cursor-pointer"
+                onClick={() => acceptSkillTraining(0)}
+              >
+                <div className="absolute top-2 left-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Slot 1</div>
+                <div className="w-16 h-16 bg-black/50 border border-white/10 rounded flex items-center justify-center mt-2 shadow-inner">
+                  {specialSkills[0] ? (
+                    <SkillBadge name={specialSkills[0]} color="special" quality={(player.skillRarities?.[specialSkills[0]] as any) || "Common"} />
+                  ) : (
+                    <div className="text-gray-600 text-xs font-bold uppercase tracking-wider">Empty</div>
                   )}
                 </div>
-
+                <div className="text-center w-full">
+                  <div className="text-gray-200 font-bold text-sm truncate w-full">{specialSkills[0] || "Available"}</div>
+                </div>
+                <button className="w-full py-2 bg-red-950/40 group-hover:bg-red-600 border border-red-500/30 group-hover:border-red-500 text-red-400 group-hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors">
+                  Replace
+                </button>
               </div>
-              
-              {/* Forfeit Button inside the bottom area */}
-              <button
-                onClick={() => rejectSkillTraining()}
-                className="absolute bottom-6 right-6 w-[180px] h-12 bg-[#2a2f38] hover:bg-[#1a1f28] text-white font-bold text-lg rounded shadow-md transition-colors cursor-pointer"
-                style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+
+              {/* Slot 2 */}
+              <div 
+                className={`border transition-all rounded p-4 flex flex-col items-center gap-3 relative ${
+                  (player.starLevel ?? 0) < 5 
+                    ? 'bg-black/20 border-white/5 opacity-50 cursor-not-allowed' 
+                    : 'bg-black/40 border-white/5 hover:border-white/20 hover:bg-white/[0.02] cursor-pointer group'
+                }`}
+                onClick={() => {
+                  if ((player.starLevel ?? 0) >= 5) acceptSkillTraining(1);
+                }}
               >
-                Forfeit
-              </button>
+                <div className="absolute top-2 left-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Slot 2</div>
+                <div className="w-16 h-16 bg-black/50 border border-white/10 rounded flex items-center justify-center mt-2 shadow-inner">
+                  {(player.starLevel ?? 0) < 5 ? (
+                    <div className="flex flex-col items-center opacity-50 mt-1">
+                      <div className="w-5 h-5 mb-1 rounded bg-gray-500/50 flex items-center justify-center"><div className="w-2 h-3 border-2 border-zinc-300 rounded-t-full relative after:absolute after:w-0.5 after:h-1 after:bg-zinc-300 after:-bottom-1.5 after:left-0.5" /></div>
+                    </div>
+                  ) : specialSkills[1] ? (
+                    <SkillBadge name={specialSkills[1]} color="special" quality={(player.skillRarities?.[specialSkills[1]] as any) || "Common"} />
+                  ) : (
+                    <div className="text-gray-600 text-xs font-bold uppercase tracking-wider">Empty</div>
+                  )}
+                </div>
+                <div className="text-center w-full">
+                  {(player.starLevel ?? 0) < 5 ? (
+                    <div className="text-gray-500 font-bold text-[11px] uppercase tracking-widest mt-2">Unlocks at Star 5</div>
+                  ) : (
+                    <div className="text-gray-200 font-bold text-sm truncate w-full">{specialSkills[1] || "Available"}</div>
+                  )}
+                </div>
+                {(player.starLevel ?? 0) >= 5 && (
+                  <button className="w-full py-2 bg-red-950/40 group-hover:bg-red-600 border border-red-500/30 group-hover:border-red-500 text-red-400 group-hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors">
+                    Replace
+                  </button>
+                )}
+              </div>
 
             </div>
-
+            
           </div>
+          
+          {/* Footer */}
+          <div className="bg-[#1c1d21]/80 p-4 border-t border-white/5 flex justify-end">
+            <button
+              onClick={() => rejectSkillTraining()}
+              className="px-8 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-bold text-[11px] uppercase tracking-widest rounded transition-colors shadow-md"
+            >
+              Forfeit Skill
+            </button>
+          </div>
+
         </div>
       </div>
     )}
