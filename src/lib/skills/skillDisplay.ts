@@ -15,7 +15,7 @@ export const getSkillBaseName = (skillId: string): string => {
 };
 
 export const getSkillDisplaySuffix = (skillTier: SkillTier | undefined): string => {
-  return getSkillTierSuffix(skillTier || "ACTIVE");
+  return getSkillTierSuffix(skillTier || "STANDARD");
 };
 
 export const formatSkillName = (skillId: string, skillTier?: SkillTier): string => {

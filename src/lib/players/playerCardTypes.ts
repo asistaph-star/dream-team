@@ -1,5 +1,5 @@
-export type CardEra = "ACTIVE" | "PEAK" | "LEGEND";
-export type SkillTier = "ACTIVE" | "X" | "XR" | "XR_ULT";
+export type CardEra = "CURRENT" | "PRIME" | "LEGEND";
+export type SkillTier = "STANDARD" | "PRIME" | "LEGACY" | "SIGNATURE";
 export type DataSource = "CURRENT_SEASON" | "HISTORICAL_SEASON" | "MANUAL_LEGEND";
 
 export interface CardEraMetadata {
