@@ -1,5 +1,6 @@
 import { Player } from "../types/player";
 import { MatchState } from "../utils/matchTypes";
+import { SpecialSkillMechanicId, getSpecialSkillsForMechanic } from "./skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats, BaseSkillName, SpecialSkillName } from "./assignBaseSkills";
 import {
   BASE_SKILL_RATES,
@@ -170,6 +171,42 @@ export const rollSpecial = (
   );
   return Math.random() * 1000 < maxRate * getTriggerBoost(lineup, stamina);
 };
+
+export const getBestSpecialSkillForMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): string | null => {
+  const matches = getSpecialSkillsForMechanic(player, mechanicId);
+  if (matches.length === 0) return null;
+  
+  // Sort by highest base trigger rate given current quality
+  return matches.sort((a, b) => {
+    const aQuality = getSpecialSkillQuality(player, a as SpecialSkillName);
+    const bQuality = getSpecialSkillQuality(player, b as SpecialSkillName);
+    const aRate = getSkillQualityRate(SPECIAL_SKILL_RATES[a as SpecialSkillName], aQuality);
+    const bRate = getSkillQualityRate(SPECIAL_SKILL_RATES[b as SpecialSkillName], bQuality);
+    return bRate - aRate;
+  })[0];
+};
+
+export const rollSpecialMechanic = (
+  lineup: Player[],
+  mechanicId: SpecialSkillMechanicId,
+  stamina: Record<string, number>,
+  scaleFn?: (holder: Player) => number
+): boolean => {
+  const holders = lineup.filter(p => getSpecialSkillsForMechanic(p, mechanicId).length > 0);
+  if (holders.length === 0) return false;
+  
+  const maxRate = Math.max(
+    ...holders.map(p => {
+      const bestSkill = getBestSpecialSkillForMechanic(p, mechanicId);
+      if (!bestSkill) return 0;
+      const base = getSkillQualityRate(SPECIAL_SKILL_RATES[bestSkill as SpecialSkillName], getSpecialSkillQuality(p, bestSkill as SpecialSkillName));
+      const scale = scaleFn ? scaleFn(p) : 1.0;
+      return base * scale;
+    })
+  );
+  return Math.random() * 1000 < maxRate * getTriggerBoost(lineup, stamina);
+};
+
 
 export const getDrainMultiplier = (target: Player, targetLineup: Player[]): number => {
   return hasBaseSkill(target, "Iron Motor") || targetLineup.some(p => hasBaseSkill(p, "Iron Motor")) ? 0.65 : 1.0;

@@ -76,3 +76,9 @@ export const getPlayerSpecialSkillMechanics = (player: Player): SpecialSkillMech
   // Dedupe mechanics
   return Array.from(new Set(allMechanics));
 };
+
+export const getSpecialSkillsForMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): string[] => {
+  if (!player.specialSkillSlots) return [];
+  return player.specialSkillSlots.filter((slot): slot is string => !!slot && doesSkillMatchMechanic(slot, mechanicId));
+};
+
