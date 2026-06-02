@@ -2083,7 +2083,10 @@ export function simulateTick(
                 skillLog(`${a.name}'s Connector Hub restores ${scorer.name}'s stamina`, true);
               }
               if (rollBaseSkill(userLineup, "Share Rhythm", newStamina)) {
-                userLineup.forEach(p => recoverSkillStamina(p, 8));
+                const shareRhythmHolders = userLineup.filter(p => hasBaseSkill(p, "Share Rhythm"));
+                const maxAssistRating = Math.max(...shareRhythmHolders.map(p => getAssistRating(p)), 50);
+                const shareRhythmScale = 0.85 + (maxAssistRating / 100) * 0.30;
+                userLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                 skillLog(`${a.name}'s Share Rhythm steadies the lineup`, true);
               }
               if (rollSpecial(userLineup, "Chain Pass X", newStamina)) {
@@ -2811,7 +2814,10 @@ export function simulateTick(
                    skillLog(`${a.name}'s Connector Hub restores ${scorer.name}'s stamina`, false);
                  }
                  if (rollBaseSkill(aiLineup, "Share Rhythm", newStamina)) {
-                   aiLineup.forEach(p => recoverSkillStamina(p, 8));
+                   const shareRhythmHolders = aiLineup.filter(p => hasBaseSkill(p, "Share Rhythm"));
+                   const maxAssistRating = Math.max(...shareRhythmHolders.map(p => getAssistRating(p)), 50);
+                   const shareRhythmScale = 0.85 + (maxAssistRating / 100) * 0.30;
+                   aiLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                    skillLog(`${a.name}'s Share Rhythm steadies the lineup`, false);
                  }
                  if (rollSpecial(aiLineup, "Chain Pass X", newStamina)) {
