@@ -1693,7 +1693,7 @@ export function simulateTick(
       const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
       screenBreakerPressure = 1.12 * screenBreakerScale;
     }
-    const cageStepPressure = rollSpecial(aiLineup, "Cage Step X", newStamina, (h) => {
+    const cageStepPressure = rollSpecialMechanic(aiLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
       const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (cageStepIdentity / 100) * 0.20;
     }) ? 1.12 : 1.0;
@@ -2141,7 +2141,7 @@ export function simulateTick(
                 userLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                 skillLog(`${a.name}'s Share Rhythm steadies the lineup`, true);
               }
-              if (rollSpecial(userLineup, "Chain Pass X", newStamina, (h) => {
+              if (rollSpecialMechanic(userLineup, "COURT_VISION_CHAIN_PASS", newStamina, (h) => {
                 const chainPassIdentity = getAssistRating(h);
                 return 0.90 + (chainPassIdentity / 100) * 0.20;
               })) {
@@ -2638,7 +2638,7 @@ export function simulateTick(
         const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
         userScreenBreakerPressure = 1.12 * screenBreakerScale;
       }
-      const userCageStepPressure = rollSpecial(userLineup, "Cage Step X", newStamina, (h) => {
+      const userCageStepPressure = rollSpecialMechanic(userLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
         const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
         return 0.90 + (cageStepIdentity / 100) * 0.20;
       }) ? 1.12 : 1.0;
@@ -2905,7 +2905,7 @@ export function simulateTick(
                    aiLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                    skillLog(`${a.name}'s Share Rhythm steadies the lineup`, false);
                  }
-                 if (rollSpecial(aiLineup, "Chain Pass X", newStamina, (h) => {
+                 if (rollSpecialMechanic(aiLineup, "COURT_VISION_CHAIN_PASS", newStamina, (h) => {
                    const chainPassIdentity = getAssistRating(h);
                    return 0.90 + (chainPassIdentity / 100) * 0.20;
                  })) {
