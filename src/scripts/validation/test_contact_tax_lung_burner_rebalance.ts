@@ -37,6 +37,11 @@ mockedResolver.rollBaseSkill = (lineup: Player[], skillName: any, stamina: Recor
   return result;
 };
 
+mockedResolver.hasBaseSkill = (player: Player, skillName: string): boolean => {
+  if (disableBaseSkills) return false;
+  return originalResolver.hasBaseSkill(player, skillName);
+};
+
 // Track incoming drain amounts
 interface DrainRecord {
   targetId: string;
