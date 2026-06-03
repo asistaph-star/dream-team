@@ -416,3 +416,19 @@ Phase LineupArchetype-1K3C resolved two specific User/AI asymmetries in the shoo
   * **Foul chance cap:** `MAX_SHOOTING_FOUL_CHANCE` remains strictly `0.28`.
   * **3PT additive cap:** `MAX_3PT_POSITIVE_ADDITIVE_BONUS` remains strictly `0.08`.
   * **Saved data & progression:** Saved data structures, card attributes, progression, and OVR/star-up calculations remain completely unchanged.
+
+---
+
+## 19. Paint Bully Regression Simulator Baseline (Phase LineupArchetype-1L2)
+
+Phase LineupArchetype-1L2 established the Paint Bully regression baseline using a dedicated simulation suite. The key results and parameters are documented below:
+
+* **Paint Attempts:** Averaged roughly 50–62 per game per team.
+* **Paint FG%:** Stayed stable around 25%–35% across various lineup matches.
+* **Rim Protection and Blocks:** Rim Warden, SKY_WALL, and high block/strength defenders successfully suppressed paint scoring.
+* **FTA Near Warning Range:** Stacked Paint Bully lineups naturally increase free throw attempts (FTA), with the Paint Bully Heavy lineup reaching 28.9 User FTA per game, already near the warning range.
+* **Big-Man Stamina Collapse:** PF/C stamina can drop severely under heavy paint usage, with some configurations depleting to 0% by the end of Q4 without stamina protection skills like Iron Motor.
+* **Legacy Contact Tax X / Lung Burner X Pressure:** Legacy physical-pressure values are too severe for future POSTER_SPARK migration. 
+  * **Lung Burner X** triggered heavily in legacy stress testing, and its flat `110` (User) / `190` (AI) stamina drain is unsafe for the standard player stamina pool.
+* **POSTER_SPARK Status:** Remains completely unimplemented and unmapped.
+* **Next Steps Recommendation:** Recommended next phase is a legacy Contact Tax / Lung Burner rebalance audit before any POSTER_SPARK gameplay is introduced.
