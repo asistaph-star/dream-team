@@ -50,7 +50,19 @@ const getFlopFoulPressureBonus = (scorer: Player): number => {
   return isShaiGilgeousAlexander(scorer) && hasSpecialSkillMechanic(scorer, "FLOP_SELL_CONTACT") ? baseBonus * 2 : baseBonus;
 };
 
+const getGlassStrikeOrebBoost = (level: number): number => {
+  if (level === 1) return 0.015;
+  if (level === 2) return 0.025;
+  if (level === 3) return 0.035;
+  return 0;
+};
 
+const getGlassStrikePutbackBoost = (level: number): number => {
+  if (level === 1) return 0;
+  if (level === 2) return 0.010;
+  if (level === 3) return 0.015;
+  return 0;
+};
 
 const getStaminaCostScale = (player: Player | undefined): number => {
   const maxStamina = getPlayerMaxStamina(player);
@@ -1610,10 +1622,10 @@ export function simulateTick(
   const REB_W: Record<string, number> = { C: 2.0, PF: 1.6, SF: 1.0, SG: 0.6, PG: 0.4 };
   const teamRebScore = (lineup: Player[]): number =>
     lineup.reduce((s, p) => s + getReboundRating(p) * (REB_W[p.position] || 1.0) * getPlayerStaminaMod(p, newStamina[p.id]), 0);
-  const getOffensiveReboundChance = (attReb: number, defReb: number, glassScale: number, barrierScale: number): number => {
+  const getOffensiveReboundChance = (attReb: number, defReb: number, glassScale: number, barrierScale: number, glassStrikeBoost = 0): number => {
     const share = attReb / Math.max(1, attReb + defReb);
     const matchupSwing = (share - 0.5) * 0.34;
-    return Math.min(Math.max(0.23 + matchupSwing + (glassScale > 0 ? 0.055 * glassScale : 0) - (barrierScale > 0 ? 0.06 * barrierScale : 0), 0.10), 0.36);
+    return Math.min(Math.max(0.23 + matchupSwing + (glassScale > 0 ? 0.055 * glassScale : 0) - (barrierScale > 0 ? 0.06 * barrierScale : 0) + glassStrikeBoost, 0.10), 0.36);
   };
   const pickRebounder = (lineup: Player[]): Player => {
     const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
@@ -2463,7 +2475,21 @@ export function simulateTick(
               const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
               barrierScale = 0.85 + (maxRating / 100) * 0.30;
             }
-            const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale);
+
+            const attackerArchetypeSummary = resolveLineupArchetypes(userLineup);
+            const userReboundResult = attackerArchetypeSummary.allResults.find(r => r.id === "rebound");
+            const userReboundLevel = userReboundResult ? userReboundResult.level : 0;
+
+            let glassStrikeTriggered = false;
+            let glassStrikeBoost = 0;
+            if (userReboundLevel > 0) {
+              glassStrikeTriggered = rollSpecialMechanic(userLineup, "GLASS_STRIKE_REBOUND", newStamina);
+              if (glassStrikeTriggered) {
+                glassStrikeBoost = getGlassStrikeOrebBoost(userReboundLevel);
+              }
+            }
+
+            const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
             if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, false);
             if (Math.random() < orebChance) {
               const reb = pickRebounder(userLineup);
@@ -2471,6 +2497,9 @@ export function simulateTick(
               eventIndicator = { playerId: reb.id, type: 'OREB' };
               newEvents.push(makeEvent(newQuarter, newClock, `${reb.name} gets the offensive rebound: second chance!`, true));
               if (glassTouch) skillLog(`${reb.name}'s Glass Touch creates second-chance pressure`, true);
+              if (glassStrikeTriggered) {
+                skillLog(`${reb.name}'s Glass Strike crashes the glass with disciplined timing`, true);
+              }
               nextPossessionTeam = 'user';
               nextLastPlayCategory = 'miss_oreb';
               // NBA 2018+ rule: shot clock resets to 14s on OREB of a rim shot
@@ -2502,7 +2531,7 @@ export function simulateTick(
                 const stm2 = getPlayerStaminaMod(sc2, newStamina[sc2.id]);
                 const goodSubRatio = state.subsMade > 0 ? state.goodSubsMade / state.subsMade : 0.5;
                 const decisionWeightMod = 1.0 + ((goodSubRatio - 0.5) * 0.05); // ±2.5% modifier
-                const fc2 = Math.max(0.20, Math.min(0.80, (eUO / ((eUO + eAD) || 1)) * getStaminaMod(userAvg) * momentumBonus * stm2 * newFormRating[sc2.id] * decisionWeightMod + (glassTouch ? 0.035 : 0)));
+                const fc2 = Math.max(0.20, Math.min(0.80, (eUO / ((eUO + eAD) || 1)) * getStaminaMod(userAvg) * momentumBonus * stm2 * newFormRating[sc2.id] * decisionWeightMod + (glassTouch ? 0.035 : 0) + (glassStrikeTriggered ? getGlassStrikePutbackBoost(userReboundLevel) : 0)));
                 if (Math.random() < fc2) {
                   const p2 = Math.random() < 0.24 ? 3 : 2;
                   trackShotStamina(sc2.id, p2 === 3 ? 'catchAndShoot' : 'putBack', p2 === 3, 'make', 'oreb');
@@ -3327,7 +3356,21 @@ export function simulateTick(
         const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
         barrierScale = 0.85 + (maxRating / 100) * 0.30;
       }
-      const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale);
+
+      const attackerArchetypeSummary = resolveLineupArchetypes(aiLineup);
+      const aiReboundResult = attackerArchetypeSummary.allResults.find(r => r.id === "rebound");
+      const aiReboundLevel = aiReboundResult ? aiReboundResult.level : 0;
+
+      let glassStrikeTriggered = false;
+      let glassStrikeBoost = 0;
+      if (aiReboundLevel > 0) {
+        glassStrikeTriggered = rollSpecialMechanic(aiLineup, "GLASS_STRIKE_REBOUND", newStamina);
+        if (glassStrikeTriggered) {
+          glassStrikeBoost = getGlassStrikeOrebBoost(aiReboundLevel);
+        }
+      }
+
+      const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
       if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, true);
       if (Math.random() < orebChance) {
         const reb = pickRebounder(aiLineup);
@@ -3335,6 +3378,9 @@ export function simulateTick(
         eventIndicator = { playerId: reb.id, type: 'OREB' };
         newEvents.push(makeEvent(newQuarter, newClock, `${reb.name} gets the offensive rebound: second chance!`, false));
         if (glassTouch) skillLog(`${reb.name}'s Glass Touch creates second-chance pressure`, false);
+        if (glassStrikeTriggered) {
+          skillLog(`${reb.name}'s Glass Strike crashes the glass with disciplined timing`, false);
+        }
         nextPossessionTeam = 'ai';
         nextLastPlayCategory = 'miss_oreb';
         // OREB second-chance with Roll F (Layer 5b)
@@ -3362,7 +3408,7 @@ export function simulateTick(
         }
         if (!orebFoulFired) {
           const stm2 = getPlayerStaminaMod(sc2, newStamina[sc2.id]);
-          const fc2 = Math.max(0.30, Math.min(0.80, eAO / ((eAO + eUD) || 1))) * getStaminaMod(avgStamina(aiLineup, newStamina)) * stm2 * newFormRating[sc2.id] + (glassTouch ? 0.035 : 0);
+          const fc2 = Math.max(0.30, Math.min(0.80, eAO / ((eAO + eUD) || 1))) * getStaminaMod(avgStamina(aiLineup, newStamina)) * stm2 * newFormRating[sc2.id] + (glassTouch ? 0.035 : 0) + (glassStrikeTriggered ? getGlassStrikePutbackBoost(aiReboundLevel) : 0);
           if (Math.random() < fc2) {
             const p2 = Math.random() < 0.24 ? 3 : 2;
             trackShotStamina(sc2.id, p2 === 3 ? 'catchAndShoot' : 'putBack', p2 === 3, 'make', 'oreb');

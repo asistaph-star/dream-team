@@ -85,6 +85,7 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "LOCK_CHAIN": "Pressures ball handlers with disciplined on-ball defense and controlled stamina drain.",
   "SKY_WALL": "Challenges paint attacks with vertical rim pressure and controlled contest fatigue.",
   "DEFENSIVE_ANCHOR": "Applies disciplined team pressure that wears down opponents across half-court possessions.",
+  "GLASS_STRIKE": "Crashes the glass with disciplined timing, improving second-chance pressure for rebound-built lineups.",
 };
 
 export const SPECIAL_SKILL_NAMES = Object.keys(SPECIAL_SKILL_TEXT).filter(name => name.endsWith(" X")) as SpecialSkillName[];
@@ -137,4 +138,5 @@ export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
   "LOCK_CHAIN": 240,
   "SKY_WALL": 240,
   "DEFENSIVE_ANCHOR": 220,
+  "GLASS_STRIKE": 220,
 };

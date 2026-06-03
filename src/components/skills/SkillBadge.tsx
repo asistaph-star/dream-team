@@ -42,6 +42,7 @@ const skillArtMap: Record<string, string> = {
   "lock_chain": "cage-step-x",
   "sky_wall": "rim-warden",
   "defensive_anchor": "corner-trap-x",
+  "glass_strike": "glass-touch",
 };
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {
