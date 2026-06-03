@@ -396,6 +396,23 @@ Phase LineupArchetype-1K3B3 implemented **Option B Hybrid Gating** for the `Four
   * **Arc Pressure & Flop:** Remain unchanged.
   * **Saved Data & Progression:** Saved data structures, card attributes, progression, and OVR/star-up calculations remain unchanged.
 
+---
 
+## 18. User/AI Shooting Foul Symmetry Cleanup (Phase LineupArchetype-1K3C)
 
+Phase LineupArchetype-1K3C resolved two specific User/AI asymmetries in the shooting foul sub-systems inside the match engine to ensure complete gameplay fairness:
 
+* **Symmetrical Discipline Wall Scaling:**
+  * **Fix:** The AI path originally used a flat, fixed `−0.03` shot-quality (SQ) penalty when Discipline Wall held off Four-Point Bait X. This has been updated to mirror the User path's dynamic, defense-rating-scaled formula.
+  * **Formula:** `disciplineScale = 0.85 + (dwMaxRating / 100) * 0.30`, applying `aiSkillShotBonus -= 0.03 * disciplineScale`.
+  * **Ratings Lookup:** Looks up active `Discipline Wall` holders in the defending `userLineup`, finding the maximum `getOnBallDefenseRating`. If no holders are found, it falls back to the primary defender or a baseline rating of 50.
+* **Symmetrical Stamina Tracking on Fouls:**
+  * **Fix:** The AI path's main possession shooting foul success branch was missing stamina tracking calls present on the User path.
+  * **Tracking calls mirrored:** Added `trackShotStamina(scorer.id, shotType, is3PT, 'foul')` and `trackDefensiveStamina(primaryDefender, shotType, is3PT, 'foul')` into the AI shooting foul success execution block.
+* **Core Safety Rules & Safeguards:**
+  * **Four-Point Bait values:** Untouched.
+  * **Exposed requirement & counters:** Untouched.
+  * **Arc Pressure & Flop X:** Untouched.
+  * **Foul chance cap:** `MAX_SHOOTING_FOUL_CHANCE` remains strictly `0.28`.
+  * **3PT additive cap:** `MAX_3PT_POSITIVE_ADDITIVE_BONUS` remains strictly `0.08`.
+  * **Saved data & progression:** Saved data structures, card attributes, progression, and OVR/star-up calculations remain completely unchanged.
