@@ -16,6 +16,7 @@ import { CoachModal } from "@/features/lobby/components/CoachModal";
 import { LobbyProfileHUD } from "@/features/lobby/components/LobbyProfileHUD";
 import { FreeAgentMarket, FreeAgentPlayer } from "@/features/lobby/components/FreeAgentMarket";
 import { SkewedBadge } from "@/components/shared/SkewedBadge";
+import { LineupArchetypePanel } from "@/components/skills/LineupArchetypePanel";
 
 export default function AuthenticLobby() {
   const {
@@ -371,6 +372,10 @@ export default function AuthenticLobby() {
   const draggingPlayerGlobal = draggingPlayerId ? roster.find(p => p.id === draggingPlayerId) : null;
   const isDraggingOOPGlobal = draggingPlayerGlobal && dragHoverSlot && draggingPlayerGlobal.position !== dragHoverSlot;
 
+  const starting5 = (["PG", "SG", "SF", "PF", "C"] as PlayerPosition[])
+    .map(pos => getPlayerForSlot(pos))
+    .filter((p): p is Player => p !== undefined);
+
   return (
     <main className="relative w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center pointer-events-none">
       {draggingPlayerId && (
@@ -493,6 +498,9 @@ export default function AuthenticLobby() {
           setChatInput={setChatInput} 
           onSendMessage={handleSendChat} 
         />
+
+        {/* --- Lineup Archetypes Panel (NBA 2K STYLE - SHARP HD FIX) --- */}
+        <LineupArchetypePanel startingLineup={starting5} />
 
         {/* --- Online Counter --- */}
         <div className="absolute top-[625px] right-[20px] w-[210px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 z-30 overflow-hidden">
