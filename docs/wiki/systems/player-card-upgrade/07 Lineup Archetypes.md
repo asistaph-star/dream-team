@@ -248,3 +248,36 @@ To establish a baseline for the rebound, second-chance, and putback systems prio
 ### Future Design Recommendation
 * **Decision: Option A — Baseline is safe; design GLASS_STRIKE rebound-only effect.**
 * Because second-chance points and OREB rates are extremely safe and far below warning/danger limits, it is safe to proceed in a future phase with a `GLASS_STRIKE` enhancer that boosts OREB chances and putback conversion rates, provided the global `0.36` cap and stamina guards remain strictly enforced.
+
+---
+
+## 13. GLASS_STRIKE Rebound-Only Integration (Phase LineupArchetype-1I4)
+
+The Learned Special Skill `GLASS_STRIKE` is integrated directly with the pure `resolveLineupArchetypes` resolver to scale its efficiency based on the team's active **Glass Bully / Rebound Lineup** archetype level:
+
+* **Level 0 (Inactive):**
+  * `GLASS_STRIKE` does not activate.
+  * No OREB boost.
+  * No putback boost.
+* **Level 1 (Bronze):**
+  * OREB boost: `+0.015`.
+  * Putback conversion boost: `0`.
+  * OREB cap remains strictly `0.36`.
+* **Level 2 (Silver):**
+  * OREB boost: `+0.025`.
+  * Putback conversion boost: `+0.010`.
+  * OREB cap remains strictly `0.36`.
+* **Level 3 (Gold):**
+  * OREB boost: `+0.035`.
+  * Putback conversion boost: `+0.015`.
+  * OREB cap remains strictly `0.36`.
+
+### Core Safety Rules & Safeguards
+* **OREB Chance Cap Clamp:** The final offensive rebound chance is strictly clamped at `0.36` maximum at all levels.
+* **Paint Barrier Counterplay:** Paint Barrier contest / suppression applies to the final rebound chance calculation.
+* **No Stamina Drain:** No box-out stamina drain is added.
+* **No Automatic Putback:** Second-chance conversions are not automatic; they still roll against the putback shot quality probability `fc2`.
+* **No Recursive Rebound Loop:** Missed putbacks always result in defensive rebounds (DREBs) for the opposing team, preventing infinite loops.
+* **No Natural Rolling:** `GLASS_STRIKE` does not roll naturally in the natural rolling pool (`SPECIAL_SKILL_NAMES` in `skillCatalog.ts`).
+* **POSTER_SPARK:** Remains completely untouched.
+* **No Saved Data / OVR Changes:** Saved data structure and ascension growth limits remain unchanged.
