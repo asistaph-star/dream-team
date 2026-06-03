@@ -773,9 +773,13 @@ export function simulateTick(
     const useKey = `${teamName} Bench Captain Q${newQuarter}`;
     if (hasTeamSkillUsed(isUserTeam, useKey)) return;
 
+    const pbSummary = resolveLineupArchetypes(team);
+    const pbLevel = pbSummary.allResults.find(r => r.id === "playmaking")?.level ?? 0;
+    const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
+
     if (!rollSpecialMechanic(team, "BENCH_CAPTAIN_STABILIZE", newStamina, (h) => {
       const benchCaptainIdentity = (getCalmRating(h) + getStaminaRating(h) + getAssistRating(h)) / 3;
-      return 0.90 + (benchCaptainIdentity / 100) * 0.20;
+      return (0.90 + (benchCaptainIdentity / 100) * 0.20) * scaleMultiplier;
     })) return;
 
     const holders = team.filter(p => hasSpecialSkillMechanic(p, "BENCH_CAPTAIN_STABILIZE"));
