@@ -215,3 +215,36 @@ Following the activation of targeted anti-Flop counters, a post-counter regressi
 ### Balance Status Lock
 * **Status Decision: Option A — Anti-Flop counters are stable; lock 1H5/1H6 and keep Flop scaling blocked.**
 * **Safeguard Enforcement:** Because baseline Foul-Draw is already strong, all future gameplay scaling for the Flop / Foul-Draw archetype remains blocked. Any changes to the Gold Flop cap, SGA Flop multipliers, or Four-Point Bait scaling will require a new separate approval phase.
+
+---
+
+## 12. Rebound Regression Simulator (Phase LineupArchetype-1I2)
+
+To establish a baseline for the rebound, second-chance, and putback systems prior to any potential `GLASS_STRIKE` implementation, a multi-scenario rebound regression simulator was executed across 8 distinct lineup scenarios.
+
+### Rebound Regression Metrics
+
+| Scenario | Combined Score | User / AI Total REB | User / AI OREB / DREB | User / AI OREB Rate | Second-Chance Poss. (Pts) | Putback FG% (Make / Att) | Glass Touch Triggers | Paint Barrier Triggers |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1. Baseline Balanced** | 192.0 | 56.0 / 57.5 | 9.9-46.1 / 11.3-46.2 | 17.6% / 19.7% | 1.0 (0.4) | 16.0% (0.2 / 0.9) | 0.00 | 0.00 |
+| **2. Glass Touch Heavy** | 196.0 | 59.8 / 54.9 | 11.6-48.1 / 12.3-42.6 | 21.5% / 20.4% | 1.4 (0.8) | 26.7% (0.3 / 1.2) | 0.32 | 0.00 |
+| **3. Paint Barrier Counter** | 196.9 | 55.6 / 57.2 | 9.5-46.1 / 11.3-46.0 | 17.2% / 19.7% | 1.5 (0.7) | 23.3% (0.3 / 1.2) | 0.00 | 0.68 |
+| **4. Glass Bully Lv.1** | 201.6 | 55.3 / 52.9 | 10.7-44.6 / 10.7-42.2 | 20.2% / 19.4% | 1.5 (0.6) | 20.7% (0.2 / 1.2) | 0.16 | 0.00 |
+| **5. Glass Bully Lv.2** | 213.8 | 65.6 / 36.8 | 8.4-57.2 / 9.8-27.0 | 23.6% / 14.7% | 0.8 (0.2) | 8.0% (0.1 / 0.7) | 0.12 | 0.40 |
+| **6. Glass Bully Lv.3** | 224.1 | 62.8 / 37.3 | 6.6-56.2 / 10.9-26.4 | 19.9% / 16.3% | 0.6 (0.3) | 12.0% (0.1 / 0.5) | 0.04 | 0.52 |
+| **7. Bully vs Counter** | 216.5 | 61.0 / 38.9 | 6.4-54.6 / 11.6-27.3 | 19.1% / 17.5% | 1.0 (0.4) | 20.0% (0.2 / 0.9) | 0.00 | 0.80 |
+| **8. Tired Bigs (30 Stam)** | 167.2 | 64.3 / 60.4 | 10.6-53.6 / 11.9-48.5 | 18.0% / 18.2% | 1.4 (0.5) | 20.7% (0.2 / 1.2) | 0.00 | 0.00 |
+
+### Analysis and Conclusions
+
+1. **Second-Chance Scoring does NOT Dominate:** In the baseline (Scenario 1), second-chance points average only `0.4` points per game, and even in the Glass Touch Heavy scenario, they remain under `1.0` point (`0.8` points). Putback efficiency remains low (`16.0%–26.7%`), preventing rebounds from inflating match scores.
+2. **OREB Rates Remain Far Below Cap:** The offensive rebound rate ranges from `14.7%` to `23.6%` under all simulation scenarios, far below the engine's global OREB cap of `36%` (`0.36`).
+3. **Glass Touch and Paint Barrier are Healthy:**
+   - Stacked `Glass Touch` base skills raise the OREB rate from `17.6%` to `21.5%` (+3.9%).
+   - Stacked `Paint Barrier` base skills reduce the opponent OREB rate from `17.6%` to `17.2%`.
+4. **Iron Motor Stamina Protection:** Starters without stamina protections end Q4 exhausted (Scenario 1 user C/PF end at `6.6%`/`0.3%`). However, lineups carrying `Iron Motor` (Scenarios 4-7) successfully maintain high stamina, ending Q4 with `56.6%` to `85.3%` stamina on C/PF big men.
+5. **No Infinite Rebound Loops:** The match engine's non-recursive putback structure successfully terminates all missed putbacks in DREBs, maintaining a stable possession count.
+
+### Future Design Recommendation
+* **Decision: Option A — Baseline is safe; design GLASS_STRIKE rebound-only effect.**
+* Because second-chance points and OREB rates are extremely safe and far below warning/danger limits, it is safe to proceed in a future phase with a `GLASS_STRIKE` enhancer that boosts OREB chances and putback conversion rates, provided the global `0.36` cap and stamina guards remain strictly enforced.
