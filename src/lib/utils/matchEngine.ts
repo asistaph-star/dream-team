@@ -2274,7 +2274,11 @@ export function simulateTick(
               const disciplineScale = 0.85 + (maxRating / 100) * 0.30;
               skillShotBonus -= 0.03 * disciplineScale;
             } else {
-              sfChance += 0.09;
+              const baitSummary = resolveLineupArchetypes(userLineup);
+              const baitDsLevel = baitSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
+              const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
+              const baitBoost = (baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020;
+              sfChance += baitBoost;
               skillLog(`Four-Point Bait X pressures the Exposed defender`, true);
             }
           }
@@ -3172,7 +3176,11 @@ export function simulateTick(
                 skillLog(`Discipline Wall holds off Four-Point Bait X`, true);
                 aiSkillShotBonus -= 0.03;
               } else {
-                sfChance_ai += 0.09;
+                const baitSummary = resolveLineupArchetypes(aiLineup);
+                const baitDsLevel = baitSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
+                const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
+                const baitBoost = (baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020;
+                sfChance_ai += baitBoost;
                 skillLog(`Four-Point Bait X pressures the Exposed defender`, false);
               }
             }
