@@ -6,12 +6,12 @@
 - Learned Skill Identity Scaling: ✅ Locked stable
 - MatchEngine Mechanic Migration: ✅ Locked stable
 - New Family Rolling Pool: ❌ Not active yet
-- Native Mechanics for 15 Families: ⚠️ Batch C (7/15: `CLEAN_CHALLENGE`, `COMPOSURE_SHIELD`, `TIMEOUT_RESET`, `COURT_VISION_ENGINE`, `BENCH_CAPTAIN`, `LOCK_CHAIN`, `SKY_WALL`) mapped and supported natively; remaining 8 families pending.
+- Native Mechanics for 15 Families: ⚠️ Batch D (8/15: `CLEAN_CHALLENGE`, `COMPOSURE_SHIELD`, `TIMEOUT_RESET`, `COURT_VISION_ENGINE`, `BENCH_CAPTAIN`, `LOCK_CHAIN`, `SKY_WALL`, `DEFENSIVE_ANCHOR`) mapped and supported natively; remaining 7 families pending.
 
 ## Next Phase
-**Phase SpecialSkill-2B5 — Native Mechanics Batch D**
+**Phase SpecialSkill-2B6 — Native Mechanics Batch E**
 
-Implement native engine mechanics for the next batch of Special Skill Family IDs, including `DEFENSIVE_ANCHOR` (Team-wide defensive pressure/stamina drain).
+Implement native engine mechanics for the next batch of Special Skill Family IDs, including `GLASS_STRIKE`, `MOMENTUM_SWING`, `FLOP`, etc.
 
 
 ## Activation Prerequisites

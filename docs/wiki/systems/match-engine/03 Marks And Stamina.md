@@ -63,6 +63,7 @@ Stamina-drain skills (e.g., `Lung Burner X`, `Contact Tax X`) drain relative sta
 * **Pressure Coach X**: Drains `12` stamina from marked targets during triggers.
 * **LOCK_CHAIN (Native)**: Drains `Math.min(12, Math.round(9 * scale))` stamina (range `8–11`, capped at `12`) from the turnover committer or shooter under on-ball pressure.
 * **SKY_WALL (Native)**: Drains `Math.min(10, Math.round(7 * scale))` stamina (range `6–9`, capped at `10`) from the shooter only during close-range paint shot contests.
+* **DEFENSIVE_ANCHOR (Native)**: Drains `Math.min(20, Math.round(15 * scale))` stamina (range `12–18`, capped at `20`) from all 5 opposing players during half-court possessions. Drains are subject to team leadership resistance (up to 20%), target stamina resistance (up to 15%), and anti-snowball low-stamina reductions (40% reduction below 50% stamina, 70% reduction below 30% stamina).
 
 ---
 

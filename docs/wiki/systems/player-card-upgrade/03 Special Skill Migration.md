@@ -168,4 +168,33 @@ We mapped the third batch of native Special Skill Family IDs (Batch C: Single-Ta
 - **Rolling Pool Isolation**: Excluded from the natural rolling pool (`SPECIAL_SKILL_NAMES`), while legacy `Cage Step X`, `Corner Trap X`, and `Five-Man Squeeze X` remain active and roll naturally.
 - **Saved Data & OVR**: Saved player data, `specialSkillSlots`, rarity keys, and OVR/star-up separation are fully preserved.
 
+---
+
+## Native Mechanics Batch D (Phase SpecialSkill-2B5)
+
+We mapped the fourth batch of native Special Skill Family IDs (Batch D: DEFENSIVE_ANCHOR Team-Wide Stamina Pressure) directly in the match engine:
+* `DEFENSIVE_ANCHOR` -> `DEFENSIVE_ANCHOR_TEAM_PRESSURE`
+
+### Implementation Details:
+- **Mechanics Mapping**: Wired inside `src/lib/skills/skillMechanics.ts` within `LEGACY_TO_MECHANIC_MAP`. Registered a new mechanic ID: `DEFENSIVE_ANCHOR_TEAM_PRESSURE`.
+- **Base Rate Support**: Set in `src/lib/skills/skillCatalog.ts` under `SPECIAL_SKILL_RATES` (`DEFENSIVE_ANCHOR: 220`).
+- **Description Support**: Added under `SPECIAL_SKILL_TEXT`:
+  - `DEFENSIVE_ANCHOR`: *"Applies disciplined team pressure that wears down opponents across half-court possessions."*
+- **Visual Safety**: Added fallback icon mappings in `SkillBadge.tsx` (`skillArtMap`) routing `"defensive_anchor"` to `"corner-trap-x"`.
+- **Match Engine Integration**:
+  - **Defensive Anchor Team Pressure**: Hooked inside the tick start loop of `simulateTick` in `matchEngine.ts`.
+  - **Possession Guard**: Uses `currentPossession` to ensure only the currently defending team can apply the pressure:
+    - If `currentPossession === 'user'` (AI defends): `applyDefensiveAnchor(aiLineup, userLineup, false);`
+    - If `currentPossession === 'ai'` (User defends): `applyDefensiveAnchor(userLineup, aiLineup, true);`
+  - **Fastbreak Guard**: Skips when transition play is active (`pace === 'fastbreak'`).
+  - **Cooldown**: Capped at max once per quarter per team using team-specific keys: `User Defensive Anchor Q[1-4]` / `AI Defensive Anchor Q[1-4]`. Cooldown keys are only set/marked on successful rolls.
+  - **Stamina Drain & Counterplays**:
+    - Base drain: `baseDrain = Math.min(20, Math.round(15 * scale))` (expected range `12–18`, capped at `20`).
+    - Counter Type B (Team Leadership): If the drained team has any counter leader (`BENCH_CAPTAIN`, `COMPOSURE_SHIELD`, or `TIMEOUT_RESET`), reduces team-wide drain by `10%–20%` (capped at `20%`) based on the best leader's Calm/Stamina/Assist identity.
+    - Counter Type A (Player Natural Resistance): Reduces received drain per target based on their stamina rating: `targetResistance = (getStaminaRating(target) / 100) * 0.15` (up to 15% reduction).
+    - Counter Type C (Anti-Snowball): If target stamina pct < 30%, reduces final drain by 70% (`Math.round(amount * 0.3)`). Else if target stamina pct < 50%, reduces final drain by 40% (`Math.round(amount * 0.6)`).
+    - Final drain is clamped to $\ge 0$. No marks are applied.
+- **Rolling Pool Isolation**: Excluded from the natural rolling pool (`SPECIAL_SKILL_NAMES`), while legacy `Corner Trap X` and `Five-Man Squeeze X` remain active and roll naturally.
+- **Saved Data & OVR**: Saved player data, `specialSkillSlots`, rarity keys, and OVR/star-up separation are fully preserved.
+
 
