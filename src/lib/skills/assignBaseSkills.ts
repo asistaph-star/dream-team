@@ -42,7 +42,9 @@ export type SpecialSkillName =
   | "Composure X"
   | "CLEAN_CHALLENGE"
   | "COMPOSURE_SHIELD"
-  | "TIMEOUT_RESET";
+  | "TIMEOUT_RESET"
+  | "COURT_VISION_ENGINE"
+  | "BENCH_CAPTAIN";
 
 const safeRatio = (a = 0, b = 0): number => a / Math.max(0.5, b);
 

@@ -80,6 +80,8 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "CLEAN_CHALLENGE": "Challenges foul-bait pressure with a disciplined contest.",
   "COMPOSURE_SHIELD": "Keeps the team calm under foul and momentum pressure.",
   "TIMEOUT_RESET": "Resets pressure by cleansing a mark during dangerous moments.",
+  "COURT_VISION_ENGINE": "Creates better rhythm from smart passing and organized offense.",
+  "BENCH_CAPTAIN": "Stabilizes the rotation when fatigue and pressure start building.",
 };
 
 export const SPECIAL_SKILL_NAMES = Object.keys(SPECIAL_SKILL_TEXT).filter(name => name.endsWith(" X")) as SpecialSkillName[];
@@ -127,4 +129,6 @@ export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
   "CLEAN_CHALLENGE": 260,
   "COMPOSURE_SHIELD": 330,
   "TIMEOUT_RESET": 260,
+  "COURT_VISION_ENGINE": 240,
+  "BENCH_CAPTAIN": 220,
 };

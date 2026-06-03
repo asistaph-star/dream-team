@@ -748,6 +748,46 @@ export function simulateTick(
     const joiner = cleanseText && recoveryText ? " and " : "";
     skillLog(`Cold Timeout X ${cleanseText}${joiner}${recoveryText}`, isUserTeam);
   };
+
+  const applyBenchCaptain = (team: Player[], isUserTeam: boolean) => {
+    const teamAvg = avgStamina(team, newStamina);
+    const lowestStamPlayer = getLowestStaminaPlayer(team);
+    const lowestStam = lowestStamPlayer ? (newStamina[lowestStamPlayer.id] ?? 100) : 100;
+    
+    if (teamAvg >= 65 && lowestStam >= 45) return;
+
+    const teamName = isUserTeam ? "User" : "AI";
+    const useKey = `${teamName} Bench Captain Q${newQuarter}`;
+    if (hasTeamSkillUsed(isUserTeam, useKey)) return;
+
+    if (!rollSpecialMechanic(team, "BENCH_CAPTAIN_STABILIZE", newStamina, (h) => {
+      const benchCaptainIdentity = (getCalmRating(h) + getStaminaRating(h) + getAssistRating(h)) / 3;
+      return 0.90 + (benchCaptainIdentity / 100) * 0.20;
+    })) return;
+
+    const holders = team.filter(p => hasSpecialSkillMechanic(p, "BENCH_CAPTAIN_STABILIZE"));
+    const leader = holders.sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
+    if (!leader) return;
+
+    markTeamSkillUsed(isUserTeam, useKey);
+
+    const leaderIdentity = (getCalmRating(leader) + getStaminaRating(leader) + getAssistRating(leader)) / 3;
+    const scale = 0.85 + (leaderIdentity / 100) * 0.30;
+    const staminaRecover = Math.min(8, Math.round(6 * scale));
+
+    recoverSkillStamina(lowestStamPlayer, staminaRecover);
+
+    ensureForm(lowestStamPlayer.id);
+    let formText = "";
+    if (newFormRating[lowestStamPlayer.id] < 1.0) {
+      const formStabilize = Math.min(0.008, 0.004 + (getCalmRating(leader) / 100) * 0.004);
+      newFormRating[lowestStamPlayer.id] = clampForm(newFormRating[lowestStamPlayer.id] + formStabilize);
+      formText = ` and focus (+${(formStabilize * 100).toFixed(2)}%)`;
+    }
+
+    skillLog(`${leader.name}'s Bench Captain stabilizes ${lowestStamPlayer.name}'s stamina (+${staminaRecover})${formText}`, isUserTeam);
+  };
+
   const tryDeadAir = (
     disruptingTeam: Player[],
     target: Player | undefined,
@@ -897,6 +937,8 @@ export function simulateTick(
   applyHookedTax(aiLineup, false);
   applyGreenSupport(userLineup, true);
   applyGreenSupport(aiLineup, false);
+  applyBenchCaptain(userLineup, true);
+  applyBenchCaptain(aiLineup, false);
   [...userLineup, ...aiLineup].forEach(p => {
     const team = userLineup.some(u => u.id === p.id) ? userLineup : aiLineup;
     const isUserTeam = team === userLineup;
@@ -1846,6 +1888,21 @@ export function simulateTick(
 
         // ═══ tryBlock — BEFORE Roll F and Roll 3 (confirmed Step 4 order) ═══
         let skillShotBonus = 0;
+        if (currentOff !== "Isolation (ISO)" && currentOff !== "Post Isolation") {
+          if (rollSpecialMechanic(userLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
+            const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
+            return 0.90 + (courtVisionIdentity / 100) * 0.20;
+          })) {
+            const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
+            const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
+            if (leader) {
+              const scale = getAssistRating(leader) / 100;
+              const bonus = Math.min(0.02, 0.012 + scale * 0.006);
+              skillShotBonus += bonus;
+              skillLog(`${leader.name}'s Court Vision Engine creates a rhythm bonus of +${(bonus * 100).toFixed(1)}% for ${scorer.name}`, true);
+            }
+          }
+        }
         if (is3PT && rollBaseSkill(userLineup, "Arc Pressure", newStamina)) {
           const jammed = tryDeadAir(aiLineup, scorer, false, "Arc Pressure");
           const shadowed = !jammed && tryShadowGuard(aiLineup, false);
@@ -2352,6 +2409,21 @@ export function simulateTick(
 
     // Blitz/Trap handling (0% general TOV — 15% steal only, Step 3 fix, DO NOT CHANGE)
     let aiSkillShotBonus = 0;
+    if (state.aiOffStrategy !== "Isolation (ISO)" && state.aiOffStrategy !== "Post Isolation") {
+      if (rollSpecialMechanic(aiLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
+        const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
+        return 0.90 + (courtVisionIdentity / 100) * 0.20;
+      })) {
+        const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
+        const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
+        if (leader) {
+          const scale = getAssistRating(leader) / 100;
+          const bonus = Math.min(0.02, 0.012 + scale * 0.006);
+          aiSkillShotBonus += bonus;
+          skillLog(`${leader.name}'s Court Vision Engine creates a rhythm bonus of +${(bonus * 100).toFixed(1)}% for ${scorer.name}`, false);
+        }
+      }
+    }
     if (is3PT && rollBaseSkill(aiLineup, "Arc Pressure", newStamina)) {
       const jammed = tryDeadAir(userLineup, scorer, true, "Arc Pressure");
       const shadowed = !jammed && tryShadowGuard(userLineup, true);
