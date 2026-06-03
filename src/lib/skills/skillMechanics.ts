@@ -17,7 +17,9 @@ export type SpecialSkillMechanicId =
   | "COMPOSURE_SHIELD_CANCEL"
   | "TIMEOUT_RESET_CLEANSE"
   | "COURT_VISION_RHYTHM"
-  | "BENCH_CAPTAIN_STABILIZE";
+  | "BENCH_CAPTAIN_STABILIZE"
+  | "LOCK_CHAIN_ON_BALL_PRESSURE"
+  | "SKY_WALL_RIM_PRESSURE";
 
 export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = {
   "Red Dot X": ["DEEP_STRIKE_EXPOSE_SETUP"],
@@ -40,6 +42,8 @@ export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = 
   "TIMEOUT_RESET": ["TIMEOUT_RESET_CLEANSE"],
   "COURT_VISION_ENGINE": ["COURT_VISION_RHYTHM"],
   "BENCH_CAPTAIN": ["BENCH_CAPTAIN_STABILIZE"],
+  "LOCK_CHAIN": ["LOCK_CHAIN_ON_BALL_PRESSURE"],
+  "SKY_WALL": ["SKY_WALL_RIM_PRESSURE"],
 };
 
 export const resolveSpecialSkillMechanics = (rawSkill: string): SpecialSkillMechanicId[] => {

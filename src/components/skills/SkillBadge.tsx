@@ -39,6 +39,8 @@ const skillArtMap: Record<string, string> = {
   "timeout_reset": "cold-timeout-x",
   "court_vision_engine": "chain-pass-x",
   "bench_captain": "pressure-coach-x",
+  "lock_chain": "cage-step-x",
+  "sky_wall": "rim-warden",
 };
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {

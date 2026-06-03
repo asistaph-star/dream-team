@@ -1736,17 +1736,41 @@ export function simulateTick(
       const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
       screenBreakerPressure = 1.12 * screenBreakerScale;
     }
+    let lockChainActive = false;
+    let lockChainTOVMod = 1.0;
+    if (rollSpecialMechanic(aiLineup, "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
+      const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+      return 0.90 + (identity / 100) * 0.20;
+    })) {
+      lockChainActive = true;
+      const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
+      if (holders.length > 0) {
+        const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
+        const bestIdentity = Math.max(...identities);
+        lockChainTOVMod = Math.min(1.06, 1.03 + (bestIdentity / 100) * 0.03);
+      }
+    }
     const cageStepPressure = rollSpecialMechanic(aiLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
       const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (cageStepIdentity / 100) * 0.20;
     }) ? 1.12 : 1.0;
-    const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure);
+    const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure * lockChainTOVMod);
     if (Math.random() < finalTOVChance) {
       turnoverOccurred = true;
       const committer = pickCommitter(userLineup);
       if (cageStepPressure > 1) {
         newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
         skillLog(`Cage Step X hooks ${committer.name}'s handle`, false);
+      }
+      if (lockChainActive) {
+        const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
+        if (holders.length > 0) {
+          const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
+          const bestIdentity = Math.max(...identities);
+          const scale = 0.90 + (bestIdentity / 100) * 0.20;
+          const drain = drainStamina(newStamina, committer, userLineup, Math.min(12, Math.round(9 * scale)));
+          skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
+        }
       }
       activePlayerId = committer.id;
       ensureStats(committer.id);
@@ -1987,6 +2011,47 @@ export function simulateTick(
           skillShotBonus += 0.025;
           skillLog(`${scorer.name}'s Tempo Switch boosts the early attack`, true);
         }
+        // LOCK_CHAIN perimeter shot pressure
+        if (primaryDefender && rollSpecialMechanic([primaryDefender], "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
+          const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+          return 0.90 + (identity / 100) * 0.20;
+        })) {
+          const identity = (getOnBallDefenseRating(primaryDefender) + getStealRating(primaryDefender) + getStaminaRating(primaryDefender)) / 3;
+          const scale = 0.90 + (identity / 100) * 0.20;
+          const drain = drainStamina(newStamina, scorer, userLineup, Math.min(12, Math.round(9 * scale)));
+          skillLog(`LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
+        }
+
+        // SKY_WALL rim protection
+        const CLOSE_RANGE_SHOTS = [
+          'drivingLayup',
+          'dunk',
+          'euroStep',
+          'fingerRoll',
+          'powerLayup',
+          'putBack',
+          'bankShot',
+          'hookShot',
+          'floater'
+        ];
+        if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
+          if (rollSpecialMechanic(aiLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
+            const identity = (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4;
+            return 0.90 + (identity / 100) * 0.20;
+          })) {
+            const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
+            if (holders.length > 0) {
+              const identities = holders.map(h => (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4);
+              const bestIdentity = Math.max(...identities);
+              const scale = 0.90 + (bestIdentity / 100) * 0.20;
+              const penalty = Math.min(0.013, 0.008 + (bestIdentity / 100) * 0.004);
+              skillShotBonus -= penalty;
+              const drain = drainStamina(newStamina, scorer, userLineup, Math.min(10, Math.round(7 * scale)));
+              skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, false);
+            }
+          }
+        }
+
         if (hasMark(newSkillMarks, scorer.id, "Static")) {
           skillShotBonus -= 0.025;
         }
@@ -2508,6 +2573,47 @@ export function simulateTick(
       aiSkillShotBonus += 0.025;
       skillLog(`${scorer.name}'s Tempo Switch boosts the early attack`, false);
     }
+    // LOCK_CHAIN perimeter shot pressure
+    if (primaryDefender && rollSpecialMechanic([primaryDefender], "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
+      const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+      return 0.90 + (identity / 100) * 0.20;
+    })) {
+      const identity = (getOnBallDefenseRating(primaryDefender) + getStealRating(primaryDefender) + getStaminaRating(primaryDefender)) / 3;
+      const scale = 0.90 + (identity / 100) * 0.20;
+      const drain = drainStamina(newStamina, scorer, aiLineup, Math.min(12, Math.round(9 * scale)));
+      skillLog(`LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, true);
+    }
+
+    // SKY_WALL rim protection
+    const CLOSE_RANGE_SHOTS = [
+      'drivingLayup',
+      'dunk',
+      'euroStep',
+      'fingerRoll',
+      'powerLayup',
+      'putBack',
+      'bankShot',
+      'hookShot',
+      'floater'
+    ];
+    if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
+      if (rollSpecialMechanic(userLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
+        const identity = (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4;
+        return 0.90 + (identity / 100) * 0.20;
+      })) {
+        const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
+        if (holders.length > 0) {
+          const identities = holders.map(h => (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4);
+          const bestIdentity = Math.max(...identities);
+          const scale = 0.90 + (bestIdentity / 100) * 0.20;
+          const penalty = Math.min(0.013, 0.008 + (bestIdentity / 100) * 0.004);
+          aiSkillShotBonus -= penalty;
+          const drain = drainStamina(newStamina, scorer, aiLineup, Math.min(10, Math.round(7 * scale)));
+          skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, true);
+        }
+      }
+    }
+
     if (hasMark(newSkillMarks, scorer.id, "Static")) {
       aiSkillShotBonus -= 0.025;
     }
@@ -2711,17 +2817,41 @@ export function simulateTick(
         const screenBreakerScale = 0.85 + (maxRating / 100) * 0.30;
         userScreenBreakerPressure = 1.12 * screenBreakerScale;
       }
+      let userLockChainActive = false;
+      let userLockChainTOVMod = 1.0;
+      if (rollSpecialMechanic(userLineup, "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
+        const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+        return 0.90 + (identity / 100) * 0.20;
+      })) {
+        userLockChainActive = true;
+        const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
+        if (holders.length > 0) {
+          const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
+          const bestIdentity = Math.max(...identities);
+          userLockChainTOVMod = Math.min(1.06, 1.03 + (bestIdentity / 100) * 0.03);
+        }
+      }
       const userCageStepPressure = rollSpecialMechanic(userLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
         const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
         return 0.90 + (cageStepIdentity / 100) * 0.20;
       }) ? 1.12 : 1.0;
-      const aiFinalTOVChance = Math.min(0.25, aiBaseTOVRate * userDefPressureMod * aiTovMod * aiLateClockMod * userHandsActivePressure * userScreenBreakerPressure * userCageStepPressure);
+      const aiFinalTOVChance = Math.min(0.25, aiBaseTOVRate * userDefPressureMod * aiTovMod * aiLateClockMod * userHandsActivePressure * userScreenBreakerPressure * userCageStepPressure * userLockChainTOVMod);
       if (Math.random() < aiFinalTOVChance) {
         turnoverOccurred = true;
         const committer = pickCommitter(aiLineup);
         if (userCageStepPressure > 1) {
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
           skillLog(`Cage Step X hooks ${committer.name}'s handle`, true);
+        }
+        if (userLockChainActive) {
+          const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
+          if (holders.length > 0) {
+            const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
+            const bestIdentity = Math.max(...identities);
+            const scale = 0.90 + (bestIdentity / 100) * 0.20;
+            const drain = drainStamina(newStamina, committer, aiLineup, Math.min(12, Math.round(9 * scale)));
+            skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, true);
+          }
         }
         activePlayerId = committer.id;
         ensureStats(committer.id);
