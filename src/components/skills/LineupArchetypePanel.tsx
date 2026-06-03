@@ -128,6 +128,25 @@ export function LineupArchetypePanel({ startingLineup }: LineupArchetypePanelPro
                 Needs 3+ distinct contributing players
               </span>
             )}
+
+            {/* Foul-Draw Preview Note */}
+            {primary.id === "foul-draw" && (
+              <div className="mt-1.5 p-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded text-[8px] leading-tight text-yellow-200/90 font-semibold flex flex-col gap-1">
+                <div className="font-bold flex items-center gap-1 text-yellow-300">
+                  <ShieldAlert size={8} className="text-yellow-400 animate-pulse shrink-0" />
+                  <span>Foul-Draw archetype detected — gameplay scaling not active yet.</span>
+                </div>
+                <div>
+                  <span className="text-zinc-400">Enhancers:</span> FLOP, DEEP_STRIKE, COMPOSURE_SHIELD.
+                </div>
+                <div>
+                  <span className="text-zinc-400">Counters:</span> CLEAN_CHALLENGE, Discipline Wall, Focus Lock.
+                </div>
+                <div className="text-[7.5px] italic text-yellow-400/80">
+                  Future: Flop and 3PT foul pressure may scale after balance audit.
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="py-2 text-center">

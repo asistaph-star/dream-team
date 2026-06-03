@@ -107,3 +107,29 @@ The following balance-sensitive mechanics are deferred and will not have any act
 * **FLOP / Foul-Draw scaling:** contact foul draw rates and SGA-specific multipliers.
 * **POSTER_SPARK & GLASS_STRIKE:** Native mechanic implementations.
 * **Base Skill Multipliers:** Base skill effect multipliers are deferred to protect core simulation stability.
+
+---
+
+## 8. Flop / Foul-Draw Archetype Audit & Preview Lock (Phase LineupArchetype-1H2)
+
+An in-depth gameplay and safety audit of the **Flop / Foul-Draw Lineup** archetype was conducted to assess the balance risks of scaling shooting foul rates, free throw attempts (FTA), and foul-out rates.
+
+### Audit Findings & Current Gameplay Status
+* **Status:** Gameplay scaling is **strictly deferred**. The Flop / Foul-Draw archetype remains in **UI/documentation preview mode only**.
+* **No Gameplay Changes:** The match engine and foul logic remain 100% unchanged.
+  * **Foul Chance Cap:** Remains at the baseline cap of `0.28` (no increase to `0.30`).
+  * **SGA Flop Multiplier:** Remains protected at the baseline `0.08` (does not scale to `0.116`).
+  * **Four-Point Bait X:** Remains at the baseline `+0.09` (does not scale to `+0.12`).
+  * **Archetype Multipliers:** No Flop archetype multiplier or general foul rate increase is activated.
+  * **Save Data & OVR:** No saved card mutations, no family rolling pool activations, and no OVR/star-up logic changes.
+
+### Current Match Engine Behavior
+* **Flop X (`FLOP_SELL_CONTACT`):** Triggers only when the defender is **Tilted**. Adds a baseline bonus (`0.04`, or `0.08` for SGA) to the shooting foul chance.
+* **Four-Point Bait X (`DEEP_STRIKE_FOUR_POINT_BAIT`):** Triggers on 3PT attempts when the defender is **Exposed**.
+* **Key Counters:** Four-Point Bait is actively mitigated by defensive counters: `COMPOSURE_SHIELD` (cancel/mitigation), `CLEAN_CHALLENGE`, and `Discipline Wall`.
+* **Foul Magnet:** Adds foul pressure only when defender stamina is low.
+
+### Future Design Direction
+* **Roster Integration:** The Flop / Foul-Draw archetype must enhance a cohesive foul-draw roster rather than letting a single rerolled Flop skill define the full lineup. Full value must require active **Foul-Draw Base Skill** support (e.g., Foul Magnet, Power Driver, Tempo Surgeon, Mismatch Caller, Paint Magnet, Focus Lock, Complete Engine).
+* **Hybrid Synergy:** Four-Point Bait should require hybrid synergy from both the **Deep Strike** (shooting) and **Foul-Draw** archetypes before unlocking any future scaled boosts.
+* **Risk Controls:** Foul systems can trigger free throw explosions and foul-out abuse. Any future gameplay scaling will require targeted, multi-quarter foul simulations.
