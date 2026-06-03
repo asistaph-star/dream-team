@@ -372,5 +372,30 @@ Phase LineupArchetype-1K3A integrated shooting/Deep Strike archetype-gated scali
 * **Arc Pressure Math:** Base skill math for Arc Pressure remains unchanged.
 * **Saved Data & Progression:** Saved data structure, player attributes, OVR/star-up calculations, and progression systems remain completely unchanged.
 
+---
+
+## 17. Four-Point Bait Hybrid Gating Implementation (Phase LineupArchetype-1K3B3)
+
+Phase LineupArchetype-1K3B3 implemented **Option B Hybrid Gating** for the `Four-Point Bait X` special mechanic boost inside the match engine:
+
+* **Symmetrical Gating Integration:**
+  * Symmetrically resolves lineup archetypes for both User and AI paths using `resolveLineupArchetypes`.
+  * The foul-pressure boost added by `Four-Point Bait X` scales dynamically based on the active levels of the attacking team's **Deep Strike / Shooting** and **Flop / Foul-Draw** lineup archetypes.
+* **Option B Scaling Rules:**
+  * **Neither archetype active:** `+0.020` foul boost.
+  * **Only Shooting OR only Foul-Draw active:** `+0.045` foul boost.
+  * **Both Shooting and Foul-Draw active (Hybrid Synergy):** `+0.090` foul boost (baseline).
+* **Defensive Counterplay & Safety Rules:**
+  * **Exposed Requirement:** Remains strictly required (Four-Point Bait X only applies on 3PT attempts when the defender is marked as `Exposed`).
+  * **Counters:** `Composure Shield`, `Clean Challenge`, and `Discipline Wall` still cancel the boost appropriately.
+  * **Foul Chance Cap:** `MAX_SHOOTING_FOUL_CHANCE` remains strictly clamped at `0.28`.
+  * **3PT Additive Cap:** `MAX_3PT_POSITIVE_ADDITIVE_BONUS` remains strictly capped at `0.08`.
+* **Deferred & Untouched Components:**
+  * **Asymmetries:** Stamina tracking on fouls and Discipline Wall scaling asymmetries between User/AI paths are intentionally deferred to a future cleanup phase.
+  * **Red Dot / Exposed Setup:** Remains unchanged.
+  * **Arc Pressure & Flop:** Remain unchanged.
+  * **Saved Data & Progression:** Saved data structures, card attributes, progression, and OVR/star-up calculations remain unchanged.
+
+
 
 
