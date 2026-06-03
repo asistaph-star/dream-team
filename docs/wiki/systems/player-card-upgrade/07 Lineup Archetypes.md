@@ -344,4 +344,33 @@ Phase LineupArchetype-1J4 integrated playmaking archetype-gated scaling for the 
 * **No Stacking Loops:** Stacking recovery enhancers does not create stamina loops; overall team fatigue decays normally.
 * **No Saved Data / OVR Changes:** Saved data structure, player attributes, and player progression systems remain unchanged.
 
+---
+
+## 16. Deep Strike Exposed Setup Gating (Phase LineupArchetype-1K3A)
+
+Phase LineupArchetype-1K3A integrated shooting/Deep Strike archetype-gated scaling for the `DEEP_STRIKE_EXPOSE_SETUP` (Red Dot X) mechanic inside the match engine:
+
+* **Level 0 (None / No Deep Strike):**
+  * scaleFn multiplier: `0.85`
+  * Purpose: Reduces the trigger consistency of the Exposed setup mark for teams that do not invest in a shooting/Deep Strike identity.
+* **Level 1 (Bronze):**
+  * scaleFn multiplier: `1.00`
+  * Purpose: Restores the baseline trigger consistency.
+* **Level 2 (Silver):**
+  * scaleFn multiplier: `1.05`
+  * Purpose: Slight trigger consistency improvement.
+* **Level 3 (Gold):**
+  * scaleFn multiplier: `1.10`
+  * Purpose: Maximum trigger consistency.
+
+### Core Rules & Safeguards
+* **Exposed Duration:** The Exposed mark duration remains exactly `3` possessions at all levels.
+* **Symmetry:** Both User and AI paths are fully symmetrical.
+* **Four-Point Bait:** Four-Point Bait X is untouched and does not use archetype gating in this phase.
+* **Foul Pressure:** Foul pressure and FTA logic are completely untouched.
+* **3PT Additive Cap:** `MAX_3PT_POSITIVE_ADDITIVE_BONUS` remains strictly capped at `0.08`.
+* **Arc Pressure Math:** Base skill math for Arc Pressure remains unchanged.
+* **Saved Data & Progression:** Saved data structure, player attributes, OVR/star-up calculations, and progression systems remain completely unchanged.
+
+
 
