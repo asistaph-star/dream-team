@@ -53,7 +53,7 @@ export const BASE_SKILL_TEXT: Record<BaseSkillName, string> = {
   "Focus Lock": "Counters perimeter rhythm, reducing opponent shooter skill bonuses down to ~+2.0%.",
   "Complete Engine": "Boosts all team skill trigger rates by ~+4% while the player has >=40% stamina.",
   "Iron Motor": "Recovers ~12 stamina and resists drain effects when stamina is below 70%.",
-  "Connector Hub": "Restores ~8 stamina to teammates on normal assists.",
+  "Connector Hub": "Restores stamina to the scorer on assisted buckets, scaling with the passer’s playmaking.",
   "Tempo Switch": "Improves early offense. Adds +2.5% shooting bonus during fastbreaks and early offense.",
   "Position Flex": "Lets flexible players avoid matchup penalties. Adds +2.0% shooting bonus across roles.",
   "Future Core": "Adds stability. Grants +0.006 Form recovery per possession if the player is cold.",
