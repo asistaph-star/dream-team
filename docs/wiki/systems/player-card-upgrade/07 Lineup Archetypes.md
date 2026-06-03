@@ -159,3 +159,27 @@ To stress-test the baseline Flop / Foul-Draw ecosystem before any potential game
   * **Do NOT** scale SGA's Flop bonus to `0.116`.
   * **Do NOT** scale Four-Point Bait X to `+0.12`.
   * **Do NOT** add Flop archetype multipliers or general foul rate increases.
+
+---
+
+## 10. Targeted Anti-Flop Counter Support (Phase LineupArchetype-1H5)
+
+Before any future Flop/Foul-Draw gameplay scaling can be considered, targeted anti-Flop defensive counterplay was introduced to ensure Flop triggers are fair and can be actively mitigated by disciplined defensive matchups.
+
+### New Anti-Flop Defensive Checks
+When `FLOP_SELL_CONTACT` triggers and before the `flopBonus` is applied to the shooting foul chance, the match engine rolls defensive counters in the following priority order:
+
+1. **Composure Shield (`COMPOSURE_SHIELD_CANCEL`):**
+   * **Mechanic:** Hard counter. If successful, cancels the Flop X bonus completely (added bonus = `0`).
+   * **Logging:** Logs that Composure Shield stayed disciplined and denied the sell-contact attempt.
+   * **Constraints:** No extra shot penalty is added, and global Flop trigger rates are unchanged.
+2. **Clean Challenge (`CLEAN_CHALLENGE_CONTEST`):**
+   * **Mechanic:** Soft counter. Checked only if Composure Shield fails. If successful, reduces the Flop X bonus by 50% (added bonus = `flopBonus * 0.5`).
+   * **Logging:** Logs that Clean Challenge absorbed the contact cleanly.
+   * **Constraints:** Does not fully cancel the Flop bonus.
+
+### Roster & Balance Safeguards
+* **SGA Flop Base Unchanged:** Shai Gilgeous-Alexander's baseline double bonus (`0.08` instead of `0.04`) is unchanged but is now subject to the same counterplay checks.
+* **Four-Point Bait & Foul Magnet:** Untouched.
+* **Foul Rates & Caps:** Untouched.
+* **No Gameplay Scaling:** Flop archetype gameplay scaling remains unapproved and blocked until more live match samples prove that FTA ranges are completely safe.
