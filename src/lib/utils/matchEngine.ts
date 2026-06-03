@@ -2130,7 +2130,22 @@ export function simulateTick(
           return 0.90 + (contactTaxIdentity / 100) * 0.20;
         })) {
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
-          drainStamina(newStamina, primaryDefender, aiLineup, 45);
+          const pbSummary = resolveLineupArchetypes(userLineup);
+          const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
+          let baseDrain = 8;
+          if (pbLevel === 1) baseDrain = 10;
+          else if (pbLevel === 2) baseDrain = 11;
+          else if (pbLevel === 3) baseDrain = 12;
+
+          const defenderStam = staminaPct(primaryDefender);
+          let finalDrain = baseDrain;
+          if (defenderStam < 30) {
+            finalDrain = Math.round(baseDrain * 0.30);
+          } else if (defenderStam < 50) {
+            finalDrain = Math.round(baseDrain * 0.60);
+          }
+
+          drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
           skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, true);
         }
         if (is3PT && primaryDefender && rollSpecialMechanic(aiLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
@@ -2399,8 +2414,26 @@ export function simulateTick(
               const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
               return 0.90 + (lungBurnerIdentity / 100) * 0.20;
             })) {
+              const pbSummary = resolveLineupArchetypes(userLineup);
+              const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
+              let baseDrain = 15;
+              if (pbLevel === 1) baseDrain = 20;
+              else if (pbLevel === 2) baseDrain = 30;
+              else if (pbLevel === 3) baseDrain = 40;
+
               const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
-              const drain = drainStamina(newStamina, primaryDefender, aiLineup, hadDebt ? 190 : 110);
+              let preClampDrain = baseDrain + (hadDebt ? 10 : 0);
+              let preSnowballDrain = Math.min(40, preClampDrain);
+
+              const defenderStam = staminaPct(primaryDefender);
+              let finalDrain = preSnowballDrain;
+              if (defenderStam < 30) {
+                finalDrain = Math.round(preSnowballDrain * 0.30);
+              } else if (defenderStam < 50) {
+                finalDrain = Math.round(preSnowballDrain * 0.60);
+              }
+
+              const drain = drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
               skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, true);
               applyDebtCollector(userLineup, aiLineup, primaryDefender, true);
             }
@@ -2737,7 +2770,22 @@ export function simulateTick(
       return 0.90 + (contactTaxIdentity / 100) * 0.20;
     })) {
       newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
-      drainStamina(newStamina, primaryDefender, userLineup, 45);
+      const pbSummary = resolveLineupArchetypes(aiLineup);
+      const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
+      let baseDrain = 8;
+      if (pbLevel === 1) baseDrain = 10;
+      else if (pbLevel === 2) baseDrain = 11;
+      else if (pbLevel === 3) baseDrain = 12;
+
+      const defenderStam = staminaPct(primaryDefender);
+      let finalDrain = baseDrain;
+      if (defenderStam < 30) {
+        finalDrain = Math.round(baseDrain * 0.30);
+      } else if (defenderStam < 50) {
+        finalDrain = Math.round(baseDrain * 0.60);
+      }
+
+      drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
       skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, false);
     }
     if (is3PT && primaryDefender && rollSpecialMechanic(userLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
@@ -3293,8 +3341,26 @@ export function simulateTick(
                 const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
                 return 0.90 + (lungBurnerIdentity / 100) * 0.20;
               })) {
+                const pbSummary = resolveLineupArchetypes(aiLineup);
+                const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
+                let baseDrain = 15;
+                if (pbLevel === 1) baseDrain = 20;
+                else if (pbLevel === 2) baseDrain = 30;
+                else if (pbLevel === 3) baseDrain = 40;
+
                 const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
-                const drain = drainStamina(newStamina, primaryDefender, userLineup, hadDebt ? 190 : 110);
+                let preClampDrain = baseDrain + (hadDebt ? 10 : 0);
+                let preSnowballDrain = Math.min(40, preClampDrain);
+
+                const defenderStam = staminaPct(primaryDefender);
+                let finalDrain = preSnowballDrain;
+                if (defenderStam < 30) {
+                  finalDrain = Math.round(preSnowballDrain * 0.30);
+                } else if (defenderStam < 50) {
+                  finalDrain = Math.round(preSnowballDrain * 0.60);
+                }
+
+                const drain = drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
                 skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, false);
                 applyDebtCollector(aiLineup, userLineup, primaryDefender, false);
               }
