@@ -2205,8 +2205,24 @@ export function simulateTick(
             return 0.90 + flopIdentity * 0.20;
           })) {
             const flopBonus = getFlopFoulPressureBonus(scorer);
-            sfChance += flopBonus;
-            skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
+            const composed = rollSpecialMechanic(aiLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
+              const composureIdentity = getCalmRating(h);
+              return 0.90 + (composureIdentity / 100) * 0.20;
+            });
+            const cleanContest = !composed && rollSpecialMechanic(aiLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
+              const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
+              return 0.90 + (cleanContestIdentity / 100) * 0.20;
+            });
+
+            if (composed) {
+              skillLog(`Composure X cancels the Flop X sell-contact attempt`, false);
+            } else if (cleanContest) {
+              sfChance += flopBonus * 0.5;
+              skillLog(`Clean Contest X reduces the Flop X contact pressure`, false);
+            } else {
+              sfChance += flopBonus;
+              skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
+            }
           }
           if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(userLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
             const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
@@ -3065,8 +3081,24 @@ export function simulateTick(
               return 0.90 + flopIdentity * 0.20;
             })) {
               const flopBonus = getFlopFoulPressureBonus(scorer);
-              sfChance_ai += flopBonus;
-              skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
+              const composed = rollSpecialMechanic(userLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
+                const composureIdentity = getCalmRating(h);
+                return 0.90 + (composureIdentity / 100) * 0.20;
+              });
+              const cleanContest = !composed && rollSpecialMechanic(userLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
+                const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
+                return 0.90 + (cleanContestIdentity / 100) * 0.20;
+              });
+
+              if (composed) {
+                skillLog(`Composure X cancels the Flop X sell-contact attempt`, true);
+              } else if (cleanContest) {
+                sfChance_ai += flopBonus * 0.5;
+                skillLog(`Clean Contest X reduces the Flop X contact pressure`, true);
+              } else {
+                sfChance_ai += flopBonus;
+                skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
+              }
             }
             if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
               const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;

@@ -110,10 +110,10 @@ function analyzeMatch(state: any, userRoster: Player[], aiRoster: Player[]): Mat
       if (text.includes("Foul Magnet pressures a tired defender")) {
         foulMagnetTriggers++;
       }
-      if (text.includes("Clean Contest X shuts down Four-Point Bait X")) {
+      if (text.includes("Clean Contest X shuts down Four-Point Bait X") || text.includes("Clean Contest X reduces the Flop X contact pressure")) {
         cleanChallengeCounters++;
       }
-      if (text.includes("Composure X cancels the forced foul pressure")) {
+      if (text.includes("Composure X cancels the forced foul pressure") || text.includes("Composure X cancels the Flop X sell-contact attempt")) {
         composureShieldCounters++;
       }
       if (text.includes("Discipline Wall holds off Four-Point Bait X")) {
