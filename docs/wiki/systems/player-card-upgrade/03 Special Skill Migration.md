@@ -125,3 +125,24 @@ We mapped the first batch of native Special Skill Family IDs (Batch A: Safe Coun
 - **Rolling Pool Isolation**: Explicitly filtered the rolling pool (`SPECIAL_SKILL_NAMES`) to only allow items ending in `" X"`, leaving the new family IDs out of natural rolls (which prevents them from showing up during active play or upgrades unless manually assigned for testing).
 - **TypeScript Integration**: Registered the new family IDs in the `SpecialSkillName` union type.
 
+---
+
+## Native Mechanics Batch B (Phase SpecialSkill-2B3)
+
+We mapped the second batch of native Special Skill Family IDs (Batch B: Playmaking / Rotation Utility) directly in the match engine:
+* `COURT_VISION_ENGINE` -> `COURT_VISION_RHYTHM`
+* `BENCH_CAPTAIN` -> `BENCH_CAPTAIN_STABILIZE`
+
+### Implementation Details:
+- **Mechanics Mapping**: Wired inside `src/lib/skills/skillMechanics.ts` within `LEGACY_TO_MECHANIC_MAP`. Registered two new mechanic IDs: `COURT_VISION_RHYTHM` and `BENCH_CAPTAIN_STABILIZE`.
+- **Base Rate Support**: Set in `src/lib/skills/skillCatalog.ts` under `SPECIAL_SKILL_RATES` (`COURT_VISION_ENGINE: 240`, `BENCH_CAPTAIN: 220`).
+- **Description Support**: Added under `SPECIAL_SKILL_TEXT` for the new family IDs.
+- **Visual Safety**: Added fallback icon mappings in `SkillBadge.tsx` (`skillArtMap`) routing `"court_vision_engine"` to `"chain-pass-x"` and `"bench_captain"` to `"pressure-coach-x"`.
+- **Match Engine Integration**:
+  - **Court Vision Rhythm**: Hooked in shot evaluation block. Restricts triggers to non-isolation plays only (`currentOff !== "Isolation (ISO)" && currentOff !== "Post Isolation"`). Yields a tiny shot quality bonus scaling with assist rating (`0.012` to `0.018`), hard-capped at `+0.02`. Max one trigger per possession. Does not apply marks or drain stamina.
+  - **Bench Captain Stabilization**: Hooked at tick start. Only checks when team average stamina is below `65` OR lowest on-court stamina is below `45`. Targets only the single lowest-stamina player on court, recovering `5` to `8` stamina (hard-capped at `8`). If target is cold (`formRating < 1.0`), stabilizes form with a tiny boost (`+0.004` to `+0.008`).
+  - **Cooldown**: Limits triggers to once per quarter per team using separate keys (`User Bench Captain Q[1-4]` and `AI Bench Captain Q[1-4]`) to ensure User and AI triggers never conflict or block each other.
+- **Rolling Pool Isolation**: Excluded from the natural rolling pool (`SPECIAL_SKILL_NAMES`), while legacy `Chain Pass X` and `Pressure Coach X` remain active and roll naturally.
+- **Saved Data / Rarity Keys**: Untouched. OVR/star-up separation is fully preserved.
+
+
