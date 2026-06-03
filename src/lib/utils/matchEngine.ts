@@ -2096,12 +2096,15 @@ export function simulateTick(
           skillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
           skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, true);
           if (focused) skillLog(`Focus Lock contains the shooting rhythm`, false);
+          const dsSummary = resolveLineupArchetypes(userLineup);
+          const dsLevel = dsSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
+          const scaleMultiplier = dsLevel === 0 ? 0.85 : dsLevel === 1 ? 1.00 : dsLevel === 2 ? 1.05 : 1.10;
           if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(userLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
             const redDotIdentity = getThreePtRating(h);
-            return 0.90 + (redDotIdentity / 100) * 0.20;
+            return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
           })) {
             newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
-            skillLog(`Red Dot X marks ${primaryDefender.name} as Exposed`, true);
+            skillLog("Red Dot X marks " + primaryDefender.name + " as Exposed", true);
           }
         }
         if (!is3PT && rollBaseSkill(userLineup, "Paint Magnet", newStamina)) {
@@ -2696,12 +2699,15 @@ export function simulateTick(
       aiSkillShotBonus += jammed ? 0.005 : shadowed ? shadowRemaining : focused ? focusRemaining : 0.035 * arcScale;
       skillLog(`${scorer.name}'s Arc Pressure creates a cleaner three`, false);
       if (focused) skillLog(`Focus Lock contains the shooting rhythm`, true);
+      const dsSummary = resolveLineupArchetypes(aiLineup);
+      const dsLevel = dsSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
+      const scaleMultiplier = dsLevel === 0 ? 0.85 : dsLevel === 1 ? 1.00 : dsLevel === 2 ? 1.05 : 1.10;
       if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
         const redDotIdentity = getThreePtRating(h);
-        return 0.90 + (redDotIdentity / 100) * 0.20;
+        return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
       })) {
         newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
-        skillLog(`Red Dot X marks ${primaryDefender.name} as Exposed`, false);
+        skillLog("Red Dot X marks " + primaryDefender.name + " as Exposed", false);
       }
     }
     if (!is3PT && rollBaseSkill(aiLineup, "Paint Magnet", newStamina)) {
