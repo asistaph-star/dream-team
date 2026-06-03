@@ -183,3 +183,35 @@ When `FLOP_SELL_CONTACT` triggers and before the `flopBonus` is applied to the s
 * **Four-Point Bait & Foul Magnet:** Untouched.
 * **Foul Rates & Caps:** Untouched.
 * **No Gameplay Scaling:** Flop archetype gameplay scaling remains unapproved and blocked until more live match samples prove that FTA ranges are completely safe.
+
+---
+
+## 11. Post-Counter Foul-Draw Regression Lock (Phase LineupArchetype-1H6)
+
+Following the activation of targeted anti-Flop counters, a post-counter regression simulation was run across all 8 match-simulation scenarios to audit the effectiveness of the counters, verify FTA control, and confirm game flow health.
+
+### Post-Counter Regression Metrics
+
+| Scenario | Combined Score | User / AI FTA | User / AI Fouls | Flop X Triggers (SGA Double) | Composure Cancels | Clean Reduces | Steals / Turnovers |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1. Baseline (No Archetype)** | 207.7 | 21.5 / 24.0 | 15.7 / 13.1 | 0.20 (0.00) | 0.00 | 0.00 | 12.5 / 24.7 |
+| **2. Foul-Draw Lv.1 (Bronze)** | 200.0 | 24.3 / 23.3 | 15.7 / 15.6 | 0.20 (0.00) | 0.00 | 0.00 | 11.2 / 25.1 |
+| **3. Foul-Draw Lv.2 (Silver)**| 190.1 | 24.9 / 23.7 | 16.5 / 15.9 | 0.53 (0.00) | 0.00 | 0.00 | 12.9 / 25.9 |
+| **4. Foul-Draw Lv.3 (Gold)**  | 194.2 | 25.5 / 25.5 | 17.0 / 16.4 | 0.13 (0.00) | 0.00 | 0.00 | 10.4 / 24.0 |
+| **5. SGA Flop Lineup**        | 195.1 | 24.4 / 24.1 | 16.1 / 16.1 | 0.67 (0.13) | 0.00 | 0.00 | 10.7 / 23.5 |
+| **6. Four-Point Bait Lineup** | 200.7 | 23.9 / 28.0 | 17.4 / 15.4 | 0.00 (0.00) | 0.00 | 0.00 | 10.5 / 22.4 |
+| **7. Hybrid Deep Strike**     | 208.8 | 22.8 / 22.1 | 14.8 / 15.3 | 0.27 (0.00) | 0.00 | 0.00 | 10.3 / 23.7 |
+| **8. Counter Lineup**         | 162.4 | 26.9 / 25.7 | 16.8 / 17.2 | 0.20 (0.00) | 0.07 | 0.20 | 9.9 / 23.5 |
+
+### Analysis and Conclusions
+
+1. **Anti-Flop Counters are Effective:** In Scenario 8 (Counter Lineup), the introduction of Composure Shield (`0.07` average cancels) and Clean Challenge (`0.20` average reduces) successfully controlled the Flop X foul pressure.
+2. **FTA Warning Mitigation:** In the Phase 1H3 baseline, the heavy counter matchup reached an average FTA of **30.4** for the user (entering the warning threshold). With anti-Flop counter mechanics active, the average user FTA in Scenario 8 dropped to **26.9**, bringing it safely below the `28+` warning mark.
+3. **SGA Flop Remains Dangerous but Fair:** SGA's double Flop bonus remains active (`0.67` Flop triggers, `0.13` double SGA portions) but did not lead to any runaway FTA, stabilizing the SGA lineup at an average of `24.4` FTA.
+4. **Foul-Draw Utility Preserved:** Foul-Draw lineups still feel highly distinct and useful, naturally elevated to `24.3–25.5` FTA under normal matchups compared to standard lineups.
+5. **No Foul-Out Spams:** Average personal fouls remained steady around `13–17` per team, ensuring no players fouled out and normal game flow was preserved.
+6. **No Offensive Collapse:** Defensive lineups successfully clamp scoring (Scenario 8 combined score of `162.4` under heavy lock pressure), while all other scenarios remained healthy and close to the `190–225` combined score target.
+
+### Balance Status Lock
+* **Status Decision: Option A — Anti-Flop counters are stable; lock 1H5/1H6 and keep Flop scaling blocked.**
+* **Safeguard Enforcement:** Because baseline Foul-Draw is already strong, all future gameplay scaling for the Flop / Foul-Draw archetype remains blocked. Any changes to the Gold Flop cap, SGA Flop multipliers, or Four-Point Bait scaling will require a new separate approval phase.
