@@ -50,6 +50,8 @@ function buildInitialState(userLineup: Player[], aiLineup: Player[]): MatchState
     clock: 720,
     userScore: 0,
     aiScore: 0,
+    userMomentum: 0,
+    aiMomentum: 0,
     events: [],
     isFinished: false,
     playerStamina: stamina,
