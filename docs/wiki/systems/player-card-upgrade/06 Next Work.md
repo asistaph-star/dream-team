@@ -6,19 +6,18 @@
 - Learned Skill Identity Scaling: ✅ Locked stable
 - MatchEngine Mechanic Migration: ✅ Locked stable
 - New Family Rolling Pool: ❌ Not active yet
-- Native Mechanics for 15 Families: ❌ Not implemented yet
+- Native Mechanics for 15 Families: ⚠️ Batch A (3/15: `CLEAN_CHALLENGE`, `COMPOSURE_SHIELD`, `TIMEOUT_RESET`) mapped and supported natively; remaining 12 families pending.
 
 ## Next Phase
-**Phase SpecialSkill-2B2 — Native Mechanics Batch A: Safe Counters / Utility**
+**Phase SpecialSkill-2B3 — Native Mechanics Batch B**
 
-Implement native engine mechanics for:
-- COMPOSURE_SHIELD
-- CLEAN_CHALLENGE
-- TIMEOUT_RESET
-- BENCH_CAPTAIN
-- COURT_VISION_ENGINE
+Implement native engine mechanics for the remaining safe counters / utility / offensive rhythm families in Batch 1:
+- `BENCH_CAPTAIN`
+- `COURT_VISION_ENGINE`
 
-These are the safest families to start with because they are counters, recovery, or team-rhythm mechanics with low risk of breaking balance.
+Followed by:
+- Designing and implementing next batches of native family mechanics (Batches C-G).
+
 
 ## Activation Prerequisites
 The new 15-family rolling pool will **not** be activated until:

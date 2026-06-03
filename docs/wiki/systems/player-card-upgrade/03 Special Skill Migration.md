@@ -107,3 +107,21 @@ Design audit completed for all 15 families. Key principles:
 Next implementation starts with **Batch 1: Counters/Utility** (COMPOSURE_SHIELD, CLEAN_CHALLENGE, TIMEOUT_RESET, BENCH_CAPTAIN, COURT_VISION_ENGINE).
 
 New rolling pool will NOT be activated until all 15 mechanics are built, base rates added, descriptions written, icons verified, and balance regression passed.
+
+---
+
+## Native Mechanics Batch A (Phase SpecialSkill-2B2)
+
+We mapped the first batch of native Special Skill Family IDs (Batch A: Safe Counters/Utility) directly in the match engine:
+* `CLEAN_CHALLENGE` -> `CLEAN_CHALLENGE_CONTEST`
+* `COMPOSURE_SHIELD` -> `COMPOSURE_SHIELD_CANCEL`
+* `TIMEOUT_RESET` -> `TIMEOUT_RESET_CLEANSE`
+
+### Implementation Details:
+- **Mechanics Mapping**: Wired inside `src/lib/skills/skillMechanics.ts` within `LEGACY_TO_MECHANIC_MAP`.
+- **Base Rate Support**: Set in `src/lib/skills/skillCatalog.ts` under `SPECIAL_SKILL_RATES` to match legacy rates (`CLEAN_CHALLENGE: 260`, `COMPOSURE_SHIELD: 330`, `TIMEOUT_RESET: 260`).
+- **Description Support**: Added under `SPECIAL_SKILL_TEXT` for the new family IDs.
+- **Visual Safety**: Added fallback icon mappings in `SkillBadge.tsx` (`skillArtMap`) routing the lowercase names to legacy asset files (`clean-contest-x`, `composure-x`, `cold-timeout-x`) to ensure smooth visual fallback without breaking layouts.
+- **Rolling Pool Isolation**: Explicitly filtered the rolling pool (`SPECIAL_SKILL_NAMES`) to only allow items ending in `" X"`, leaving the new family IDs out of natural rolls (which prevents them from showing up during active play or upgrades unless manually assigned for testing).
+- **TypeScript Integration**: Registered the new family IDs in the `SpecialSkillName` union type.
+
