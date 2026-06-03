@@ -29,6 +29,7 @@ import {
 } from "../skills/skillResolver";
 import { hasSpecialSkillMechanic, SpecialSkillMechanicId } from "../skills/skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
+import { resolveLineupArchetypes } from "../lineup/lineupArchetypeResolver";
 
 // Re-export everything the UI needs
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
@@ -795,9 +796,18 @@ export function simulateTick(
     const useKey = `${teamName} Defensive Anchor Q${newQuarter}`;
     if (hasTeamSkillUsed(isDefendingUserTeam, useKey)) return;
 
+    const summary = resolveLineupArchetypes(defendingTeam);
+    const staminaDrainResult = summary.allResults.find(r => r.id === "stamina-drain");
+    const level = staminaDrainResult ? staminaDrainResult.level : 0;
+
+    let triggerMultiplier = 1.0;
+    if (level === 2) triggerMultiplier = 1.15;
+    else if (level === 3) triggerMultiplier = 1.30;
+
     if (!rollSpecialMechanic(defendingTeam, "DEFENSIVE_ANCHOR_TEAM_PRESSURE", newStamina, (h) => {
       const identity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStrengthRating(h) + getStealRating(h)) / 4;
-      return 0.90 + (identity / 100) * 0.20;
+      const baseScale = 0.90 + (identity / 100) * 0.20;
+      return baseScale * triggerMultiplier;
     })) return;
 
     const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_PRESSURE"));
@@ -812,39 +822,24 @@ export function simulateTick(
 
     const leaderIdentity = (getOnBallDefenseRating(leader) + getStaminaRating(leader) + getStrengthRating(leader) + getStealRating(leader)) / 4;
     const scale = 0.90 + (leaderIdentity / 100) * 0.20;
-    const baseAmount = Math.min(20, Math.round(15 * scale));
 
-    // Team Leadership Resistance (Counter Type B)
-    const counterMechanics: SpecialSkillMechanicId[] = [
-      "BENCH_CAPTAIN_STABILIZE",
-      "COMPOSURE_SHIELD_CANCEL",
-      "TIMEOUT_RESET_CLEANSE"
-    ];
-    const counterLeaders = attackingTeam.filter(p =>
-      counterMechanics.some(mech => hasSpecialSkillMechanic(p, mech))
-    );
-    let leadershipReduction = 0;
-    let counterLeaderName = "";
-    if (counterLeaders.length > 0) {
-      const bestLeader = counterLeaders.sort((a, b) => {
-        const aId = (getCalmRating(a) + getStaminaRating(a) + getAssistRating(a)) / 3;
-        const bId = (getCalmRating(b) + getStaminaRating(b) + getAssistRating(b)) / 3;
-        return bId - aId;
-      })[0];
-      const counterIdentity = (getCalmRating(bestLeader) + getStaminaRating(bestLeader) + getAssistRating(bestLeader)) / 3;
-      leadershipReduction = Math.min(0.20, 0.10 + (counterIdentity / 100) * 0.10);
-      counterLeaderName = bestLeader.name;
-    }
+    const getPrimaryBallHandler = (team: Player[]): Player => {
+      return [...team].sort((a, b) => {
+        const aVal = (getAssistRating(a) + getHandleRating(a)) / 2;
+        const bVal = (getAssistRating(b) + getHandleRating(b)) / 2;
+        return bVal - aVal;
+      })[0] ?? team[0];
+    };
 
-    const teamDrain = Math.round(baseAmount * (1 - leadershipReduction));
+    if (level === 0) {
+      const target = getPrimaryBallHandler(attackingTeam);
+      if (!target) return;
 
-    attackingTeam.forEach(p => {
-      // Player Natural Resistance (Counter Type A)
-      const targetResistance = (getStaminaRating(p) / 100) * 0.15;
-      let playerDrain = Math.round(teamDrain * (1 - targetResistance));
+      const baseAmount = Math.min(8, Math.round(6 * scale));
+      const targetResistance = (getStaminaRating(target) / 100) * 0.15;
+      let playerDrain = Math.round(baseAmount * (1 - targetResistance));
 
-      // Anti-Snowball Low-Stamina Reduction (Counter Type C)
-      const currentStaminaPct = staminaPct(p);
+      const currentStaminaPct = staminaPct(target);
       if (currentStaminaPct < 30) {
         playerDrain = Math.round(playerDrain * 0.3);
       } else if (currentStaminaPct < 50) {
@@ -853,12 +848,59 @@ export function simulateTick(
 
       playerDrain = Math.max(0, playerDrain);
       if (playerDrain > 0) {
-        drainStamina(newStamina, p, attackingTeam, playerDrain);
+        drainStamina(newStamina, target, attackingTeam, playerDrain);
       }
-    });
 
-    const leadershipText = counterLeaderName ? ` (countered by ${counterLeaderName}: -${Math.round(leadershipReduction * 100)}%)` : "";
-    skillLog(`${leader.name}'s Defensive Anchor exerts team-wide pressure, draining stamina${leadershipText}`, isDefendingUserTeam);
+      skillLog(`${leader.name}'s Defensive Anchor exerts single-target pressure on ${target.name}, draining ${playerDrain} stamina`, isDefendingUserTeam);
+    } else {
+      const baseAmount = Math.min(20, Math.round(15 * scale));
+
+      // Team Leadership Resistance (Counter Type B)
+      const counterMechanics: SpecialSkillMechanicId[] = [
+        "BENCH_CAPTAIN_STABILIZE",
+        "COMPOSURE_SHIELD_CANCEL",
+        "TIMEOUT_RESET_CLEANSE"
+      ];
+      const counterLeaders = attackingTeam.filter(p =>
+        counterMechanics.some(mech => hasSpecialSkillMechanic(p, mech))
+      );
+      let leadershipReduction = 0;
+      let counterLeaderName = "";
+      if (counterLeaders.length > 0) {
+        const bestLeader = counterLeaders.sort((a, b) => {
+          const aId = (getCalmRating(a) + getStaminaRating(a) + getAssistRating(a)) / 3;
+          const bId = (getCalmRating(b) + getStaminaRating(b) + getAssistRating(b)) / 3;
+          return bId - aId;
+        })[0];
+        const counterIdentity = (getCalmRating(bestLeader) + getStaminaRating(bestLeader) + getAssistRating(bestLeader)) / 3;
+        leadershipReduction = Math.min(0.20, 0.10 + (counterIdentity / 100) * 0.10);
+        counterLeaderName = bestLeader.name;
+      }
+
+      const teamDrain = Math.round(baseAmount * (1 - leadershipReduction));
+
+      attackingTeam.forEach(p => {
+        // Player Natural Resistance (Counter Type A)
+        const targetResistance = (getStaminaRating(p) / 100) * 0.15;
+        let playerDrain = Math.round(teamDrain * (1 - targetResistance));
+
+        // Anti-Snowball Low-Stamina Reduction (Counter Type C)
+        const currentStaminaPct = staminaPct(p);
+        if (currentStaminaPct < 30) {
+          playerDrain = Math.round(playerDrain * 0.3);
+        } else if (currentStaminaPct < 50) {
+          playerDrain = Math.round(playerDrain * 0.6);
+        }
+
+        playerDrain = Math.max(0, playerDrain);
+        if (playerDrain > 0) {
+          drainStamina(newStamina, p, attackingTeam, playerDrain);
+        }
+      });
+
+      const leadershipText = counterLeaderName ? ` (countered by ${counterLeaderName}: -${Math.round(leadershipReduction * 100)}%)` : "";
+      skillLog(`${leader.name}'s Defensive Anchor exerts team-wide pressure, draining stamina${leadershipText}`, isDefendingUserTeam);
+    }
   };
 
   const tryDeadAir = (
