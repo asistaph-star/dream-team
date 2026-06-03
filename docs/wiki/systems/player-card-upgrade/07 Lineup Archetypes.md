@@ -432,3 +432,19 @@ Phase LineupArchetype-1L2 established the Paint Bully regression baseline using 
   * **Lung Burner X** triggered heavily in legacy stress testing, and its flat `110` (User) / `190` (AI) stamina drain is unsafe for the standard player stamina pool.
 * **POSTER_SPARK Status:** Remains completely unimplemented and unmapped.
 * **Next Steps Recommendation:** Recommended next phase is a legacy Contact Tax / Lung Burner rebalance audit before any POSTER_SPARK gameplay is introduced.
+
+---
+
+## 20. Contact Tax / Lung Burner Regression Baseline (Phase LineupArchetype-1L4)
+
+Phase LineupArchetype-1L4 added a dedicated Contact Tax / Lung Burner regression baseline simulation suite. The key results are documented below:
+
+* **Contact Tax Impact:** Contact Tax Only causes a complete collapse of defender stamina by Q2 (lowest defender stamina reached 0.0%). Zero-stamina events per game jumped from the baseline `2.40` to `13.80`.
+* **Lung Burner Impact:** Lung Burner Only instantly zeroes out defenders on successful triggers due to its flat 110 stamina drain, causing zero-stamina events to jump to `14.12` per game.
+* **Debt Stress Impact:** Debt Stress simulation confirmed that the legacy flat 190 stamina drain is extremely unsafe, resulting in over 22,000 total stamina drained by Lung Burner per game and instantly zeroing out defender stamina in Q1.
+* **Stamina Zeroing Frequency:** Stacking both Contact Tax and Lung Burner causes defender stamina to collapse immediately, producing over **33.10 zero-stamina events** per game.
+* **Foul-Draw Overlap:** Foul-Draw overlap configuration caused extremely high Flop X trigger rates (**102.1 triggers per game**) because Contact Tax applies the `Tilted` mark, which Flop X exploits to draw fouls.
+* **Rim Protection Counterplay:** Rim Warden and SKY_WALL successfully countered shot attempts (Rim Warden averaging 312+ and SKY_WALL averaging 209+ contests/blocks), but they could not prevent defender stamina collapse.
+* **Symmetry Check:** Symmetrical user vs AI matchups confirmed identical collapses on both sides, with zero-stamina events peaking at **44.27** per game.
+* **POSTER_SPARK Status:** Remains completely unimplemented.
+* **Verdict:** Legacy drain values are extremely unsafe and must be rebalanced (reducing drains to safe, controlled, archetype-gated amounts) before any POSTER_SPARK migration.
