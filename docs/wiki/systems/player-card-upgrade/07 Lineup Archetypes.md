@@ -492,3 +492,27 @@ All changes are fully symmetrical across both User and AI branches.
 * **POSTER_SPARK:** Remains unimplemented and unmapped.
 * **Core Integrity:** Saved card data structure and OVR/star-up calculations remain completely unchanged.
 
+---
+
+## 22. POSTER_SPARK Design Audit (Phase LineupArchetype-1L6)
+
+Phase LineupArchetype-1L6 audited and mapped the design direction for the `POSTER_SPARK` learned special skill:
+
+* **Current Code Integration:**
+  * **Unmapped:** `POSTER_SPARK` is not mapped to any mechanics in `LEGACY_TO_MECHANIC_MAP` inside `skillMechanics.ts`.
+  * **Missing Catalog Data:** Missing from `SPECIAL_SKILL_TEXT` and `SPECIAL_SKILL_RATES` in `skillCatalog.ts`.
+  * **No Natural Rolling:** Excluded from `SPECIAL_SKILL_NAMES` since it does not end in `" X"`.
+  * **Trigger Logic:** Cannot trigger in `matchEngine.ts`. The match engine checks for `POSTER_SPARK_CONTACT_TAX` and `POSTER_SPARK_LUNG_BURNER` which resolve through legacy strings (`Contact Tax X` and `Lung Burner X`).
+  * **Enhancer Only:** Only listed as a candidate enhancer for `rebound` (Glass Bully) and `paint-bully` (Paint Bully) archetypes in `archetypes.ts`.
+* **Legacy Compatibility:**
+  * Legacy skills `"Contact Tax X"` and `"Lung Burner X"` continue to map to the `POSTER_SPARK` family via `LEGACY_TO_FAMILY_MAP` in `skillMigration.ts`, so old cards function safely with the rebalanced stamina values.
+* **Future Design Direction (If Implemented Later):**
+  * If implemented, `POSTER_SPARK` will reuse the safe 1L5 stamina values dynamically scaled by Paint Bully / Glass Bully level:
+    * **Level 1 (Bronze):** Setup drains 10 (applies Tilted) | Payoff drains 20.
+    * **Level 2 (Silver):** Setup drains 11 (applies Tilted) | Payoff drains 30.
+    * **Level 3 (Gold):** Setup drains 12 (applies Tilted) | Payoff drains 40.
+  * **Constraints:** Hard cap of 40 stamina drain, anti-snowball scaling, single-target only, no team-wide fatigue, and no automatic fouls or scores.
+* **Final Verdict:** `POSTER_SPARK` remains unimplemented for now because the 1L5 rebalanced legacy skills already provide safe physical pressure. This allows collecting more match samples under the new balance before adding new rollable skills.
+* **Next Steps:** Proceed to Phase LineupArchetype-1M — Anti-Meta / Gameplan Lineup Audit.
+
+
