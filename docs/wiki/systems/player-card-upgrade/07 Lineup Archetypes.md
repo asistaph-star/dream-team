@@ -133,3 +133,29 @@ An in-depth gameplay and safety audit of the **Flop / Foul-Draw Lineup** archety
 * **Roster Integration:** The Flop / Foul-Draw archetype must enhance a cohesive foul-draw roster rather than letting a single rerolled Flop skill define the full lineup. Full value must require active **Foul-Draw Base Skill** support (e.g., Foul Magnet, Power Driver, Tempo Surgeon, Mismatch Caller, Paint Magnet, Focus Lock, Complete Engine).
 * **Hybrid Synergy:** Four-Point Bait should require hybrid synergy from both the **Deep Strike** (shooting) and **Foul-Draw** archetypes before unlocking any future scaled boosts.
 * **Risk Controls:** Foul systems can trigger free throw explosions and foul-out abuse. Any future gameplay scaling will require targeted, multi-quarter foul simulations.
+
+---
+
+## 9. Flop / Foul-Draw Simulator Regression (Phase LineupArchetype-1H3)
+
+To stress-test the baseline Flop / Foul-Draw ecosystem before any potential gameplay scaling, a multi-scenario regression simulation suite was executed. 
+
+### Regression Findings & Baseline Strength
+* **Foul-Draw / Flop Baseline is Strong:** Roster configurations stacking Foul-Draw base skills (e.g., `Foul Magnet`, `Power Driver`, `Paint Magnet`) naturally increase FTA to the **25–27** range, already near the warning threshold.
+* **Warning & Danger Thresholds:**
+  * **FTA Target:** `16–23` FTA per team.
+  * **Warning Threshold:** `28+` FTA.
+  * **Danger Threshold:** `35+` FTA.
+  * *Status:* Some baseline scenarios naturally reached `25–27` FTA. Under heavy counter defensive pressure, the user team's average FTA reached **30.4**, entering the warning range. 
+* **Flop X Triggers:** Remained low (`0.20` to `0.47` triggers per game) and strictly setup-dependent (requiring the defender to be `Tilted` via a `Contact Tax X` drive).
+* **SGA Double Behavior:** SGA's double Flop X bonus (`0.08` instead of `0.04`) triggered correctly and safely under simulation, averaging `0.07` double triggers per game without inflating overall FTA.
+* **Four-Point Bait X & Counters:** Four-Point Bait X triggers were successfully controlled and mitigated by existing counters. Under simulation, the AI's `Discipline Wall` base skill successfully neutralized the forced foul pressure (`0.07` average counter triggers).
+* **Foul-out & Game Flow Health:** No players fouled out during the simulations. Steals, turnovers, and scoring averages remained well within healthy limits, proving that free throws do not dominate or break normal match flow under baseline rules.
+
+### Balance Decision
+* **Decision: Option B — Baseline is already high; add/verify counters before scaling.**
+* **Gameplay Safeguard:** Because baseline FTA is already close to the warning threshold when Foul-Draw skills are stacked, **no gameplay scaling will be implemented**.
+  * **Do NOT** increase the Gold cap to `0.30`.
+  * **Do NOT** scale SGA's Flop bonus to `0.116`.
+  * **Do NOT** scale Four-Point Bait X to `+0.12`.
+  * **Do NOT** add Flop archetype multipliers or general foul rate increases.
