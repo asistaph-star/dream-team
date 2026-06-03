@@ -14,35 +14,35 @@ Each base skill's effect is scaled through Player Identity helpers defined in `p
 | Skill | Phase | Identity Helpers |
 |---|---|---|
 | Arc Pressure | SkillSystem-1B | `getThreePtRating` |
-| Paint Magnet | SkillSystem-1B | `getFinishingRating`, `getStrengthRating` |
-| Tempo Surgeon | SkillSystem-1F | `getAssistRating`, `getOffenseRating` |
-| Mismatch Caller | SkillSystem-1K | `getOffenseRating`, `getStrengthRating` |
+| Paint Magnet | SkillSystem-1B | `getFinishingRating` |
+| Tempo Surgeon | SkillSystem-1F | `getHandleRating`, `getAssistRating` |
+| Mismatch Caller | SkillSystem-1K | (static) |
 | Power Driver | SkillSystem-1P | `getStrengthRating`, `getFinishingRating` |
-| Foul Magnet | SkillSystem-1D | `getFoulDrawTendency`, `getStrengthRating` |
-| Tempo Switch | SkillSystem-1K | `getSpeedRating`, `getHandleRating` |
+| Foul Magnet | SkillSystem-1D | `getFoulDrawTendency` |
+| Glass Touch | SkillSystem-1C | `getReboundRating` |
 
 ### Defense Skills
 | Skill | Phase | Identity Helpers |
 |---|---|---|
 | Rim Warden | SkillSystem-1H | `getBlockRating` |
-| Hands Active | SkillSystem-1E | `getStealRating`, `getOnBallDefenseRating` |
-| Screen Breaker | SkillSystem-1I | `getOnBallDefenseRating`, `getStrengthRating` |
+| Hands Active | SkillSystem-1E | `getStealRating` |
+| Screen Breaker | SkillSystem-1I | `getOnBallDefenseRating` |
 | Shadow Guard | SkillSystem-1H | `getOnBallDefenseRating` |
-| Discipline Wall | SkillSystem-1H | `getOnBallDefenseRating`, `getCalmRating` |
+| Discipline Wall | SkillSystem-1H | `getOnBallDefenseRating` |
 | Focus Lock | SkillSystem-1H | `getOnBallDefenseRating` |
-| Paint Barrier | SkillSystem-1C | `getReboundRating`, `getStrengthRating` |
-| Glass Touch | SkillSystem-1C | `getReboundRating` |
+| Paint Barrier | SkillSystem-1C | `getReboundRating` |
 
 ### Comprehensive Skills
 | Skill | Phase | Identity Helpers |
 |---|---|---|
-| Complete Engine | SkillSystem-1L | `getOffenseRating`, `getOnBallDefenseRating` |
+| Complete Engine | SkillSystem-1L | `getOffenseRating`, `getOnBallDefenseRating`, `getAssistRating` |
 | Iron Motor | SkillSystem-1M | `getStaminaRating` |
 | Share Rhythm | SkillSystem-1N | `getAssistRating` |
-| Enforcer Lift | SkillSystem-1O | `getOnBallDefenseRating`, `getStrengthRating` |
+| Enforcer Lift | SkillSystem-1O | `getOnBallDefenseRating`, `getStrengthRating`, `getStaminaRating` |
 | Connector Hub | SkillSystem-1F | `getAssistRating` |
 | Position Flex | SkillSystem-1K | (static) |
 | Future Core | SkillSystem-1K | (static) |
+| Tempo Switch | SkillSystem-1K | (static) |
 
 ## Player Identity Helpers (Foundation)
 Created in Phases PlayerIdentity-1B through PlayerIdentity-1X:
