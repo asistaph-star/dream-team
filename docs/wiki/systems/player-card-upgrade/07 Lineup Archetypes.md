@@ -281,3 +281,35 @@ The Learned Special Skill `GLASS_STRIKE` is integrated directly with the pure `r
 * **No Natural Rolling:** `GLASS_STRIKE` does not roll naturally in the natural rolling pool (`SPECIAL_SKILL_NAMES` in `skillCatalog.ts`).
 * **POSTER_SPARK:** Remains completely untouched.
 * **No Saved Data / OVR Changes:** Saved data structure and ascension growth limits remain unchanged.
+
+---
+
+## 14. COURT_VISION Archetype Gating Integration (Phase LineupArchetype-1J3c)
+
+Phase LineupArchetype-1J3c integrated playmaking archetype-gated scaling for the `COURT_VISION_RHYTHM` mechanic inside the match engine:
+
+* **Level 0 (None / No Light Bulb):**
+  * scaleFn multiplier: `0.85`
+  * Shot-quality cap: `0.015` (reduced from 0.020)
+  * Purpose: Reduces the "accidental" Court Vision value for lineups that do not invest in a playmaking identity.
+* **Level 1 (Bronze):**
+  * scaleFn multiplier: `1.00`
+  * Shot-quality cap: `0.020`
+  * Purpose: Restores the current baseline gameplay behavior.
+* **Level 2 (Silver):**
+  * scaleFn multiplier: `1.05`
+  * Shot-quality cap: `0.020`
+  * Purpose: Slight trigger consistency improvement.
+* **Level 3 (Gold):**
+  * scaleFn multiplier: `1.10`
+  * Shot-quality cap: `0.020`
+  * Purpose: Best trigger consistency, but enforces a strict `0.020` cap to prevent 3PT% spikes.
+
+### Core Rules & Safeguards
+* **No Cap Increases:** No archetype level raises the shot-quality cap above `0.020`.
+* **No Assist Logic Changes:** Assist chances and selection weights are unchanged.
+* **ISO/Post ISO Blocking:** COURT_VISION is still completely blocked when Isolation or Post Isolation strategy is active.
+* **ISO Auto-Switch Handling:** If Isolation automatically switches to Motion Offense because of stamina collapse, the attacking lineup's dynamic archetype level continues to control the multipliers and caps. A Level 0 lineup will strictly receive Level 0 modifiers.
+* **BENCH_CAPTAIN / TIMEOUT_RESET:** Remain completely untouched.
+* **No Saved Data / OVR Changes:** Saved data structure, player attributes, and player progression systems remain unchanged.
+
