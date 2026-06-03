@@ -3,15 +3,16 @@
 ## Current Status
 - Base Skills: ✅ Locked stable
 - Upgrade System: ✅ Locked stable
+- Lineup Archetypes: ✅ Phase LineupArchetype-1C completed (detection-only, starting 5 only, bench and OVR < 85 green skills excluded).
 - Learned Skill Identity Scaling: ✅ Locked stable
 - MatchEngine Mechanic Migration: ✅ Locked stable
 - New Family Rolling Pool: ❌ Not active yet
 - Native Mechanics for 15 Families: ⚠️ Batch D (8/15: `CLEAN_CHALLENGE`, `COMPOSURE_SHIELD`, `TIMEOUT_RESET`, `COURT_VISION_ENGINE`, `BENCH_CAPTAIN`, `LOCK_CHAIN`, `SKY_WALL`, `DEFENSIVE_ANCHOR`) mapped and supported natively; remaining 7 families pending.
 
 ## Next Phase
-**Phase SpecialSkill-2B6 — Native Mechanics Batch E**
+**Phase LineupArchetype-1D — Gameplay Archetype Integration**
 
-Implement native engine mechanics for the next batch of Special Skill Family IDs, including `GLASS_STRIKE`, `MOMENTUM_SWING`, `FLOP`, etc.
+Document and integrate Special Skill scaling with the active Lineup Archetypes after comprehensive balance reviews.
 
 
 ## Activation Prerequisites
