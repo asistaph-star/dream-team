@@ -446,5 +446,49 @@ Phase LineupArchetype-1L4 added a dedicated Contact Tax / Lung Burner regression
 * **Foul-Draw Overlap:** Foul-Draw overlap configuration caused extremely high Flop X trigger rates (**102.1 triggers per game**) because Contact Tax applies the `Tilted` mark, which Flop X exploits to draw fouls.
 * **Rim Protection Counterplay:** Rim Warden and SKY_WALL successfully countered shot attempts (Rim Warden averaging 312+ and SKY_WALL averaging 209+ contests/blocks), but they could not prevent defender stamina collapse.
 * **Symmetry Check:** Symmetrical user vs AI matchups confirmed identical collapses on both sides, with zero-stamina events peaking at **44.27** per game.
-* **POSTER_SPARK Status:** Remains completely unimplemented.
 * **Verdict:** Legacy drain values are extremely unsafe and must be rebalanced (reducing drains to safe, controlled, archetype-gated amounts) before any POSTER_SPARK migration.
+
+---
+
+## 21. Contact Tax / Lung Burner Safe Rebalance (Phase LineupArchetype-1L5)
+
+Phase LineupArchetype-1L5 implemented a safe rebalance of the physical-pressure stamina drains for both **Contact Tax X** and **Lung Burner X** inside the match engine to replace unsafe legacy flat drains with Paint Bully archetype-gated and anti-snowball fatigue scaling.
+
+All changes are fully symmetrical across both User and AI branches.
+
+### Rebalance Specifications
+
+#### Contact Tax X
+* **Old Behavior:** Flat 45 stamina drain.
+* **New Behavior (Gated by Paint Bully Archetype):**
+  * Level 0 (None): **8** stamina
+  * Level 1 (Bronze): **10** stamina
+  * Level 2 (Silver): **11** stamina
+  * Level 3 (Gold): **12** stamina
+* **Anti-Snowball Scaling:**
+  * Defender stamina $< 30\% \rightarrow$ final drain scaled by `0.30` (70% reduction, rounded).
+  * Defender stamina $< 50\% \rightarrow$ final drain scaled by `0.60` (40% reduction, rounded).
+  * Otherwise $\rightarrow$ full drain.
+* **Trigger Conditions:** Remains restricted to non-3PT/interior drives where the defender's stamina is $< 65\%$. Still applies the `Tilted` mark for exactly 3 possessions with no direct foul or shot quality boosts.
+
+#### Lung Burner X
+* **Old Behavior:** Flat 110 stamina drain, or 190 stamina drain when defender has the Debt mark.
+* **New Behavior (Gated by Paint Bully Archetype):**
+  * Level 0 (None): **15** stamina
+  * Level 1 (Bronze): **20** stamina
+  * Level 2 (Silver): **30** stamina
+  * Level 3 (Gold): **40** stamina
+* **Debt Handling:** If the target defender has `Debt`, add **+10** stamina drain.
+* **Hard Cap:** Pre-snowball final drain is hard-capped at **40** stamina.
+* **Anti-Snowball Scaling:**
+  * Defender stamina $< 30\% \rightarrow$ final drain scaled by `0.30` (70% reduction, rounded).
+  * Defender stamina $< 50\% \rightarrow$ final drain scaled by `0.60` (40% reduction, rounded).
+  * Otherwise $\rightarrow$ full drain.
+* **Trigger Conditions:** Remains single-target only, triggered only on successful shots against marked defenders, with no team-wide drains, no automatic fouls, and no automatic scores.
+
+### Regression Audit & System Safeguards
+* **Zero-Stamina Events:** Regression simulator audits confirm that zero-stamina events dropped significantly compared to legacy baseline runs, restoring normal player stamina progression.
+* **FTA Ranges:** Free Throw Attempts (FTA) remained safe and stable.
+* **POSTER_SPARK:** Remains unimplemented and unmapped.
+* **Core Integrity:** Saved card data structure and OVR/star-up calculations remain completely unchanged.
+
