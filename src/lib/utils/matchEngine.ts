@@ -2048,15 +2048,20 @@ export function simulateTick(
         // ═══ tryBlock — BEFORE Roll F and Roll 3 (confirmed Step 4 order) ═══
         let skillShotBonus = 0;
         if (currentOff !== "Isolation (ISO)" && currentOff !== "Post Isolation") {
+          const pbSummary = resolveLineupArchetypes(userLineup);
+          const pbLevel = pbSummary.allResults.find(r => r.id === "playmaking")?.level ?? 0;
+          const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
+          const capLimit = pbLevel === 0 ? 0.015 : 0.020;
+
           if (rollSpecialMechanic(userLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
             const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
-            return 0.90 + (courtVisionIdentity / 100) * 0.20;
+            return (0.90 + (courtVisionIdentity / 100) * 0.20) * scaleMultiplier;
           })) {
             const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
             const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
             if (leader) {
               const scale = getAssistRating(leader) / 100;
-              const bonus = Math.min(0.02, 0.012 + scale * 0.006);
+              const bonus = Math.min(capLimit, 0.012 + scale * 0.006);
               skillShotBonus += bonus;
               skillLog(`${leader.name}'s Court Vision Engine creates a rhythm bonus of +${(bonus * 100).toFixed(1)}% for ${scorer.name}`, true);
             }
@@ -2643,15 +2648,20 @@ export function simulateTick(
     // Blitz/Trap handling (0% general TOV — 15% steal only, Step 3 fix, DO NOT CHANGE)
     let aiSkillShotBonus = 0;
     if (state.aiOffStrategy !== "Isolation (ISO)" && state.aiOffStrategy !== "Post Isolation") {
+      const pbSummary = resolveLineupArchetypes(aiLineup);
+      const pbLevel = pbSummary.allResults.find(r => r.id === "playmaking")?.level ?? 0;
+      const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
+      const capLimit = pbLevel === 0 ? 0.015 : 0.020;
+
       if (rollSpecialMechanic(aiLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
         const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
-        return 0.90 + (courtVisionIdentity / 100) * 0.20;
+        return (0.90 + (courtVisionIdentity / 100) * 0.20) * scaleMultiplier;
       })) {
         const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
         const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
         if (leader) {
           const scale = getAssistRating(leader) / 100;
-          const bonus = Math.min(0.02, 0.012 + scale * 0.006);
+          const bonus = Math.min(capLimit, 0.012 + scale * 0.006);
           aiSkillShotBonus += bonus;
           skillLog(`${leader.name}'s Court Vision Engine creates a rhythm bonus of +${(bonus * 100).toFixed(1)}% for ${scorer.name}`, false);
         }
