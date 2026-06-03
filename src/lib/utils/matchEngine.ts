@@ -27,7 +27,7 @@ import {
   rollSpecial,
   rollSpecialMechanic,
 } from "../skills/skillResolver";
-import { hasSpecialSkillMechanic } from "../skills/skillMechanics";
+import { hasSpecialSkillMechanic, SpecialSkillMechanicId } from "../skills/skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 
 // Re-export everything the UI needs
@@ -788,6 +788,79 @@ export function simulateTick(
     skillLog(`${leader.name}'s Bench Captain stabilizes ${lowestStamPlayer.name}'s stamina (+${staminaRecover})${formText}`, isUserTeam);
   };
 
+  const applyDefensiveAnchor = (defendingTeam: Player[], attackingTeam: Player[], isDefendingUserTeam: boolean) => {
+    if (pace === 'fastbreak') return;
+
+    const teamName = isDefendingUserTeam ? "User" : "AI";
+    const useKey = `${teamName} Defensive Anchor Q${newQuarter}`;
+    if (hasTeamSkillUsed(isDefendingUserTeam, useKey)) return;
+
+    if (!rollSpecialMechanic(defendingTeam, "DEFENSIVE_ANCHOR_TEAM_PRESSURE", newStamina, (h) => {
+      const identity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStrengthRating(h) + getStealRating(h)) / 4;
+      return 0.90 + (identity / 100) * 0.20;
+    })) return;
+
+    const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_PRESSURE"));
+    const leader = holders.sort((a_p, b_p) => {
+      const aId = (getOnBallDefenseRating(a_p) + getStaminaRating(a_p) + getStrengthRating(a_p) + getStealRating(a_p)) / 4;
+      const bId = (getOnBallDefenseRating(b_p) + getStaminaRating(b_p) + getStrengthRating(b_p) + getStealRating(b_p)) / 4;
+      return bId - aId;
+    })[0];
+    if (!leader) return;
+
+    markTeamSkillUsed(isDefendingUserTeam, useKey);
+
+    const leaderIdentity = (getOnBallDefenseRating(leader) + getStaminaRating(leader) + getStrengthRating(leader) + getStealRating(leader)) / 4;
+    const scale = 0.90 + (leaderIdentity / 100) * 0.20;
+    const baseAmount = Math.min(20, Math.round(15 * scale));
+
+    // Team Leadership Resistance (Counter Type B)
+    const counterMechanics: SpecialSkillMechanicId[] = [
+      "BENCH_CAPTAIN_STABILIZE",
+      "COMPOSURE_SHIELD_CANCEL",
+      "TIMEOUT_RESET_CLEANSE"
+    ];
+    const counterLeaders = attackingTeam.filter(p =>
+      counterMechanics.some(mech => hasSpecialSkillMechanic(p, mech))
+    );
+    let leadershipReduction = 0;
+    let counterLeaderName = "";
+    if (counterLeaders.length > 0) {
+      const bestLeader = counterLeaders.sort((a, b) => {
+        const aId = (getCalmRating(a) + getStaminaRating(a) + getAssistRating(a)) / 3;
+        const bId = (getCalmRating(b) + getStaminaRating(b) + getAssistRating(b)) / 3;
+        return bId - aId;
+      })[0];
+      const counterIdentity = (getCalmRating(bestLeader) + getStaminaRating(bestLeader) + getAssistRating(bestLeader)) / 3;
+      leadershipReduction = Math.min(0.20, 0.10 + (counterIdentity / 100) * 0.10);
+      counterLeaderName = bestLeader.name;
+    }
+
+    const teamDrain = Math.round(baseAmount * (1 - leadershipReduction));
+
+    attackingTeam.forEach(p => {
+      // Player Natural Resistance (Counter Type A)
+      const targetResistance = (getStaminaRating(p) / 100) * 0.15;
+      let playerDrain = Math.round(teamDrain * (1 - targetResistance));
+
+      // Anti-Snowball Low-Stamina Reduction (Counter Type C)
+      const currentStaminaPct = staminaPct(p);
+      if (currentStaminaPct < 30) {
+        playerDrain = Math.round(playerDrain * 0.3);
+      } else if (currentStaminaPct < 50) {
+        playerDrain = Math.round(playerDrain * 0.6);
+      }
+
+      playerDrain = Math.max(0, playerDrain);
+      if (playerDrain > 0) {
+        drainStamina(newStamina, p, attackingTeam, playerDrain);
+      }
+    });
+
+    const leadershipText = counterLeaderName ? ` (countered by ${counterLeaderName}: -${Math.round(leadershipReduction * 100)}%)` : "";
+    skillLog(`${leader.name}'s Defensive Anchor exerts team-wide pressure, draining stamina${leadershipText}`, isDefendingUserTeam);
+  };
+
   const tryDeadAir = (
     disruptingTeam: Player[],
     target: Player | undefined,
@@ -939,6 +1012,14 @@ export function simulateTick(
   applyGreenSupport(aiLineup, false);
   applyBenchCaptain(userLineup, true);
   applyBenchCaptain(aiLineup, false);
+
+  if (currentPossession === "user") {
+    // AI is defending, User is attacking
+    applyDefensiveAnchor(aiLineup, userLineup, false);
+  } else {
+    // User is defending, AI is attacking
+    applyDefensiveAnchor(userLineup, aiLineup, true);
+  }
   [...userLineup, ...aiLineup].forEach(p => {
     const team = userLineup.some(u => u.id === p.id) ? userLineup : aiLineup;
     const isUserTeam = team === userLineup;

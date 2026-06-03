@@ -41,6 +41,7 @@ const skillArtMap: Record<string, string> = {
   "bench_captain": "pressure-coach-x",
   "lock_chain": "cage-step-x",
   "sky_wall": "rim-warden",
+  "defensive_anchor": "corner-trap-x",
 };
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {

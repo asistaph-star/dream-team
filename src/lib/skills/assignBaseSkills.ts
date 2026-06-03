@@ -46,7 +46,8 @@ export type SpecialSkillName =
   | "COURT_VISION_ENGINE"
   | "BENCH_CAPTAIN"
   | "LOCK_CHAIN"
-  | "SKY_WALL";
+  | "SKY_WALL"
+  | "DEFENSIVE_ANCHOR";
 
 const safeRatio = (a = 0, b = 0): number => a / Math.max(0.5, b);
 
