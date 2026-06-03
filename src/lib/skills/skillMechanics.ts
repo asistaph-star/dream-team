@@ -33,6 +33,9 @@ export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = 
   "Clean Contest X": ["CLEAN_CHALLENGE_CONTEST"],
   "Composure X": ["COMPOSURE_SHIELD_CANCEL"],
   "Cold Timeout X": ["TIMEOUT_RESET_CLEANSE"],
+  "CLEAN_CHALLENGE": ["CLEAN_CHALLENGE_CONTEST"],
+  "COMPOSURE_SHIELD": ["COMPOSURE_SHIELD_CANCEL"],
+  "TIMEOUT_RESET": ["TIMEOUT_RESET_CLEANSE"],
 };
 
 export const resolveSpecialSkillMechanics = (rawSkill: string): SpecialSkillMechanicId[] => {

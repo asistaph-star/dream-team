@@ -39,7 +39,10 @@ export type SpecialSkillName =
   | "Corner Trap X"
   | "Pressure Coach X"
   | "Flop X"
-  | "Composure X";
+  | "Composure X"
+  | "CLEAN_CHALLENGE"
+  | "COMPOSURE_SHIELD"
+  | "TIMEOUT_RESET";
 
 const safeRatio = (a = 0, b = 0): number => a / Math.max(0.5, b);
 

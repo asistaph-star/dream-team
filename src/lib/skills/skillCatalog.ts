@@ -77,9 +77,12 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "Pressure Coach X": "Marked opponents lose extra stamina when acting. Drains 12 stamina from each marked opponent during triggers.",
   "Flop X": "Sells light contact into foul pressure. Adds +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
   "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",
+  "CLEAN_CHALLENGE": "Challenges foul-bait pressure with a disciplined contest.",
+  "COMPOSURE_SHIELD": "Keeps the team calm under foul and momentum pressure.",
+  "TIMEOUT_RESET": "Resets pressure by cleansing a mark during dangerous moments.",
 };
 
-export const SPECIAL_SKILL_NAMES = Object.keys(SPECIAL_SKILL_TEXT) as SpecialSkillName[];
+export const SPECIAL_SKILL_NAMES = Object.keys(SPECIAL_SKILL_TEXT).filter(name => name.endsWith(" X")) as SpecialSkillName[];
 
 export const BASE_SKILL_RATES: Partial<Record<BaseSkillName, [number, number, number]>> = {
   "Tempo Surgeon": [120, 190, 270],
@@ -121,4 +124,7 @@ export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
   "Pressure Coach X": 1000,
   "Flop X": 230,
   "Composure X": 330,
+  "CLEAN_CHALLENGE": 260,
+  "COMPOSURE_SHIELD": 330,
+  "TIMEOUT_RESET": 260,
 };

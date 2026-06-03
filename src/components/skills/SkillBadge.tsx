@@ -34,6 +34,9 @@ const skillArtMap: Record<string, string> = {
   "discipline wall": "discipline-wall",
   "connector hub": "connector-hub",
   "debt collector x": "debt-collector-x",
+  "clean_challenge": "clean-contest-x",
+  "composure_shield": "composure-x",
+  "timeout_reset": "cold-timeout-x",
 };
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {
