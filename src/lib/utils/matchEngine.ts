@@ -3174,7 +3174,10 @@ export function simulateTick(
                 aiSkillShotBonus -= 0.03;
               } else if (disciplineWall) {
                 skillLog(`Discipline Wall holds off Four-Point Bait X`, true);
-                aiSkillShotBonus -= 0.03;
+                const dwHolders = userLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
+                const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
+                const disciplineScale = 0.85 + (dwMaxRating / 100) * 0.30;
+                aiSkillShotBonus -= 0.03 * disciplineScale;
               } else {
                 const baitSummary = resolveLineupArchetypes(aiLineup);
                 const baitDsLevel = baitSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
@@ -3188,6 +3191,8 @@ export function simulateTick(
             sfChance_ai = Math.min(MAX_SHOOTING_FOUL_CHANCE, sfChance_ai);
             if (Math.random() < sfChance_ai) {
               shootingFoulOccurred = true;
+              trackShotStamina(scorer.id, shotType, is3PT, 'foul');
+              trackDefensiveStamina(primaryDefender, shotType, is3PT, 'foul');
               const committer = pickFoulCommitter(userLineup);
               ensureStats(committer.id); ensureForm(committer.id);
               newPlayerStats[committer.id].FOL = (newPlayerStats[committer.id].FOL ?? 0) + 1;
