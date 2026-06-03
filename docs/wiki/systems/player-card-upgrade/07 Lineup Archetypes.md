@@ -48,10 +48,36 @@ The system relies on Base Skills to define the core roster identity. Learned Spe
 
 ---
 
-## 5. Deferred Balance Items (Future Work)
+## 5. Defensive Anchor Archetype-Gated Integration (Phase LineupArchetype-1F)
+
+`DEFENSIVE_ANCHOR` (mapped to `DEFENSIVE_ANCHOR_TEAM_PRESSURE` with base rate `220`) is integrated directly with the pure `resolveLineupArchetypes` resolver to scale its efficiency and scope based on the team's active **Stamina Drain Lineup** archetype level:
+
+* **Level 0 (None / Inactive):**
+  * **Effect:** Single-target drain against the primary playmaker (the offensive player with the highest average of `assist` and `handle` ratings).
+  * **Drain Formula:** `Math.min(8, Math.round(6 * scale))` (strictly capped at `8` stamina).
+  * **Counterplay:** Attacking player's natural stamina resistance and anti-snowball low-stamina reduction apply. No team leadership resistance is applied.
+* **Level 1 (Bronze):**
+  * **Effect:** Team-wide drain against all 5 offensive opponents.
+  * **Drain Formula:** `Math.min(20, Math.round(15 * scale))` (strictly capped at `20` stamina).
+  * **Counterplay:** Full counterplays apply (team leadership resistance + target stamina resistance + anti-snowball reduction).
+* **Level 2 (Silver):**
+  * **Effect:** Team-wide drain (capped at `20` stamina).
+  * **Trigger Consistency:** Boosted by a **1.15x trigger consistency multiplier** (effective rate `253`).
+* **Level 3 (Gold):**
+  * **Effect:** Team-wide drain (capped at `20` stamina).
+  * **Trigger Consistency:** Boosted by a **1.30x trigger consistency multiplier** (effective rate `286`).
+
+### Execution Guards & Constraints
+* **Possession Guard:** Only the active defending team can trigger their Defensive Anchor. Both teams can never trigger in the same play.
+* **Fastbreak Guard:** Skips immediately if `pace === "fastbreak"`.
+* **Team-Specific Cooldowns:** Keys are tracked per team per quarter (`User Defensive Anchor Q[1-4]` / `AI Defensive Anchor Q[1-4]`) and are only set upon a successful roll and application of the drain.
+* **No Marks:** `DEFENSIVE_ANCHOR` does not apply any marks (e.g. Pinned, Hooked, Static).
+
+---
+
+## 6. Deferred Balance Items (Future Work)
 
 The following balance-sensitive mechanics are deferred and will not have any active gameplay integration until full gameplay balance audits are performed:
-* **DEFENSIVE_ANCHOR team-wide drain:** Scaling of stamina drain and cooldown bounds remains deferred (hard cap remains fixed at 20 stamina).
 * **FLOP / Foul-Draw scaling:** contact foul draw rates and SGA-specific multipliers.
 * **POSTER_SPARK & GLASS_STRIKE:** Native mechanic implementations.
 * **Base Skill Multipliers:** Base skill effect multipliers are deferred to protect core simulation stability.
