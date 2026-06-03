@@ -313,3 +313,35 @@ Phase LineupArchetype-1J3c integrated playmaking archetype-gated scaling for the
 * **BENCH_CAPTAIN / TIMEOUT_RESET:** Remain completely untouched.
 * **No Saved Data / OVR Changes:** Saved data structure, player attributes, and player progression systems remain unchanged.
 
+---
+
+## 15. BENCH_CAPTAIN Archetype Gating (Phase LineupArchetype-1J4)
+
+Phase LineupArchetype-1J4 integrated playmaking archetype-gated scaling for the `BENCH_CAPTAIN_STABILIZE` mechanic inside the match engine:
+
+* **Level 0 (None / No Light Bulb):**
+  * scaleFn multiplier: `0.85`
+  * Stamina recovery cap: `8` (maximum `+8` stamina, once per quarter per team)
+  * Purpose: Gentle tax on trigger consistency for non-playmaking rosters.
+* **Level 1 (Bronze):**
+  * scaleFn multiplier: `1.00`
+  * Stamina recovery cap: `8`
+  * Purpose: Restores current baseline behavior.
+* **Level 2 (Silver):**
+  * scaleFn multiplier: `1.05`
+  * Stamina recovery cap: `8`
+  * Purpose: Tiny trigger consistency improvement.
+* **Level 3 (Gold):**
+  * scaleFn multiplier: `1.10`
+  * Stamina recovery cap: `8`
+  * Purpose: Best trigger consistency, but recovery cap stays strictly capped at `8`.
+
+### Core Rules & Safeguards
+* **No Recovery Increases:** No archetype level raises the stamina recovery cap above `8`.
+* **No Cooldown Weakening:** Once-per-quarter cooldown key checks and marking are fully preserved. Cooldown is only marked if a valid target is recovered and focus stabilized.
+* **Targeting:** Target selection remains strictly on-court lowest-stamina player. Bench/reserve players are not targeted or recovered.
+* **Form Focus Cap:** Form focus recovery stays capped at `+0.80%` and is only applied if the player is cold/tired.
+* **No Stacking Loops:** Stacking recovery enhancers does not create stamina loops; overall team fatigue decays normally.
+* **No Saved Data / OVR Changes:** Saved data structure, player attributes, and player progression systems remain unchanged.
+
+
