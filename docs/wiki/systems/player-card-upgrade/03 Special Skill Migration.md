@@ -145,4 +145,27 @@ We mapped the second batch of native Special Skill Family IDs (Batch B: Playmaki
 - **Rolling Pool Isolation**: Excluded from the natural rolling pool (`SPECIAL_SKILL_NAMES`), while legacy `Chain Pass X` and `Pressure Coach X` remain active and roll naturally.
 - **Saved Data / Rarity Keys**: Untouched. OVR/star-up separation is fully preserved.
 
+---
+
+## Native Mechanics Batch C (Phase SpecialSkill-2B4)
+
+We mapped the third batch of native Special Skill Family IDs (Batch C: Single-Target Defensive Stamina Pressure) directly in the match engine:
+* `LOCK_CHAIN` -> `LOCK_CHAIN_ON_BALL_PRESSURE`
+* `SKY_WALL` -> `SKY_WALL_RIM_PRESSURE`
+
+`DEFENSIVE_ANCHOR` is delayed to a future team-wide stamina pressure phase.
+
+### Implementation Details:
+- **Mechanics Mapping**: Wired inside `src/lib/skills/skillMechanics.ts` within `LEGACY_TO_MECHANIC_MAP`. Registered two new mechanic IDs: `LOCK_CHAIN_ON_BALL_PRESSURE` and `SKY_WALL_RIM_PRESSURE`.
+- **Base Rate Support**: Set in `src/lib/skills/skillCatalog.ts` under `SPECIAL_SKILL_RATES` (`LOCK_CHAIN: 240`, `SKY_WALL: 240`).
+- **Description Support**: Added under `SPECIAL_SKILL_TEXT` for the new family IDs:
+  - `LOCK_CHAIN`: *"Pressures ball handlers with disciplined on-ball defense and controlled stamina drain."*
+  - `SKY_WALL`: *"Challenges paint attacks with vertical rim pressure and controlled contest fatigue."*
+- **Visual Safety**: Added fallback icon mappings in `SkillBadge.tsx` (`skillArtMap`) routing `"lock_chain"` to `"cage-step-x"` and `"sky_wall"` to `"rim-warden"`.
+- **Match Engine Integration**:
+  - **Lock Chain On-Ball Pressure**: Hooked in turnover checks and shot contest evaluations. Multiplies turnover chance by `1.03 + (identity / 100) * 0.03` (strictly capped at `1.06`). If triggered on a turnover or contested shot, it applies a single-target stamina drain of `Math.min(12, Math.round(9 * scale))` (range `8–11`, strictly capped at `12`) to the turnover committer or shooter. No marks are applied.
+  - **Sky Wall Rim Pressure**: Hooked in shot evaluations for close-range / paint attempts only (`drivingLayup`, `dunk`, `euroStep`, `fingerRoll`, `powerLayup`, `putBack`, `bankShot`, `hookShot`, `floater`). It applies a tiny shot quality penalty of `0.008 + (identity / 100) * 0.004` (strictly capped at `-0.013`), and drains `Math.min(10, Math.round(7 * scale))` stamina (range `6–9`, strictly capped at `10`) from the shooter only. No marks are applied.
+- **Rolling Pool Isolation**: Excluded from the natural rolling pool (`SPECIAL_SKILL_NAMES`), while legacy `Cage Step X`, `Corner Trap X`, and `Five-Man Squeeze X` remain active and roll naturally.
+- **Saved Data & OVR**: Saved player data, `specialSkillSlots`, rarity keys, and OVR/star-up separation are fully preserved.
+
 
