@@ -75,7 +75,33 @@ The system relies on Base Skills to define the core roster identity. Learned Spe
 
 ---
 
-## 6. Deferred Balance Items (Future Work)
+## 6. LineupArchetype-1G Balance Regression & Watch Items
+
+Following the implementation of archetype-gated scaling, a rigorous regression test suite was executed across multiple match-simulation scenarios to audit engine stability, fatigue rates, trigger frequencies, and counterplay mechanics.
+
+### Key Regression Findings
+* **Stamina Stability:** Gated scaling prevents runaway fatigue. In Level 1-3 games, average team stamina remained healthy at **75–79%** by the end of Q4, and the lowest single-player stamina on court stayed around **59–63%**. No team experienced halftime stamina collapses.
+* **Level 0 (None / Inactive) Safety:** Verified that Level 0 triggers execute as a safe single-target playmaker drain only, capping at `8` stamina, and never leak team-wide impact.
+* **Counterplay Integrity:** Counterplay leader checks (`COMPOSURE_SHIELD_CANCEL`, etc.) successfully reduced the team-wide drain (e.g. by 20% against composing leaders) but did not erase the utility of the drain strategy.
+* **Tactical Substitutions:** Auto-substitutions remain critical to rest fatigued players. Since archetypes are calculated dynamically from the active 5 players on court, **substitutions can temporarily weaken or disable an active archetype** if bench replacements do not carry matching base skill signals (e.g., slipping from Lv.1 to Lv.0). This supports deeper rotation planning and roster-building depth.
+* **Pace & Possession Guards:** Trigger checks correctly ignored fastbreak pacing and enforced possession-side segregation (both teams cannot trigger on the same play). Legacy Cage Step X, Corner Trap X, Five-Man Squeeze X, Flop X, and SGA-specific Flop behavior remained fully untouched.
+
+### Balance Watch Items
+* **Scoring Metrics:** While combined scores remained mostly healthy within the `190–225` target range, one scenario reached slightly above at `231.9`.
+* **Action:** No immediate tuning is required. We record this as a watch item: *"Monitor combined score and Defensive Anchor trigger frequency after more real match samples."*
+
+### Recommendation & Status Lock
+* **Current Status:** `DEFENSIVE_ANCHOR` is **locked as stable**.
+* **Tuning Trigger Thresholds:** Future tuning will only be initiated if live match data displays:
+  * Runaway stamina collapse (halftime depletion).
+  * Persistent scoring spikes exceeding the 225-point threshold.
+  * Over-frequency of Defensive Anchor triggers.
+  * Substitutions becoming ineffective or useless.
+  * Counterplay mechanics becoming too strong (erasing the drain) or too weak (zero mitigation).
+
+---
+
+## 7. Deferred Balance Items (Future Work)
 
 The following balance-sensitive mechanics are deferred and will not have any active gameplay integration until full gameplay balance audits are performed:
 * **FLOP / Foul-Draw scaling:** contact foul draw rates and SGA-specific multipliers.
