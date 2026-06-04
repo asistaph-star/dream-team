@@ -73,7 +73,7 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "Clean Contest X": "Counters forced foul and 3PT bait effects, reducing opponent skill bonuses by -3.0%.",
   "Contact Tax X": "Applies Tilted (lasts 3 possessions) and drains 45 stamina when attacking tired defenders.",
   "Cage Step X": "Applies Hooked (lasts 2 possessions) to ball handlers under defensive pressure. Hooked players drain 38 stamina per possession.",
-  "Corner Trap X": "Applies Pinned (lasts 2 possessions) on sideline or corner-style perimeter actions. Pinned players cannot recover stamina on the bench or from skills.",
+  "Corner Trap X": "Applies Pinned (lasts 2 possessions) on sideline or corner-style perimeter actions. Pinned players cannot receive skill-based stamina recovery while active. Pinned is cleared when the player is subbed out.",
   "Pressure Coach X": "Marked opponents lose extra stamina when acting. Drains 12 stamina from each marked opponent during triggers.",
   "Flop X": "Sells light contact into foul pressure. Adds +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
   "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",

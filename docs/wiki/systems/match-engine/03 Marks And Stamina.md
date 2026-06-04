@@ -13,7 +13,7 @@ Tactical marks are debuffs applied during possessions by special base or signatu
 | **Exposed** | 2 possessions | DEEP_STRIKE (Red Dot X) | Increases shooter foul-draw rate on 3PT attempts. |
 | **Debt** | 2 possessions | COURT_VISION (Chain Pass X) | Makes target vulnerable to secondary skill splash drains. |
 | **Hooked** | 2 possessions | LOCK_CHAIN (Cage Step X) | Target ball handler loses **38 stamina** per possession. |
-| **Pinned** | 2 possessions | DEFENSIVE_ANCHOR (Corner Trap) | Prevents the target from recovering stamina on the bench or from skills. |
+| **Pinned** | 2 possessions | DEFENSIVE_ANCHOR (Corner Trap) | Blocks active skill-based stamina recovery while on court. Cleared when subbed out. |
 | **Static** | 2 possessions | GAMEPLAN_JAMMER (Dead Air X) | Blocks mid-air skill triggers and adds +0.5% contest. |
 | **Tilted** | 3 possessions | POSTER_SPARK (Contact Tax) | Target loses **45 stamina** when attacked on interior drives. |
 

@@ -72,7 +72,7 @@ The 15 legacy special/learned skills are active and trigger in matches via legac
 | **Clean Contest X** | `CLEAN_CHALLENGE_CONTEST` | `CLEAN_CHALLENGE` | Opponent Flop X or 4PT Bait triggers. | None | None | Reduces Flop X bonus by 50%, or blocks 4PT Bait and subtracts `-0.03` SQ. | Yes | **LOCKED** |
 | **Contact Tax X** | `POSTER_SPARK_CONTACT_TAX` | `POSTER_SPARK` | 2PT attempt, defender stamina $< 65\%$. | Paint Bully | Applies `Tilted` (3 pos) | Drains stamina (bronze 10, silver 11, gold 12). Anti-snowball checks apply. | Yes | **LOCKED** |
 | **Cage Step X** | `LOCK_CHAIN_CAGE_STEP` | `LOCK_CHAIN` | Defensive tick start. | None | Applies `Hooked` (2 pos) | Multiplies opponent turnover chance by `1.12`. Hooked targets lose 38 stamina per possession. | Yes | **LOCKED** |
-| **Corner Trap X** | `DEFENSIVE_ANCHOR_CORNER_TRAP` | `DEFENSIVE_ANCHOR` | Opponent 3PT shot attempt. | None | Applies `Pinned` (2 pos) | Reduces opponent shot bonus by `-0.025`. **Mismatch:** Pinned cleared before bench recovery. | Yes | **MISMATCH / DECISION NEEDED** |
+| **Corner Trap X** | `DEFENSIVE_ANCHOR_CORNER_TRAP` | `DEFENSIVE_ANCHOR` | Opponent 3PT shot attempt. | None | Applies `Pinned` (2 pos) | Reduces opponent shot bonus by `-0.025`. Pinned blocks active skill recovery. Subbing out clears it. | Yes | **LOCKED** |
 | **Pressure Coach X** | `GAMEPLAN_PRESSURE_COACH` | `BENCH_CAPTAIN` | Tick start. | None | Checks marked opponents | Drains 12 stamina from each marked opponent. | Yes | **LOCKED** |
 | **Flop X** | `FLOP_SELL_CONTACT` | `FLOP` | Opponent contests shot, defender is `Tilted`. | Blocked (no scaling) | Requires `Tilted` | Adds `0.04` (SGA `0.08`) foul chance. Capped at `0.28`. | Yes | **LOCKED** |
 | **Composure X** | `COMPOSURE_SHIELD_CANCEL` | `COMPOSURE_SHIELD` | Opponent Flop X or 4PT Bait triggers. | None | None | Cancels forced foul pressure and reduces opponent shot bonus by `-0.02`. | Yes | **LOCKED** |
@@ -103,10 +103,10 @@ To maintain baseline simulation and progression stability, the following familie
 
 ## Part 4 — Known Mismatches & Decisions Needed
 
-### 1. Pinned Bench-Cleansing Mismatch
-* **Documented Consequence:** Corner Trap X documentation states that `Pinned` players cannot recover stamina on the bench.
-* **Code Conflict:** Substitution logic clears all active marks from a player's state the moment they leave the court. Consequently, `Pinned` is removed before the bench recovery routine executes, rendering this block inactive.
-* **Decision Needed:** A future design phase must determine whether `Pinned` marks should persist on the bench, or if the substitution cleansing rule is the desired behavior.
+### 1. Corner Trap / Pinned Behavior Alignment (Phase SkillDecision-1A)
+* **Decision Approved:** Option A — Text Update Only.
+* **Intentional Behavior:** Pinned blocks active skill-based stamina recovery while on court. It does not block bench recovery because all active marks are cleared upon substitution.
+* **Resolution:** Documentation and UI text have been updated to reflect this behavior. The mismatch is resolved.
 
 ---
 

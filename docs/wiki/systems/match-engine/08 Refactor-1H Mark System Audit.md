@@ -76,18 +76,10 @@ Leave the status mark system inside [`src/lib/utils/matchEngine.ts`](file:///c:/
 ## Pinned Bench-Cleansing Mismatch (Design / Bug Note)
 
 > [!IMPORTANT]
-> **Design Mismatch Identified:**
-> * The base skill text states: *"Pinned players cannot recover stamina on the bench."*
-> * However, the current substitution cleanup deletes all marks when a player is moved to the bench.
-> * As a result, the `Pinned` mark is removed instantly when a player leaves the court, permitting them to recover bench stamina normally.
-> 
-> **Resolution Plan:**
-> Do not fix this behavior in the current phase. It will be addressed in a future design phase using one of the following approaches:
-> 1. **Update Skill Text:** Align text to say Pinned only blocks on-court/skill recovery.
-> 2. **Retain Mark on Bench:** Modify the substitution cleanup block so `Pinned` persists on the bench.
-> 3. **Bench Status Tracker:** Create a distinct `benchPinned` state flag.
-> 
-> *Recommended approach:* Choose the text update (1) or a focused bug-fixing phase after mark lifecycle tests are implemented.
+> **Design Mismatch Resolved (Phase SkillDecision-1A):**
+> * **Approved Decision:** Option A — Text Update Only.
+> * **Intentional Behavior:** Pinned blocks active skill-based stamina recovery while on court. It does not block bench recovery because all active marks are cleared upon substitution.
+> * **Resolution:** Corner Trap X UI text and Marks/Stamina documentation have been aligned to reflect this behavior. The mismatch is resolved.
 
 ---
 

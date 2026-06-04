@@ -59,7 +59,7 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 | Clean Contest X | ✅ Active, counter only |
 | Dead Air X | ✅ Active / Preserved |
 | Cage Step X | 📦 Active / Preserved |
-| Corner Trap X | 📦 Active / Preserved, with bench-cleansing mismatch |
+| Corner Trap X | 📦 Active / Preserved |
 | Five-Man Squeeze X | 📦 Active / Preserved |
 | Pressure Coach X | 📦 Active / Preserved |
 | Chain Pass X | 📦 Active / Preserved |
