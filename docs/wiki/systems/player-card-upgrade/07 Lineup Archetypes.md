@@ -515,4 +515,27 @@ Phase LineupArchetype-1L6 audited and mapped the design direction for the `POSTE
 * **Final Verdict:** `POSTER_SPARK` remains unimplemented for now because the 1L5 rebalanced legacy skills already provide safe physical pressure. This allows collecting more match samples under the new balance before adding new rollable skills.
 * **Next Steps:** Proceed to Phase LineupArchetype-1M — Anti-Meta / Gameplan Lineup Audit.
 
+---
 
+## 23. Anti-Meta / Gameplan Regression Simulator (Phase LineupArchetype-1M2)
+
+Phase LineupArchetype-1M2 established the regression baseline for the **Anti-Meta / Gameplan Lineup** archetype using a dedicated simulation suite. The key results and architectural conclusions are documented below:
+
+### Regression Findings & Baseline Strength
+* **Anti-Meta Base Skills are Active and Strong:** Audits of the match engine and simulation runs confirmed that all 7 core candidate base skills are fully functional:
+  * **Shadow Guard & Focus Lock:** Successfully suppress the opponent's `Arc Pressure` shooting bonus (scaling it down to minor values).
+  * **Discipline Wall:** Contributes active counterplay against `Four-Point Bait X`, applying an on-ball defense-scaled shot-quality (SQ) penalty to neutralize bait tactics.
+  * **Hands Active:** Increases defensive pressure, driving turnovers and team steals under pressure.
+  * **Enforcer Lift:** Provides robust team-wide stamina recovery when fouls occur, helping defensive lineups stay fresh.
+  * **Future Core:** Safely handles form recovery check-ins per quarter.
+* **Dead Air X / GAMEPLAN_DEAD_AIR:** The legacy special skill `Dead Air X` is fully mapped and functional. In simulations, it triggers regularly (~35.5 times per match), applying the `Static` mark to block opposing special skill execution.
+* **GAMEPLAN_JAMMER Status:**
+  * **Blocked/Unimplemented/Unmapped:** `GAMEPLAN_JAMMER` is NOT mapped to any active mechanic ID in `LEGACY_TO_MECHANIC_MAP` and is not rollable in natural pools.
+  * **Decision:** Keep `GAMEPLAN_JAMMER` blocked and unimplemented in the match engine for now. The regression results prove that current Anti-Meta base skills, in combination with legacy `Dead Air X` triggers, are already highly effective at countering archetype stacking. Adding further disruption mechanics like `GAMEPLAN_JAMMER` immediately could cause severe scoring collapses (combined scores in mirror matches dropped to 136.7 even without it).
+
+### Recommendations & Next Steps
+1. **Option B — Keep GAMEPLAN_JAMMER blocked for now:** The baseline Anti-Meta counters are already sufficient and stable.
+2. **Next Phase Alternatives:**
+   * **Alternative A:** Anti-Meta documentation lock.
+   * **Alternative B:** matchEngine refactor planning (audit/design phase).
+   * **Alternative C:** PlayerCard stamina bar fix as a separate UI phase.
