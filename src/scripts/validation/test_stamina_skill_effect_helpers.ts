@@ -77,8 +77,8 @@ async function run() {
 
   // 8. Stamina Drain Constants validation (representing flagged values)
   assert(DEBT_COLLECTOR_DRAIN === 45, "DEBT_COLLECTOR_DRAIN is exactly 45 (NEEDS REGRESSION / DECISION)");
-  assert(FIVE_MAN_SQUEEZE_BASE === 40, "FIVE_MAN_SQUEEZE_BASE is exactly 40 (NEEDS REGRESSION / DECISION)");
-  assert(FIVE_MAN_SQUEEZE_BOOSTED === 60, "FIVE_MAN_SQUEEZE_BOOSTED is exactly 60 (NEEDS REGRESSION / DECISION)");
+  assert(FIVE_MAN_SQUEEZE_BASE === 25, "FIVE_MAN_SQUEEZE_BASE is exactly 25");
+  assert(FIVE_MAN_SQUEEZE_BOOSTED === 40, "FIVE_MAN_SQUEEZE_BOOSTED is exactly 40");
   assert(HOOKED_TAX_DRAIN === 38, "HOOKED_TAX_DRAIN is exactly 38");
 
   // 9. Confirm no 110 or 190 active drain constants exist

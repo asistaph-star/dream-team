@@ -1,6 +1,6 @@
 export const DEBT_COLLECTOR_DRAIN = 45;
-export const FIVE_MAN_SQUEEZE_BASE = 40;
-export const FIVE_MAN_SQUEEZE_BOOSTED = 60;
+export const FIVE_MAN_SQUEEZE_BASE = 25;
+export const FIVE_MAN_SQUEEZE_BOOSTED = 40;
 export const HOOKED_TAX_DRAIN = 38;
 
 /**

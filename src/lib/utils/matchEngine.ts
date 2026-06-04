@@ -464,7 +464,10 @@ export function simulateTick(
     })) return;
     const markedCount = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id)).length;
     const amount = markedCount >= 3 ? FIVE_MAN_SQUEEZE_BOOSTED : FIVE_MAN_SQUEEZE_BASE;
-    targetTeam.forEach(p => drainStamina(newStamina, p, targetTeam, amount));
+    targetTeam.forEach(p => {
+      const finalDrain = applyAntiSnowballScaling(amount, staminaPct(p));
+      drainStamina(newStamina, p, targetTeam, finalDrain);
+    });
     skillLog(`Five-Man Squeeze X drains ${amount} stamina from the opposing five`, isTriggerUser);
   };
   const tryColdTimeout = (team: Player[], isUserTeam: boolean) => {
