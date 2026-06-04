@@ -90,12 +90,18 @@ export function MatchScoreboard({
   const getAiGradient = () => {
     if (selectedDifficulty === 'EASY') return 'from-[#a71930] to-[#5a0b17]';
     if (selectedDifficulty === 'NORMAL') return 'from-[#0b3c5d] to-[#051e30]';
+    if (selectedDifficulty === 'EXPERT') return 'from-[#0f5132] to-[#082a1a]';
+    if (selectedDifficulty === 'HELL_EXPERT') return 'from-[#4a0d0d] to-[#240505]';
+    if (selectedDifficulty === 'DREAM_TEAM') return 'from-[#0d9488] to-[#115e59]';
     return 'from-[#b0882e] to-[#674f17]';
   };
 
   const getAiHeaderGrad = () => {
     if (selectedDifficulty === 'EASY') return 'to-red-950/40';
     if (selectedDifficulty === 'NORMAL') return 'to-blue-950/40';
+    if (selectedDifficulty === 'EXPERT') return 'to-green-950/40';
+    if (selectedDifficulty === 'HELL_EXPERT') return 'to-red-950/50';
+    if (selectedDifficulty === 'DREAM_TEAM') return 'to-teal-950/40';
     return 'to-amber-950/40';
   };
 

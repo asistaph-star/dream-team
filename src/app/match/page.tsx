@@ -56,6 +56,7 @@ export default function MatchPage() {
 
   const [viewState, setViewState] = useState<ViewState>('SEASON_MAP');
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>('NORMAL');
+  const [opponentName, setOpponentName] = useState<string>('');
   
   const [matchState, setMatchState] = useState<MatchState>(createInitialMatchState());
   const [reward, setReward] = useState<MatchResult | null>(null);
@@ -122,6 +123,14 @@ export default function MatchPage() {
   const [shotMeterProgress, setShotMeterProgress] = useState(0);
   const [shotMeterStatus, setShotMeterStatus] = useState<'idle' | 'filling' | 'release' | 'done'>('idle');
   const [shotMeterFeedback, setShotMeterFeedback] = useState('');
+
+  const aiTeam = useMemo(() => {
+    const baseTeam = mockAiTeams[selectedDifficulty];
+    return {
+      ...baseTeam,
+      name: opponentName || baseTeam.name
+    };
+  }, [selectedDifficulty, opponentName]);
 
   useEffect(() => {
     if (!draggingPlayerId && !potentialDragPlayerId) return;
@@ -392,8 +401,11 @@ export default function MatchPage() {
   }, [viewState]);
 
 
-  const startMatch = useCallback((diff: Difficulty) => {
+  const startMatch = useCallback((diff: Difficulty, customName?: string) => {
     setSelectedDifficulty(diff);
+    const actualOpponentName = customName || mockAiTeams[diff].name;
+    setOpponentName(actualOpponentName);
+
     const initState = createInitialMatchState();
     initState.difficulty = diff;
     initState.strategyLevels = strategyLevels;
@@ -475,14 +487,14 @@ export default function MatchPage() {
     setReward(null);
     setHalftimeTriggered(false);
     setViewState('PRE_MATCH');
-  }, [roster, activeLineup]);
+  }, [roster, activeLineup, matchRoster, strategyLevels]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (viewState === 'SIMULATING' && !matchState.isFinished && !isPaused && !matchState.ftSequence && !showOTTransition && !matchState.shootoutSequence && !matchState.activeShotMeter) {
       interval = setInterval(() => {
         setMatchState(prev => {
-          const ai = mockAiTeams[selectedDifficulty];
+          const ai = aiTeam;
           const next = simulateTick(prev, teamOffense, teamDefense, ai, currentLineup, matchRoster);
           
           // Halftime trigger — pause for 20s
@@ -498,7 +510,7 @@ export default function MatchPage() {
       }, 1500 / MATCH_PLAYBACK_SPEED); 
     }
     return () => clearInterval(interval);
-  }, [viewState, matchState.isFinished, selectedDifficulty, teamOffense, teamDefense, currentLineup, matchRoster, isPaused, matchState.ftSequence, matchState.activeShotMeter]);
+  }, [viewState, matchState.isFinished, aiTeam, teamOffense, teamDefense, currentLineup, matchRoster, isPaused, matchState.ftSequence, matchState.activeShotMeter]);
 
   // ═══ MATCH FINISH — runs AFTER state settles to avoid cross-component update error ═══
   useEffect(() => {
@@ -778,7 +790,6 @@ export default function MatchPage() {
     if (showSubModal) closeModal();
   };
 
-  const aiTeam = mockAiTeams[selectedDifficulty];
   const userTotal = teamOffense + teamDefense;
   const aiTotal = aiTeam.off + aiTeam.def;
   const maxOvr = Math.max(userTotal, aiTotal, 1);
@@ -961,7 +972,7 @@ export default function MatchPage() {
 
   if (viewState === 'PRE_MATCH') {
     const preIsHome = matchState.isHomeGame;
-    const preAiTeam = mockAiTeams[selectedDifficulty];
+    const preAiTeam = aiTeam;
     // PRE_MATCH should show the starting lineup, not the full roster
     const userPlayers = liveLineup.length > 0 ? liveLineup : activeLineup;
     const aiPlayers = matchState.aiLineupIds.map(id => preAiTeam.roster.find(p => p.id === id)).filter(Boolean) as Player[];

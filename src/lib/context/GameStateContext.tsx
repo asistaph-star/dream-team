@@ -72,7 +72,7 @@ interface GameState {
   stadiumLevels: StadiumLevels;
   passiveStoreCash: number;
   draftPlayer: (isPremium: boolean) => { success: boolean; player?: Player; error?: string };
-  finishMatch: (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string, isWin?: boolean) => MatchResult;
+  finishMatch: (difficulty: import("@/lib/utils/matchTypes").Difficulty, offStrategy?: string, defStrategy?: string, isWin?: boolean) => MatchResult;
   craftEquipment: (slot: EquipmentSlot) => Equipment | null;
   upgradeEquipment: (equipmentId: string) => { success: boolean; newLevel?: number; error?: string };
   upgradeFacility: (facility: keyof StadiumLevels) => { success: boolean; error?: string };
@@ -490,17 +490,39 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     return { success: true, player: newPlayer };
   };
 
-  const finishMatch = (difficulty: 'EASY' | 'NORMAL' | 'HARD', offStrategy?: string, defStrategy?: string, isWin?: boolean): MatchResult => {
+  const finishMatch = (difficulty: import("@/lib/utils/matchTypes").Difficulty, offStrategy?: string, defStrategy?: string, isWin?: boolean): MatchResult => {
     let multiplier = 1;
     if (difficulty === 'NORMAL') multiplier = 2;
     if (difficulty === 'HARD') multiplier = 3.5;
+    if (difficulty === 'EXPERT') multiplier = 5.0;
+    if (difficulty === 'HELL_EXPERT') multiplier = 8.0;
+    if (difficulty === 'DREAM_TEAM') multiplier = 10.0;
 
     // Calculate rewards with stadium level multipliers
     const gainedExp = Math.floor(50 * multiplier * (1 + stadiumLevels.gym * 0.15));
     const gainedCash = Math.floor(5000 * multiplier * (1 + stadiumLevels.arena * 0.1));
     const gainedCraftingMats = Math.floor((Math.random() * 5 + 2) * multiplier);
-    const gainedUpgradeMats = difficulty === 'HARD' ? Math.floor(Math.random() * 3 + 1) : (Math.random() > 0.5 ? 1 : 0);
-    const gainedSkillTapes = Math.random() < (difficulty === 'HARD' ? 0.12 : difficulty === 'NORMAL' ? 0.05 : 0.02) ? 1 : 0;
+    
+    let gainedUpgradeMats = 0;
+    if (difficulty === 'DREAM_TEAM') {
+      gainedUpgradeMats = Math.floor(Math.random() * 12 + 6);
+    } else if (difficulty === 'HELL_EXPERT') {
+      gainedUpgradeMats = Math.floor(Math.random() * 8 + 4);
+    } else if (difficulty === 'EXPERT') {
+      gainedUpgradeMats = Math.floor(Math.random() * 5 + 2);
+    } else if (difficulty === 'HARD') {
+      gainedUpgradeMats = Math.floor(Math.random() * 3 + 1);
+    } else {
+      gainedUpgradeMats = Math.random() > 0.5 ? 1 : 0;
+    }
+
+    let tapeChance = 0.02;
+    if (difficulty === 'DREAM_TEAM') tapeChance = 0.75;
+    else if (difficulty === 'HELL_EXPERT') tapeChance = 0.50;
+    else if (difficulty === 'EXPERT') tapeChance = 0.25;
+    else if (difficulty === 'HARD') tapeChance = 0.12;
+    else if (difficulty === 'NORMAL') tapeChance = 0.05;
+    const gainedSkillTapes = Math.random() < tapeChance ? 1 : 0;
 
     // Apply Account EXP
     let newExp = accountExp + gainedExp;

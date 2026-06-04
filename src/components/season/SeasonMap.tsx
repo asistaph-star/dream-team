@@ -6,10 +6,12 @@ import { mockAiTeams } from '@/lib/utils/matchEngine';
 import { Play, Lock, MapPin, ChevronLeft } from 'lucide-react';
 import { usaStatePaths } from './UsaPaths';
 
+import { Difficulty } from '@/lib/utils/matchTypes';
+
 interface Stage {
   id: number;
   name: string;
-  difficulty: 'EASY' | 'NORMAL' | 'HARD';
+  difficulty: Difficulty;
   teamId: string;
   teamAbbr: string;
   stateCode: string;
@@ -33,33 +35,73 @@ const TEAM_MAP_LOCATIONS: Record<string, { x: number; y: number; labelOffsetX: n
   lal:  { x: 9.5,  y: 46.5, labelOffsetX: 0, labelOffsetY: -60 },   // Los Angeles, CA (CA)
   chi:  { x: 61.6, y: 44.0, labelOffsetX: 0, labelOffsetY: -60 },   // Chicago, IL (IL)
   mia:  { x: 75.1, y: 86.2, labelOffsetX: 0, labelOffsetY: -60 },   // Miami, FL (FL)
+  bos:  { x: 84.8, y: 24.1, labelOffsetX: 0, labelOffsetY: -60 },   // Boston (MA)
+  mil:  { x: 62.0, y: 31.0, labelOffsetX: 0, labelOffsetY: -60 },   // Milwaukee (WI)
+  dal:  { x: 44.0, y: 70.0, labelOffsetX: 0, labelOffsetY: -60 },   // Dallas (TX)
+  min:  { x: 50.0, y: 22.0, labelOffsetX: 0, labelOffsetY: -60 },   // Minnesota (MN)
+  phi:  { x: 81.5, y: 31.2, labelOffsetX: 0, labelOffsetY: -60 },   // Philadelphia (PA)
+  usa:  { x: 50.0, y: 48.0, labelOffsetX: 0, labelOffsetY: -60 },   // USA (KS center)
+  den:  { x: 30.5, y: 42.0, labelOffsetX: 0, labelOffsetY: -60 },   // Denver (CO)
 };
 
 const STAGES: Stage[] = [
-  { id: 1,  name: "OKC Thunder",           difficulty: 'EASY',   teamId: 'EASY',   teamAbbr: 'okc', stateCode: 'OK', region: 'WEST' },
-  { id: 2,  name: "Cleveland Cavaliers",   difficulty: 'EASY',   teamId: 'EASY',   teamAbbr: 'cle', stateCode: 'OH', region: 'EAST' },
-  { id: 3,  name: "Golden State Warriors", difficulty: 'EASY',   teamId: 'EASY',   teamAbbr: 'gsw', stateCode: 'CA', region: 'WEST' },
-  { id: 4,  name: "Memphis Grizzlies",     difficulty: 'NORMAL', teamId: 'NORMAL', teamAbbr: 'mem', stateCode: 'TN', region: 'WEST' },
-  { id: 5,  name: "Houston Rockets",       difficulty: 'NORMAL', teamId: 'NORMAL', teamAbbr: 'hou', stateCode: 'TX', region: 'WEST' },
-  { id: 6,  name: "Detroit Pistons",       difficulty: 'NORMAL', teamId: 'NORMAL', teamAbbr: 'det', stateCode: 'MI', region: 'EAST' },
-  { id: 7,  name: "Phoenix Suns",          difficulty: 'NORMAL', teamId: 'NORMAL', teamAbbr: 'phx', stateCode: 'AZ', region: 'WEST' },
-  { id: 8,  name: "NY Knicks",             difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'nyk', stateCode: 'NY', region: 'EAST' },
-  { id: 9,  name: "Sacramento Kings",      difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'sac', stateCode: 'CA', region: 'WEST' },
-  { id: 10, name: "Houston Rockets",       difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'hou', stateCode: 'TX', region: 'WEST' },
-  { id: 11, name: "Washington Wizards",    difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'wsh', stateCode: 'DC', region: 'EAST' },
-  { id: 12, name: "Atlanta Hawks",         difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'atl', stateCode: 'GA', region: 'EAST' },
-  { id: 13, name: "Cleveland Cavaliers",   difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'cle', stateCode: 'OH', region: 'EAST' },
-  { id: 14, name: "San Antonio Spurs",     difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'sas', stateCode: 'TX', region: 'WEST' },
-  { id: 15, name: "LA Lakers",             difficulty: 'HARD',   teamId: 'HARD',   teamAbbr: 'lal', stateCode: 'CA', region: 'WEST' },
+  { id: 1,  name: "OKC Thunder",           difficulty: 'EASY',        teamId: 'EASY',        teamAbbr: 'okc', stateCode: 'OK', region: 'WEST' },
+  { id: 2,  name: "Cleveland Cavaliers",   difficulty: 'EASY',        teamId: 'EASY',        teamAbbr: 'cle', stateCode: 'OH', region: 'EAST' },
+  { id: 3,  name: "Golden State Warriors", difficulty: 'EASY',        teamId: 'EASY',        teamAbbr: 'gsw', stateCode: 'CA', region: 'WEST' },
+  { id: 4,  name: "Memphis Grizzlies",     difficulty: 'NORMAL',      teamId: 'NORMAL',      teamAbbr: 'mem', stateCode: 'TN', region: 'WEST' },
+  { id: 5,  name: "Houston Rockets",       difficulty: 'NORMAL',      teamId: 'NORMAL',      teamAbbr: 'hou', stateCode: 'TX', region: 'WEST' },
+  { id: 6,  name: "Detroit Pistons",       difficulty: 'NORMAL',      teamId: 'NORMAL',      teamAbbr: 'det', stateCode: 'MI', region: 'EAST' },
+  { id: 7,  name: "Phoenix Suns",          difficulty: 'NORMAL',      teamId: 'NORMAL',      teamAbbr: 'phx', stateCode: 'AZ', region: 'WEST' },
+  { id: 8,  name: "NY Knicks",             difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'nyk', stateCode: 'NY', region: 'EAST' },
+  { id: 9,  name: "Sacramento Kings",      difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'sac', stateCode: 'CA', region: 'WEST' },
+  { id: 10, name: "Houston Rockets",       difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'hou', stateCode: 'TX', region: 'WEST' },
+  { id: 11, name: "Washington Wizards",    difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'wsh', stateCode: 'DC', region: 'EAST' },
+  { id: 12, name: "Atlanta Hawks",         difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'atl', stateCode: 'GA', region: 'EAST' },
+  { id: 13, name: "Cleveland Cavaliers",   difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'cle', stateCode: 'OH', region: 'EAST' },
+  { id: 14, name: "San Antonio Spurs",     difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'sas', stateCode: 'TX', region: 'WEST' },
+  { id: 15, name: "LA Lakers",             difficulty: 'HARD',        teamId: 'HARD',        teamAbbr: 'lal', stateCode: 'CA', region: 'WEST' },
+  { id: 16, name: "Boston Celtics",        difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'bos', stateCode: 'MA', region: 'EAST' },
+  { id: 17, name: "Milwaukee Bucks",       difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'mil', stateCode: 'WI', region: 'EAST' },
+  { id: 18, name: "Dallas Mavericks",      difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'dal', stateCode: 'TX', region: 'WEST' },
+  { id: 19, name: "Minnesota Wolves",      difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'min', stateCode: 'MN', region: 'WEST' },
+  { id: 20, name: "Philadelphia 76ers",    difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'phi', stateCode: 'PA', region: 'EAST' },
+  { id: 21, name: "Portland Trail Blazers",difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'okc', stateCode: 'OR', region: 'WEST' },
+  { id: 22, name: "Denver Nuggets",        difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'den', stateCode: 'CO', region: 'WEST' },
+  { id: 23, name: "Miami Heat",            difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'mia', stateCode: 'FL', region: 'EAST' },
+  { id: 24, name: "Phoenix Suns",          difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'phx', stateCode: 'AZ', region: 'WEST' },
+  { id: 25, name: "Golden State Warriors", difficulty: 'EXPERT',      teamId: 'EXPERT',      teamAbbr: 'gsw', stateCode: 'CA', region: 'WEST' },
+  { id: 26, name: "Dream Team Alpha",      difficulty: 'HELL_EXPERT', teamId: 'HELL_EXPERT', teamAbbr: 'usa', stateCode: 'NY', region: 'EAST' },
+  { id: 27, name: "Dream Team Beta",       difficulty: 'HELL_EXPERT', teamId: 'HELL_EXPERT', teamAbbr: 'usa', stateCode: 'CA', region: 'WEST' },
+  { id: 28, name: "Dream Team Gamma",      difficulty: 'HELL_EXPERT', teamId: 'HELL_EXPERT', teamAbbr: 'usa', stateCode: 'TX', region: 'WEST' },
+  { id: 29, name: "Dream Team Delta",      difficulty: 'HELL_EXPERT', teamId: 'HELL_EXPERT', teamAbbr: 'usa', stateCode: 'IL', region: 'EAST' },
+  { id: 30, name: "Dream Team Omega",      difficulty: 'HELL_EXPERT', teamId: 'HELL_EXPERT', teamAbbr: 'usa', stateCode: 'FL', region: 'EAST' },
 ];
 
+const getTeamLogoUrl = (name: string) => {
+  const map: Record<string, string> = {
+    "Detroit Pistons": "det", "Miami Heat": "mia", "Chicago Bulls": "chi",
+    "NY Knicks": "nyk", "LA Lakers": "lal", "Golden State Warriors": "gsw",
+    "OKC Thunder": "okc", "Cleveland Cavaliers": "cle", "Memphis Grizzlies": "mem",
+    "Houston Rockets": "hou", "Phoenix Suns": "phx", "Sacramento Kings": "sac",
+    "Washington Wizards": "wsh", "Atlanta Hawks": "atl", "San Antonio Spurs": "sas",
+    "Boston Celtics": "bos", "Milwaukee Bucks": "mil", "Dallas Mavericks": "dal",
+    "Minnesota Wolves": "min", "Philadelphia 76ers": "phi", "Denver Nuggets": "den",
+    "Portland Trail Blazers": "por", "USA Dream Team": "usa", "Dream Team": "usa",
+    "Dream Team Alpha": "usa", "Dream Team Beta": "usa", "Dream Team Gamma": "usa",
+    "Dream Team Delta": "usa", "Dream Team Omega": "usa"
+  };
+  const abbr = map[name] || "nba";
+  return `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`;
+};
+
 interface SeasonMapProps {
-  onStartMatch: (difficulty: 'EASY' | 'NORMAL' | 'HARD') => void;
+  onStartMatch: (difficulty: Difficulty, opponentName?: string) => void;
   onBack: () => void;
 }
 
 export const SeasonMap: React.FC<SeasonMapProps> = ({ onStartMatch, onBack }) => {
   const { campaignStage, activeLineup } = useGameState();
+  const [sandboxDiff, setSandboxDiff] = useState<Difficulty | null>(null);
   const injuredStarters = activeLineup.filter(p => p.isInjured);
   const hasInjuredStarters = injuredStarters.length > 0;
   
@@ -364,18 +406,6 @@ export const SeasonMap: React.FC<SeasonMapProps> = ({ onStartMatch, onBack }) =>
                 style={{ transform: `translateX(-${Math.max(0, campaignStage - 2) * 60}px)` }}
               >
                 {STAGES.map((stage, idx) => {
-                  const getTeamLogoUrl = (name: string) => {
-                    const map: Record<string, string> = {
-                      "Detroit Pistons": "det", "Miami Heat": "mia", "Chicago Bulls": "chi",
-                      "NY Knicks": "nyk", "LA Lakers": "lal", "Golden State Warriors": "gsw",
-                      "OKC Thunder": "okc", "Cleveland Cavaliers": "cle", "Memphis Grizzlies": "mem",
-                      "Houston Rockets": "hou", "Phoenix Suns": "phx", "Sacramento Kings": "sac",
-                      "Washington Wizards": "wsh", "Atlanta Hawks": "atl", "San Antonio Spurs": "sas"
-                    };
-                    const abbr = map[name] || "nba";
-                    return `https://a.espncdn.com/i/teamlogos/nba/500/${abbr}.png`;
-                  };
-
                   const isCurrent = idx === campaignStage - 1;
                   const isPassed = idx < campaignStage - 1;
 
@@ -437,60 +467,151 @@ export const SeasonMap: React.FC<SeasonMapProps> = ({ onStartMatch, onBack }) =>
           {/* Subtle Carbon Fiber / Halftone background effect */}
           <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
           
+          {/* Opponent Logo watermark (skew corrected) */}
+          {(() => {
+            const activeDiff = sandboxDiff || currentStageInfo?.difficulty || 'EASY';
+            const activeTeamInfo = mockAiTeams[activeDiff];
+            const activeTeamName = sandboxDiff ? activeTeamInfo.name : (currentStageInfo?.name || 'SEASON COMPLETE');
+            return (
+              <div className="absolute -right-8 -bottom-8 w-32 h-32 opacity-15 pointer-events-none transition-all duration-300 group-hover:scale-110 group-hover:opacity-25" style={{ transform: 'skewX(8deg)' }}>
+                <img 
+                  src={getTeamLogoUrl(activeTeamName)} 
+                  alt="Opponent Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            );
+          })()}
+
           {/* Top highlight bar */}
           <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-orange-500 to-orange-600" />
           
           {/* Content Wrapper (un-skewed for readable text) */}
-          <div className="px-6 py-4 skew-x-[8deg]">
+          <div className="px-6 py-4 skew-x-[8deg] relative z-10">
             
-            {/* Header / Label */}
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 bg-orange-500 rounded-sm shadow-[0_0_8px_rgba(249,115,22,0.8)]" />
-              <div className="text-[11px] font-black italic uppercase tracking-[0.25em] text-orange-400 drop-shadow-md">
-                NEXT MATCH
+            {/* Header / Label / Mode Toggle */}
+            <div className="flex items-center justify-between mb-3 text-[11px] font-bold">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-sm shadow-[0_0_8px_rgba(249,115,22,0.8)]" />
+                <div className="font-black italic uppercase tracking-[0.2em] text-orange-400 drop-shadow-md">
+                  {sandboxDiff ? 'SANDBOX MATCH' : 'NEXT MATCH'}
+                </div>
               </div>
             </div>
-            
-            {/* Main Team (User) */}
-            <div className="text-[26px] font-black italic uppercase text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] leading-none mt-1 truncate w-[110%] -ml-1 pl-1">
-              {currentStageInfo?.name || 'SEASON COMPLETE'}
+
+            {/* Mode Toggle Buttons */}
+            <div className="flex bg-black/50 p-0.5 rounded border border-gray-800/80 mb-3 text-[10px] font-black tracking-wider">
+              <button 
+                onClick={() => setSandboxDiff(null)}
+                className={`flex-1 py-1 text-center transition-all duration-200 cursor-pointer rounded-sm ${!sandboxDiff ? 'bg-orange-600/90 text-white font-black italic shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                CAMPAIGN
+              </button>
+              <button 
+                onClick={() => setSandboxDiff('EASY')}
+                className={`flex-1 py-1 text-center transition-all duration-200 cursor-pointer rounded-sm ${sandboxDiff ? 'bg-indigo-600/90 text-white font-black italic shadow-md' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              >
+                SANDBOX
+              </button>
             </div>
-            
-            {/* Opponent Subtitle */}
-            {teamInfo && (
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-black italic text-gray-400 uppercase tracking-widest bg-black px-2 py-0.5 rounded-sm border border-gray-800">VS</span>
-                <span className="text-[14px] font-bold italic uppercase text-gray-300 tracking-wide drop-shadow-md">
-                  {teamInfo.name}
-                </span>
+
+            {/* Sandbox Difficulty Selection Grid */}
+            {sandboxDiff && (
+              <div className="flex flex-col gap-1.5 mb-3.5 bg-black/35 p-2 rounded border border-gray-800/40">
+                <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 pl-0.5">SELECT DIFFICULTY:</div>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['EASY', 'NORMAL', 'HARD', 'EXPERT', 'HELL_EXPERT', 'DREAM_TEAM'] as Difficulty[]).map((d) => {
+                    const active = sandboxDiff === d;
+                    const diffColors: Record<Difficulty, string> = {
+                      EASY: 'border-green-500/20 text-green-400 hover:bg-green-500/10 hover:border-green-500/40',
+                      NORMAL: 'border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/40',
+                      HARD: 'border-amber-500/20 text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/40',
+                      EXPERT: 'border-green-600/20 text-green-300 hover:bg-green-600/10 hover:border-green-600/40',
+                      HELL_EXPERT: 'border-red-600/20 text-red-400 hover:bg-red-600/10 hover:border-red-600/40',
+                      DREAM_TEAM: 'border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/40'
+                    };
+                    const activeBg: Record<Difficulty, string> = {
+                      EASY: 'bg-green-950/80 border-green-500 text-green-300 shadow-[0_0_8px_rgba(34,197,94,0.4)] font-extrabold',
+                      NORMAL: 'bg-blue-950/80 border-blue-500 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.4)] font-extrabold',
+                      HARD: 'bg-amber-950/80 border-amber-500 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] font-extrabold',
+                      EXPERT: 'bg-green-900/80 border-green-500 text-green-200 shadow-[0_0_8px_rgba(22,101,52,0.4)] font-extrabold',
+                      HELL_EXPERT: 'bg-red-950/80 border-red-500 text-red-200 shadow-[0_0_8px_rgba(220,38,38,0.4)] font-extrabold',
+                      DREAM_TEAM: 'bg-cyan-950/80 border-cyan-500 text-cyan-200 shadow-[0_0_8px_rgba(6,182,212,0.4)] font-extrabold'
+                    };
+
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => setSandboxDiff(d)}
+                        className={`text-[9px] font-bold py-1 border rounded transition-all text-center leading-tight cursor-pointer ${active ? activeBg[d] : `border-gray-800 text-gray-400 bg-black/20 ${diffColors[d]}`}`}
+                      >
+                        {d.replace('_', ' ')}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
+            
+            {/* Matchup Team Name */}
+            {(() => {
+              const activeDiff = sandboxDiff || currentStageInfo?.difficulty || 'EASY';
+              const activeTeamInfo = mockAiTeams[activeDiff];
+              const activeTeamName = sandboxDiff ? activeTeamInfo.name : (currentStageInfo?.name || 'SEASON COMPLETE');
+              const isCompleted = !sandboxDiff && campaignStage > STAGES.length;
+
+              return (
+                <>
+                  <div className="text-[24px] font-black italic uppercase text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)] leading-none mt-1 truncate w-[110%] -ml-1 pl-1">
+                    {activeTeamName}
+                  </div>
+                  
+                  {/* Opponent Subtitle */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[9px] font-black italic text-gray-400 uppercase tracking-widest bg-black px-1.5 py-0.5 rounded-sm border border-gray-800">VS MY TEAM</span>
+                    <span className="text-[11px] font-bold italic uppercase text-gray-300 tracking-wide drop-shadow-md">
+                      {sandboxDiff ? `SANDBOX [${sandboxDiff.replace('_', ' ')}]` : isCompleted ? 'CAMPAIGN COMPLETE' : `STAGE ${campaignStage}`}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* NBA 2K Style Action Button */}
-            <button
-              disabled={!currentStageInfo || campaignStage > STAGES.length || hasInjuredStarters}
-              onClick={() => currentStageInfo && onStartMatch(currentStageInfo.difficulty)}
-              className={`mt-5 relative w-[105%] -ml-2 h-[44px] flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ${
-                !currentStageInfo || campaignStage > STAGES.length || hasInjuredStarters
-                  ? 'bg-gray-800 cursor-not-allowed border-b-2 border-gray-900 text-gray-500 opacity-60' 
-                  : 'bg-gradient-to-r from-orange-600 via-red-600 to-orange-700 cursor-pointer shadow-[0_5px_15px_rgba(249,115,22,0.4)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.6)] hover:brightness-110 active:scale-[0.98] border-b-[3px] border-orange-900 text-white'
-              }`}
-              style={{ clipPath: 'polygon(6% 0%, 100% 0%, 94% 100%, 0% 100%)' }}
-            >
-              {/* Button shine sweep */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out pointer-events-none" />
-              
-              {campaignStage > STAGES.length ? (
-                <span className="font-black italic uppercase tracking-[0.2em] text-[13px] z-10">COMPLETED</span>
-              ) : (
-                <>
-                  <Play size={15} fill="currentColor" className="drop-shadow-md z-10" />
-                  <span className="font-black italic uppercase tracking-[0.25em] text-[14px] drop-shadow-[1px_1px_0_rgba(0,0,0,0.5)] z-10">
-                    GO TO MATCH
-                  </span>
-                </>
-              )}
-            </button>
+            {(() => {
+              const activeDiff = sandboxDiff || currentStageInfo?.difficulty || 'EASY';
+              const activeTeamInfo = mockAiTeams[activeDiff];
+              const activeTeamName = sandboxDiff ? activeTeamInfo.name : (currentStageInfo?.name || 'SEASON COMPLETE');
+              const isCompleted = !sandboxDiff && campaignStage > STAGES.length;
+              const isButtonDisabled = hasInjuredStarters || (!sandboxDiff && (campaignStage > STAGES.length || !currentStageInfo));
+
+              return (
+                <button
+                  disabled={isButtonDisabled}
+                  onClick={() => onStartMatch(activeDiff, activeTeamName)}
+                  className={`mt-5 relative w-[105%] -ml-2 h-[44px] flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ${
+                    isButtonDisabled
+                      ? 'bg-gray-800 cursor-not-allowed border-b-2 border-gray-900 text-gray-500 opacity-60' 
+                      : 'bg-gradient-to-r from-orange-600 via-red-600 to-orange-700 cursor-pointer shadow-[0_5px_15px_rgba(249,115,22,0.4)] hover:shadow-[0_8px_25px_rgba(249,115,22,0.6)] hover:brightness-110 active:scale-[0.98] border-b-[3px] border-orange-900 text-white'
+                  }`}
+                  style={{ clipPath: 'polygon(6% 0%, 100% 0%, 94% 100%, 0% 100%)' }}
+                >
+                  {/* Button shine sweep */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-1000 ease-in-out pointer-events-none" />
+                  
+                  {isCompleted ? (
+                    <span className="font-black italic uppercase tracking-[0.2em] text-[13px] z-10">COMPLETED</span>
+                  ) : (
+                    <>
+                      <Play size={15} fill="currentColor" className="drop-shadow-md z-10" />
+                      <span className="font-black italic uppercase tracking-[0.25em] text-[14px] drop-shadow-[1px_1px_0_rgba(0,0,0,0.5)] z-10">
+                        GO TO MATCH
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       </div>

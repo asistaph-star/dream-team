@@ -1,6 +1,6 @@
 import { Player, PlayerPosition } from "../types/player";
 
-export type Difficulty = 'EASY' | 'NORMAL' | 'HARD';
+export type Difficulty = 'EASY' | 'NORMAL' | 'HARD' | 'EXPERT' | 'HELL_EXPERT' | 'DREAM_TEAM';
 
 export interface PlayerMatchStats {
   PTS: number; REB: number; AST: number; STL: number; TOV: number; BLK: number; OREB: number; DREB: number;

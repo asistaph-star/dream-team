@@ -20,9 +20,12 @@ const DIFF_CONFIG: Record<Difficulty, {
   subDelay: number; maxTimeouts: number; runThreshold: number; preSubStamina: number;
   subCooldown: number; subSkipChance: number; swapDeltaThreshold: number;
 }> = {
-  EASY:   { evalInterval: 180, ignoreChance: 0.35, counterMomentum: false, subDelay: 60, maxTimeouts: 2, runThreshold: 10, preSubStamina: 25, subCooldown: 100, subSkipChance: 0.35, swapDeltaThreshold: 18 },
-  NORMAL: { evalInterval: 120, ignoreChance: 0.15, counterMomentum: true,  subDelay: 0,  maxTimeouts: 3, runThreshold: 8,  preSubStamina: 30, subCooldown: 65,  subSkipChance: 0.15, swapDeltaThreshold: 12 },
-  HARD:   { evalInterval: 90,  ignoreChance: 0.00, counterMomentum: true,  subDelay: 0,  maxTimeouts: 3, runThreshold: 4,  preSubStamina: 35, subCooldown: 50,  subSkipChance: 0.00, swapDeltaThreshold: 8  },
+  EASY:        { evalInterval: 180, ignoreChance: 0.35, counterMomentum: false, subDelay: 60, maxTimeouts: 2, runThreshold: 10, preSubStamina: 25, subCooldown: 100, subSkipChance: 0.35, swapDeltaThreshold: 18 },
+  NORMAL:      { evalInterval: 120, ignoreChance: 0.15, counterMomentum: true,  subDelay: 0,  maxTimeouts: 3, runThreshold: 8,  preSubStamina: 30, subCooldown: 65,  subSkipChance: 0.15, swapDeltaThreshold: 12 },
+  HARD:        { evalInterval: 90,  ignoreChance: 0.00, counterMomentum: true,  subDelay: 0,  maxTimeouts: 3, runThreshold: 4,  preSubStamina: 35, subCooldown: 50,  subSkipChance: 0.00, swapDeltaThreshold: 8  },
+  EXPERT:      { evalInterval: 80,  ignoreChance: 0.00, counterMomentum: true,  subDelay: 0,  maxTimeouts: 4, runThreshold: 3,  preSubStamina: 38, subCooldown: 40,  subSkipChance: 0.00, swapDeltaThreshold: 6  },
+  HELL_EXPERT: { evalInterval: 60,  ignoreChance: 0.00, counterMomentum: true,  subDelay: 0,  maxTimeouts: 4, runThreshold: 2,  preSubStamina: 42, subCooldown: 30,  subSkipChance: 0.00, swapDeltaThreshold: 4  },
+  DREAM_TEAM:  { evalInterval: 60,  ignoreChance: 0.00, counterMomentum: true,  subDelay: 0,  maxTimeouts: 4, runThreshold: 2,  preSubStamina: 42, subCooldown: 30,  subSkipChance: 0.00, swapDeltaThreshold: 4  },
 };
 
 // ─── STAMINA MOD (mirrors matchTypes) ───
@@ -412,8 +415,11 @@ export function evaluateAICoach(
     const tiredStars = aiLineup.filter(p => p.ovr >= 82 && (state.playerStamina[p.id] ?? 100) < 50);
     
     if (tiredStars.length > 0) {
-      // Chance of item usage per tick: 35% on Hard, 20% on Normal, 5% on Easy
-      const itemChance = difficulty === "HARD" ? 0.35 : difficulty === "NORMAL" ? 0.20 : 0.05;
+      let itemChance = 0.05;
+      if (difficulty === "HELL_EXPERT" || difficulty === "DREAM_TEAM") itemChance = 0.65;
+      else if (difficulty === "EXPERT") itemChance = 0.50;
+      else if (difficulty === "HARD") itemChance = 0.35;
+      else if (difficulty === "NORMAL") itemChance = 0.20;
       
       if (Math.random() < itemChance) {
         // Boost the most exhausted superstar player
