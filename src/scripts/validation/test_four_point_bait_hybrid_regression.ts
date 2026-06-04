@@ -269,12 +269,42 @@ function resetTickFlags() {
 }
 
 // 2. Intercept Math.random for shooting foul checks
+const matchEnginePath = path.resolve(__dirname, "../../lib/utils/matchEngine.ts");
+const matchEngineContent = fs.readFileSync(matchEnginePath, "utf-8");
+const matchEngineLines = matchEngineContent.split("\n");
+
+let userPathLine = -1;
+let aiPathLine = -1;
+
+for (let i = 0; i < matchEngineLines.length; i++) {
+  const line = matchEngineLines[i];
+  if (line.includes("Math.random() < sfChance") && !line.includes("sfChance_ai")) {
+    let contextHasBait = false;
+    for (let j = Math.max(0, i - 60); j < i; j++) {
+      if (matchEngineLines[j].includes("DEEP_STRIKE_FOUR_POINT_BAIT")) {
+        contextHasBait = true;
+        break;
+      }
+    }
+    if (contextHasBait) {
+      userPathLine = i + 1; // 1-based line number
+    }
+  }
+  if (line.includes("Math.random() < sfChance_ai")) {
+    aiPathLine = i + 1; // 1-based line number
+  }
+}
+
+if (userPathLine === -1 || aiPathLine === -1) {
+  throw new Error(`Failed to dynamically locate shooting foul roll lines in matchEngine.ts (userPathLine: ${userPathLine}, aiPathLine: ${aiPathLine})`);
+}
+
 const originalRandom = Math.random;
 Math.random = function() {
   const r = originalRandom();
   const stack = new Error().stack || "";
-  const isUserPath = stack.includes("matchEngine.ts:2283");
-  const isAIPath = stack.includes("matchEngine.ts:3181");
+  const isUserPath = stack.includes(`matchEngine.ts:${userPathLine}`);
+  const isAIPath = stack.includes(`matchEngine.ts:${aiPathLine}`);
   
   if ((isUserPath || isAIPath) && fourPointBaitTriggeredSuccessfully) {
     fourPointBaitTriggeredSuccessfully = false; // consume

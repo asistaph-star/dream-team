@@ -24,6 +24,22 @@ import {
 import { generatePreMatchInjuries, calibrateLineupForInjuries } from "../match/injuryHelpers";
 import { calculateBenchRecoveryAmount, driftFormTowardNeutral, calculateBaseStaminaDecay } from "../match/staminaDecay";
 import { REB_W, calculateTeamReboundScore, calculateOffensiveReboundChance, calculateGlassScale, calculateBarrierScale } from "../match/reboundSystem";
+import {
+  FOUL_W,
+  getPositionFoulWeight,
+  getFoulStaminaModifier,
+  getClutchRatingByRarity,
+  calculateCrowdNoisePenalty,
+  calculateFreeThrowChance,
+  calculateBaseShootingFoulChance,
+  calculateFoulDrawModifier,
+  calculateFlopIdentityScale,
+  calculateFourPointBaitIdentityScale,
+  calculateComposureIdentityScale,
+  calculateCleanContestIdentityScale,
+  calculateDisciplineScale,
+  calculateFourPointBaitBoost
+} from "../match/foulSystem";
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
@@ -62,6 +78,22 @@ export {
   getSubtleStrategyHint
 } from "../match/matchHelpers";
 export { generatePreMatchInjuries, calibrateLineupForInjuries } from "../match/injuryHelpers";
+export {
+  FOUL_W,
+  getPositionFoulWeight,
+  getFoulStaminaModifier,
+  getClutchRatingByRarity,
+  calculateCrowdNoisePenalty,
+  calculateFreeThrowChance,
+  calculateBaseShootingFoulChance,
+  calculateFoulDrawModifier,
+  calculateFlopIdentityScale,
+  calculateFourPointBaitIdentityScale,
+  calculateComposureIdentityScale,
+  calculateCleanContestIdentityScale,
+  calculateDisciplineScale,
+  calculateFourPointBaitBoost
+} from "../match/foulSystem";
 
 const MAX_3PT_POSITIVE_ADDITIVE_BONUS = 0.08;
 
@@ -1287,8 +1319,7 @@ export function simulateTick(
   };
 
   // ═══ FOUL HELPERS ═══
-  const getFoulStamMod = (avg: number) => avg >= 70 ? 1.0 : avg >= 50 ? 1.12 : avg >= 30 ? 1.28 : 1.45;
-  const FOUL_W: Record<string, number> = { PG: 1.4, SG: 1.2, SF: 1.0, PF: 0.8, C: 0.6 };
+  const getFoulStamMod = (avg: number) => getFoulStaminaModifier(avg);
   const pickFoulCommitter = (lineup: Player[]): Player => {
     const eligible = lineup.filter(p => (newPlayerStats[p.id]?.FOL ?? 0) < 4);
     const pool = eligible.length > 0 ? eligible : lineup;
@@ -1305,14 +1336,7 @@ export function simulateTick(
 
   // ═══ STEP 7: CLUTCH HELPERS (Layers 2, 3, 8) ═══
   const getClutchRating = (player: Player): number => {
-    const base: Record<string, number> = {
-      'Mythic':    0.13,
-      'Legendary': 0.09,
-      'Epic':      0.04,
-      'Rare':      0.00,
-      'Common':   -0.03,
-    };
-    return base[player.rarity] ?? 0.00;
+    return getClutchRatingByRarity(player.rarity);
   };
 
   const getClutchMod = (player: Player, situation: typeof clutchSituation): number => {
@@ -1349,47 +1373,22 @@ export function simulateTick(
   const getFTChance = (shooterId: string): number => {
     const shooter = userLineup.find(p => p.id === shooterId) || aiLineup.find(p => p.id === shooterId);
     const ftRating = shooter ? getFreeThrowRating(shooter) : 75;
-    const normalizedFt = ftRating > 100 ? 60 + ((ftRating - 100) * 0.45) : ftRating;
-    const baseChance = Math.min(0.90, Math.max(0.62, 0.74 + (normalizedFt - 75) * 0.0025));
-    
     const stm = shooter ? getPlayerStaminaMod(shooter, newStamina[shooterId]) : getStaminaMod(newStamina[shooterId] ?? 100);
-    let penalty = 0;
-    if (stm >= 1.0) penalty = 0;
-    else if (stm >= 0.95) penalty = -0.03;
-    else if (stm >= 0.88) penalty = -0.07;
-    else if (stm >= 0.80) penalty = -0.11;
-    else penalty = -0.15;
-    const hotBonus = (newFormRating[shooterId] ?? 1.0) >= 1.10 ? 0.05 : 0;
-    const ftClutchRating = shooter ? getClutchRating(shooter) : 0;
-    const clutchBonus = clutchSituation.active
-      ? ftClutchRating * (clutchSituation.intensity === 'high' ? 1.3 : 1.0)
-      : 0;
-
-    // ─── Layer 4 (Step 8): Crowd noise penalty for AWAY team FT shooters ───
+    const formRating = newFormRating[shooterId] ?? 1.0;
     const shooterIsAway = userIsHome
       ? aiLineup.some(p => p.id === shooterId)   // user is home → AI is away
       : userLineup.some(p => p.id === shooterId); // AI is home → user is away
-    const crowdNoisePenalty = shooterIsAway
-      ? (() => {
-          const base = 0.03;
-          const energyPenalty = base * homeCourt.crowdEnergy;
-          // Layer 6: Away FT clutchAmplifier always 'high' during clutch (hostile crowd never quiets)
-          const clutchAmplifier = clutchSituation.active ? 2.0
-            : clutchSituation.intensity === 'medium' ? 1.5
-            : 1.0;
-          const rarityResistance: Record<string, number> = {
-            'Mythic':    0.30,
-            'Legendary': 0.45,
-            'Epic':      0.60,
-            'Rare':      0.75,
-            'Common':    0.90,
-          };
-          const resistance = rarityResistance[shooter?.rarity ?? 'Common'];
-          return energyPenalty * clutchAmplifier * resistance;
-        })()
-      : 0; // Home team FTs — no crowd noise penalty
 
-    return Math.max(0.50, Math.min(0.95, baseChance + penalty + hotBonus + clutchBonus - crowdNoisePenalty));
+    return calculateFreeThrowChance(
+      ftRating,
+      stm,
+      formRating,
+      clutchSituation.active,
+      clutchSituation.intensity,
+      shooterIsAway,
+      homeCourt.crowdEnergy,
+      shooter?.rarity
+    );
   };
 
   const runFTSequence = (shooterId: string, shooterName: string, totalShots: number, isAnd1: boolean,
@@ -1864,28 +1863,23 @@ export function simulateTick(
         if (!blockOccurred) {
           // ═══ ROLL F: SHOOTING FOUL CHECK ═══
           const defAvg_sf = avgStamina(aiLineup, newStamina);
-          const clutchFoulBoost = clutchSituation.active ? getClutchRating(scorer) * 0.5 : 0;
           const foulDrawTendency = scorer ? getFoulDrawTendency(scorer) : 0.4;
-          const foulDrawMod = 0.90 + foulDrawTendency * 0.25;
-          let sfChance = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf) * foulDrawMod) + clutchFoulBoost; // NBA avg ~20-25 FTA/team/game
+          let sfChance = calculateBaseShootingFoulChance(is3PT, defAvg_sf, foulDrawTendency, clutchSituation.active, scorer.rarity); // NBA avg ~20-25 FTA/team/game
           if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance += 0.035;
           if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(userLineup, "Foul Magnet", newStamina)) {
-            const foulMagnetScale = 0.90 + getFoulDrawTendency(scorer) * 0.25;
+            const foulMagnetScale = calculateFoulDrawModifier(getFoulDrawTendency(scorer));
             sfChance += 0.035 * foulMagnetScale;
             skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, true);
           }
           if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(userLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
-            const flopIdentity = getFoulDrawTendency(h);
-            return 0.90 + flopIdentity * 0.20;
+            return calculateFlopIdentityScale(getFoulDrawTendency(h));
           })) {
             const flopBonus = getFlopFoulPressureBonus(scorer);
             const composed = rollSpecialMechanic(aiLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
-              const composureIdentity = getCalmRating(h);
-              return 0.90 + (composureIdentity / 100) * 0.20;
+              return calculateComposureIdentityScale(getCalmRating(h));
             });
             const cleanContest = !composed && rollSpecialMechanic(aiLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
-              const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
-              return 0.90 + (cleanContestIdentity / 100) * 0.20;
+              return calculateCleanContestIdentityScale(getOnBallDefenseRating(h), getBlockRating(h));
             });
 
             if (composed) {
@@ -1899,16 +1893,13 @@ export function simulateTick(
             }
           }
           if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(userLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
-            const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
-            return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
+            return calculateFourPointBaitIdentityScale(getThreePtRating(h), getFoulDrawTendency(h));
           })) {
             const composed = rollSpecialMechanic(aiLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
-              const composureIdentity = getCalmRating(h);
-              return 0.90 + (composureIdentity / 100) * 0.20;
+              return calculateComposureIdentityScale(getCalmRating(h));
             });
             const cleanContest = !composed && rollSpecialMechanic(aiLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
-              const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
-              return 0.90 + (cleanContestIdentity / 100) * 0.20;
+              return calculateCleanContestIdentityScale(getOnBallDefenseRating(h), getBlockRating(h));
             });
             const disciplineWall = !cleanContest && rollBaseSkill(aiLineup, "Discipline Wall", newStamina);
             if (composed) {
@@ -1921,13 +1912,13 @@ export function simulateTick(
               skillLog(`Discipline Wall holds off Four-Point Bait X`, false);
               const holders = aiLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
               const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
-              const disciplineScale = 0.85 + (maxRating / 100) * 0.30;
+              const disciplineScale = calculateDisciplineScale(maxRating);
               skillShotBonus -= 0.03 * disciplineScale;
             } else {
               const baitSummary = resolveLineupArchetypes(userLineup);
               const baitDsLevel = baitSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
               const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
-              const baitBoost = (baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020;
+              const baitBoost = calculateFourPointBaitBoost(baitDsLevel, baitFdLevel);
               sfChance += baitBoost;
               skillLog(`Four-Point Bait X pressures the Exposed defender`, true);
             }
@@ -2796,28 +2787,23 @@ export function simulateTick(
 
           if (!blockOccurred) {
             const defAvg_sf_ai = avgStamina(userLineup, newStamina);
-            const aiClutchFoulBoost = clutchSituation.active ? getClutchRating(scorer) * 0.5 : 0;
             const foulDrawTendency = scorer ? getFoulDrawTendency(scorer) : 0.4;
-            const foulDrawMod = 0.90 + foulDrawTendency * 0.25;
-            let sfChance_ai = ((is3PT ? 0.044 : 0.086) * getFoulStamMod(defAvg_sf_ai) * foulDrawMod) + aiClutchFoulBoost; // NBA avg ~20-25 FTA/team/game
+            let sfChance_ai = calculateBaseShootingFoulChance(is3PT, defAvg_sf_ai, foulDrawTendency, clutchSituation.active, scorer.rarity); // NBA avg ~20-25 FTA/team/game
             if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted")) sfChance_ai += 0.035;
             if (primaryDefender && staminaPct(primaryDefender) < 60 && rollBaseSkill(aiLineup, "Foul Magnet", newStamina)) {
-              const foulMagnetScale = 0.90 + getFoulDrawTendency(scorer) * 0.25;
+              const foulMagnetScale = calculateFoulDrawModifier(getFoulDrawTendency(scorer));
               sfChance_ai += 0.035 * foulMagnetScale;
               skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, false);
             }
             if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(aiLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
-              const flopIdentity = getFoulDrawTendency(h);
-              return 0.90 + flopIdentity * 0.20;
+              return calculateFlopIdentityScale(getFoulDrawTendency(h));
             })) {
               const flopBonus = getFlopFoulPressureBonus(scorer);
               const composed = rollSpecialMechanic(userLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
-                const composureIdentity = getCalmRating(h);
-                return 0.90 + (composureIdentity / 100) * 0.20;
+                return calculateComposureIdentityScale(getCalmRating(h));
               });
               const cleanContest = !composed && rollSpecialMechanic(userLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
-                const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
-                return 0.90 + (cleanContestIdentity / 100) * 0.20;
+                return calculateCleanContestIdentityScale(getOnBallDefenseRating(h), getBlockRating(h));
               });
 
               if (composed) {
@@ -2831,16 +2817,13 @@ export function simulateTick(
               }
             }
             if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
-              const fourPointBaitIdentity = (getThreePtRating(h) + getFoulDrawTendency(h) * 100) / 2;
-              return 0.90 + (fourPointBaitIdentity / 100) * 0.20;
+              return calculateFourPointBaitIdentityScale(getThreePtRating(h), getFoulDrawTendency(h));
             })) {
               const composed = rollSpecialMechanic(userLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
-                const composureIdentity = getCalmRating(h);
-                return 0.90 + (composureIdentity / 100) * 0.20;
+                return calculateComposureIdentityScale(getCalmRating(h));
               });
               const cleanContest = !composed && rollSpecialMechanic(userLineup, "CLEAN_CHALLENGE_CONTEST", newStamina, (h) => {
-                const cleanContestIdentity = (getOnBallDefenseRating(h) + getBlockRating(h)) / 2;
-                return 0.90 + (cleanContestIdentity / 100) * 0.20;
+                return calculateCleanContestIdentityScale(getOnBallDefenseRating(h), getBlockRating(h));
               });
               const disciplineWall = !cleanContest && rollBaseSkill(userLineup, "Discipline Wall", newStamina);
               if (composed) {
@@ -2853,13 +2836,13 @@ export function simulateTick(
                 skillLog(`Discipline Wall holds off Four-Point Bait X`, true);
                 const dwHolders = userLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
                 const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
-                const disciplineScale = 0.85 + (dwMaxRating / 100) * 0.30;
+                const disciplineScale = calculateDisciplineScale(dwMaxRating);
                 aiSkillShotBonus -= 0.03 * disciplineScale;
               } else {
                 const baitSummary = resolveLineupArchetypes(aiLineup);
                 const baitDsLevel = baitSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
                 const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
-                const baitBoost = (baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020;
+                const baitBoost = calculateFourPointBaitBoost(baitDsLevel, baitFdLevel);
                 sfChance_ai += baitBoost;
                 skillLog(`Four-Point Bait X pressures the Exposed defender`, false);
               }

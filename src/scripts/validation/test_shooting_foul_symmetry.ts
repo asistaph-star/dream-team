@@ -34,8 +34,7 @@ async function run() {
   );
 
   // Four-Point Bait boost mapping unchanged on both paths
-  const boostMapping = "(baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020";
-  const boostCount = (engineContent.match(/\(baitDsLevel >= 1 && baitFdLevel >= 1\) \? 0\.090 : \(baitDsLevel >= 1 \|\| baitFdLevel >= 1\) \? 0\.045 : 0\.020/g) || []).length;
+  const boostCount = (engineContent.match(/calculateFourPointBaitBoost\(baitDsLevel,\s*baitFdLevel\)/g) || []).length;
   assert(boostCount === 2, `Four-Point Bait boost mapping present on both User and AI paths (found ${boostCount} occurrences, expected 2)`);
 
   // Red Dot / Exposed Setup unchanged
