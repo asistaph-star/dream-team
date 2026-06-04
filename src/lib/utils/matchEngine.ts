@@ -61,6 +61,19 @@ import {
 import { hasSpecialSkillMechanic, SpecialSkillMechanicId } from "../skills/skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 import { resolveLineupArchetypes } from "../lineup/lineupArchetypeResolver";
+import {
+  DEBT_COLLECTOR_DRAIN,
+  FIVE_MAN_SQUEEZE_BASE,
+  FIVE_MAN_SQUEEZE_BOOSTED,
+  HOOKED_TAX_DRAIN,
+  getContactTaxDrain,
+  getLungBurnerDrain,
+  applyAntiSnowballScaling,
+  getPowerDriverDrain,
+  getDefensiveAnchorPressureDrain,
+  getDefensiveAnchorTeamPressureDrain,
+  getLockChainOnBallPressureDrain
+} from "../match/staminaSkillEffects";
 
 // Re-export everything the UI needs
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
@@ -389,7 +402,7 @@ export function simulateTick(
       .filter(p => p.id !== target.id)
       .sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))
       .slice(0, 2);
-    splashTargets.forEach(p => drainStamina(newStamina, p, targetTeam, 45));
+    splashTargets.forEach(p => drainStamina(newStamina, p, targetTeam, DEBT_COLLECTOR_DRAIN));
     skillLog(`Debt Collector X spreads stamina damage from ${target.name}`, isTriggerUser);
   };
   const applyFiveManSqueeze = (
@@ -402,7 +415,7 @@ export function simulateTick(
       return 0.90 + (fiveManIdentity / 100) * 0.20;
     })) return;
     const markedCount = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id)).length;
-    const amount = markedCount >= 3 ? 60 : 40;
+    const amount = markedCount >= 3 ? FIVE_MAN_SQUEEZE_BOOSTED : FIVE_MAN_SQUEEZE_BASE;
     targetTeam.forEach(p => drainStamina(newStamina, p, targetTeam, amount));
     skillLog(`Five-Man Squeeze X drains ${amount} stamina from the opposing five`, isTriggerUser);
   };
@@ -532,17 +545,11 @@ export function simulateTick(
       const target = getPrimaryBallHandler(attackingTeam);
       if (!target) return;
 
-      const baseAmount = Math.min(8, Math.round(6 * scale));
+      const baseAmount = getDefensiveAnchorPressureDrain(scale);
       const targetResistance = (getStaminaRating(target) / 100) * 0.15;
       let playerDrain = Math.round(baseAmount * (1 - targetResistance));
 
-      const currentStaminaPct = staminaPct(target);
-      if (currentStaminaPct < 30) {
-        playerDrain = Math.round(playerDrain * 0.3);
-      } else if (currentStaminaPct < 50) {
-        playerDrain = Math.round(playerDrain * 0.6);
-      }
-
+      playerDrain = applyAntiSnowballScaling(playerDrain, staminaPct(target));
       playerDrain = Math.max(0, playerDrain);
       if (playerDrain > 0) {
         drainStamina(newStamina, target, attackingTeam, playerDrain);
@@ -550,7 +557,7 @@ export function simulateTick(
 
       skillLog(`${leader.name}'s Defensive Anchor exerts single-target pressure on ${target.name}, draining ${playerDrain} stamina`, isDefendingUserTeam);
     } else {
-      const baseAmount = Math.min(20, Math.round(15 * scale));
+      const baseAmount = getDefensiveAnchorTeamPressureDrain(scale);
 
       // Team Leadership Resistance (Counter Type B)
       const counterMechanics: SpecialSkillMechanicId[] = [
@@ -582,12 +589,7 @@ export function simulateTick(
         let playerDrain = Math.round(teamDrain * (1 - targetResistance));
 
         // Anti-Snowball Low-Stamina Reduction (Counter Type C)
-        const currentStaminaPct = staminaPct(p);
-        if (currentStaminaPct < 30) {
-          playerDrain = Math.round(playerDrain * 0.3);
-        } else if (currentStaminaPct < 50) {
-          playerDrain = Math.round(playerDrain * 0.6);
-        }
+        playerDrain = applyAntiSnowballScaling(playerDrain, staminaPct(p));
 
         playerDrain = Math.max(0, playerDrain);
         if (playerDrain > 0) {
@@ -637,7 +639,7 @@ export function simulateTick(
   const applyHookedTax = (team: Player[], isUserTeam: boolean) => {
     const hooked = team.filter(p => hasMark(newSkillMarks, p.id, "Hooked"));
     hooked.forEach(p => {
-      drainStamina(newStamina, p, team, 38);
+      drainStamina(newStamina, p, team, HOOKED_TAX_DRAIN);
       skillLog(`${p.name} pays the Hooked stamina tax`, isUserTeam);
     });
   };
@@ -1541,7 +1543,7 @@ export function simulateTick(
           const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
           const bestIdentity = Math.max(...identities);
           const scale = 0.90 + (bestIdentity / 100) * 0.20;
-          const drain = drainStamina(newStamina, committer, userLineup, Math.min(12, Math.round(9 * scale)));
+          const drain = drainStamina(newStamina, committer, userLineup, getLockChainOnBallPressureDrain(scale));
           skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
         }
       }
@@ -1756,7 +1758,7 @@ export function simulateTick(
           const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
           skillShotBonus += 0.02 * powerDriverShotScale;
           const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
-          const drain = drainStamina(newStamina, primaryDefender, aiLineup, Math.min(36, 32 * powerDriverDrainScale));
+          const drain = drainStamina(newStamina, primaryDefender, aiLineup, getPowerDriverDrain(powerDriverDrainScale));
           skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, true);
         }
         if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(userLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
@@ -1766,18 +1768,9 @@ export function simulateTick(
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
           const pbSummary = resolveLineupArchetypes(userLineup);
           const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-          let baseDrain = 8;
-          if (pbLevel === 1) baseDrain = 10;
-          else if (pbLevel === 2) baseDrain = 11;
-          else if (pbLevel === 3) baseDrain = 12;
+          const baseDrain = getContactTaxDrain(pbLevel);
 
-          const defenderStam = staminaPct(primaryDefender);
-          let finalDrain = baseDrain;
-          if (defenderStam < 30) {
-            finalDrain = Math.round(baseDrain * 0.30);
-          } else if (defenderStam < 50) {
-            finalDrain = Math.round(baseDrain * 0.60);
-          }
+          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(primaryDefender));
 
           drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
           skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, true);
@@ -1814,7 +1807,7 @@ export function simulateTick(
         })) {
           const identity = (getOnBallDefenseRating(primaryDefender) + getStealRating(primaryDefender) + getStaminaRating(primaryDefender)) / 3;
           const scale = 0.90 + (identity / 100) * 0.20;
-          const drain = drainStamina(newStamina, scorer, userLineup, Math.min(12, Math.round(9 * scale)));
+          const drain = drainStamina(newStamina, scorer, userLineup, getLockChainOnBallPressureDrain(scale));
           skillLog(`LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
         }
 
@@ -2042,22 +2035,9 @@ export function simulateTick(
             })) {
               const pbSummary = resolveLineupArchetypes(userLineup);
               const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-              let baseDrain = 15;
-              if (pbLevel === 1) baseDrain = 20;
-              else if (pbLevel === 2) baseDrain = 30;
-              else if (pbLevel === 3) baseDrain = 40;
+              const preSnowballDrain = getLungBurnerDrain(pbLevel, hasMark(newSkillMarks, primaryDefender.id, "Debt"));
 
-              const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
-              let preClampDrain = baseDrain + (hadDebt ? 10 : 0);
-              let preSnowballDrain = Math.min(40, preClampDrain);
-
-              const defenderStam = staminaPct(primaryDefender);
-              let finalDrain = preSnowballDrain;
-              if (defenderStam < 30) {
-                finalDrain = Math.round(preSnowballDrain * 0.30);
-              } else if (defenderStam < 50) {
-                finalDrain = Math.round(preSnowballDrain * 0.60);
-              }
+              const finalDrain = applyAntiSnowballScaling(preSnowballDrain, staminaPct(primaryDefender));
 
               const drain = drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
               skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, true);
@@ -2382,7 +2362,7 @@ export function simulateTick(
       const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
       aiSkillShotBonus += 0.02 * powerDriverShotScale;
       const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
-      const drain = drainStamina(newStamina, primaryDefender, userLineup, Math.min(36, 32 * powerDriverDrainScale));
+      const drain = drainStamina(newStamina, primaryDefender, userLineup, getPowerDriverDrain(powerDriverDrainScale));
       skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, false);
     }
     if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(aiLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
@@ -2392,18 +2372,9 @@ export function simulateTick(
       newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
       const pbSummary = resolveLineupArchetypes(aiLineup);
       const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-      let baseDrain = 8;
-      if (pbLevel === 1) baseDrain = 10;
-      else if (pbLevel === 2) baseDrain = 11;
-      else if (pbLevel === 3) baseDrain = 12;
+      const baseDrain = getContactTaxDrain(pbLevel);
 
-      const defenderStam = staminaPct(primaryDefender);
-      let finalDrain = baseDrain;
-      if (defenderStam < 30) {
-        finalDrain = Math.round(baseDrain * 0.30);
-      } else if (defenderStam < 50) {
-        finalDrain = Math.round(baseDrain * 0.60);
-      }
+      const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(primaryDefender));
 
       drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
       skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, false);
@@ -2709,7 +2680,7 @@ export function simulateTick(
             const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
             const bestIdentity = Math.max(...identities);
             const scale = 0.90 + (bestIdentity / 100) * 0.20;
-            const drain = drainStamina(newStamina, committer, aiLineup, Math.min(12, Math.round(9 * scale)));
+            const drain = drainStamina(newStamina, committer, aiLineup, getLockChainOnBallPressureDrain(scale));
             skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, true);
           }
         }
@@ -2955,22 +2926,9 @@ export function simulateTick(
               })) {
                 const pbSummary = resolveLineupArchetypes(aiLineup);
                 const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-                let baseDrain = 15;
-                if (pbLevel === 1) baseDrain = 20;
-                else if (pbLevel === 2) baseDrain = 30;
-                else if (pbLevel === 3) baseDrain = 40;
+                const preSnowballDrain = getLungBurnerDrain(pbLevel, hasMark(newSkillMarks, primaryDefender.id, "Debt"));
 
-                const hadDebt = hasMark(newSkillMarks, primaryDefender.id, "Debt");
-                let preClampDrain = baseDrain + (hadDebt ? 10 : 0);
-                let preSnowballDrain = Math.min(40, preClampDrain);
-
-                const defenderStam = staminaPct(primaryDefender);
-                let finalDrain = preSnowballDrain;
-                if (defenderStam < 30) {
-                  finalDrain = Math.round(preSnowballDrain * 0.30);
-                } else if (defenderStam < 50) {
-                  finalDrain = Math.round(preSnowballDrain * 0.60);
-                }
+                const finalDrain = applyAntiSnowballScaling(preSnowballDrain, staminaPct(primaryDefender));
 
                 const drain = drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
                 skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, false);
