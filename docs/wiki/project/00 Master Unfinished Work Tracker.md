@@ -47,6 +47,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 5. Broken Play Rescue Learned Special Skill Family
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [brokenPlayRescue.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/brokenPlayRescue.ts) (getBrokenPlayRescueIdentity, calculateBrokenPlayRescueChanceScale, calculateBrokenPlayRescueStaminaCost, calculateBrokenPlayRescueShotPenalty)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (intercepts User and AI turnovers, rolls skill mechanic, applies stamina cost, sets rescue shot flags)
+  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Registered in SPECIAL_SKILL_NAMES)
+* **What Code Does**: Intercepts unforced and forced turnovers before they are finalized. If the committer has the `BROKEN_PLAY_RESCUE` skill and rolls successfully, it prevents the turnover, consumes stamina from the committer, and forces them to take a penalized, low-quality 2PT rescue shot.
+* **Tests**: [test_broken_play_rescue.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_broken_play_rescue.ts) passes.
+* **Risk Level**: MEDIUM
+* **Recommended Next Step**: Monitor rescue frequency and scoring rates.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
@@ -109,14 +120,7 @@ This document provides a comprehensive verification log and completion tracker f
 
 ## Section 4: Not Implemented Systems
 
-### 1. Broken Play Rescue Special Skill Family
-* **Status**: NOT IMPLEMENTED
-* **Evidence File Paths**:
-  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts#L70) (comment states it is not yet mechanic-wired)
-  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts#L101-L115) (explicitly excluded from SPECIAL_SKILL_NAMES rolling pool)
-* **What is Missing**: No code exists in matchEngine.ts to rescue failing possessions or convert turnovers into shot opportunities.
-* **Risk Level**: HIGH
-* **Recommended Next Step**: Implement a turnover intercept hook in simulateTick that rolls for BROKEN_PLAY_RESCUE and redirects flow to a highly contested rim attempt.
+None. All 15 planned learned special skill families and mechanics are now fully implemented, integrated, and verified.
 
 ---
 
