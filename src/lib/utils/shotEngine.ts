@@ -1,5 +1,6 @@
 import { Player } from "../types/player";
 import { getThreePtTendency } from "./playerIdentity";
+import { calculateShotIntentWeights } from "../match/playerIntentSelection";
 
 export type ShotType = 
   | 'euroStep' | 'floater' | 'pullUpMid' | 'stepBackMid' | 'fingerRoll' | 'drivingLayup' | 'dunk' | 'fadeaway' | 'hookShot' | 'powerLayup' | 'bankShot' | 'putBack'
@@ -107,6 +108,18 @@ export function generateShot(player: Player, formRating: number, staminaPct: num
 
   // Step 4.75: Smart Fatigue Filter (Stamina Context)
   applySmartFatigueShotWeights(pool, staminaPct);
+
+  // Step 4.8: Tendency Modifiers
+  const intentWeights = calculateShotIntentWeights(player, staminaPct);
+  const driveShots = ['drivingLayup', 'euroStep', 'floater', 'fingerRoll', 'dunk', 'powerLayup'];
+  const pullUpShots = ['pullUpMid', 'stepBackMid', 'fadeaway', 'pullUpThree', 'stepBackThree'];
+
+  driveShots.forEach(shot => {
+    if (pool[shot]) pool[shot] *= intentWeights.driveMultiplier;
+  });
+  pullUpShots.forEach(shot => {
+    if (pool[shot]) pool[shot] *= intentWeights.pullUpMultiplier;
+  });
 
   // Step 5: Final Selection (Weighted Random)
   const totalWeight = Object.values(pool).reduce((a, b) => a + b, 0);
