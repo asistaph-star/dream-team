@@ -74,7 +74,7 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<strin
   "CLEAN_CHALLENGE": "Challenges foul-baiting and counters forced foul or 3PT bait effects, reducing opponent skill bonuses by -3.0%.",
   "GLASS_STRIKE": "Crashes the glass with disciplined timing, improving second-chance pressure and creating putback scoring moments.",
   "BENCH_CAPTAIN": "Improves rotation stamina recovery for benched players, and drains 12 stamina from each marked opponent when they act (does not stack).",
-  "MOMENTUM_SWING": "Chance to gain possession or recover team rhythm with minor stamina recovery. (OFFICIAL FAMILY / NOT YET MECHANIC-WIRED)",
+  "MOMENTUM_SWING": "Triggers after defensive momentum events (steal, block, turnover) to recover stamina for the lowest-stamina teammate, restore form, and boost momentum.",
   "COMPOSURE_SHIELD": "Cancels forced foul pressure before it becomes free throws, and counters Tilted marks or bad momentum, reducing opponent skill bonuses by -2.0%.",
   "GAMEPLAN_JAMMER": "Blocks opponent special skill triggers, applying Static (lasts 2 possessions), and consumes Debt to drain 45 stamina from 2 additional opposing players.",
   "TIMEOUT_RESET": "Cleanses 1 mark from all marked players and recovers 12 stamina for tired players when team stamina is low.",
@@ -97,7 +97,7 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<strin
   "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",
 };
 
-// Exclude MOMENTUM_SWING and BROKEN_PLAY_RESCUE from the active rolling pool as they do not have gameplay mechanics in matchEngine.ts yet.
+// Exclude BROKEN_PLAY_RESCUE from the active rolling pool as it does not have gameplay mechanics in matchEngine.ts yet.
 export const SPECIAL_SKILL_NAMES: SpecialSkillName[] = [
   "DEEP_STRIKE",
   "COURT_VISION_ENGINE",
@@ -109,6 +109,7 @@ export const SPECIAL_SKILL_NAMES: SpecialSkillName[] = [
   "CLEAN_CHALLENGE",
   "GLASS_STRIKE",
   "BENCH_CAPTAIN",
+  "MOMENTUM_SWING",
   "COMPOSURE_SHIELD",
   "GAMEPLAN_JAMMER",
   "TIMEOUT_RESET",

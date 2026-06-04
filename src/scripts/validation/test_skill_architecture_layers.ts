@@ -169,10 +169,10 @@ async function run() {
   assert(formatSkillName("Red Dot X", "PRIME") === "Deep Strike Prime", "formatSkillName for legacy Red Dot X");
   assert(formatSkillName("DEEP_STRIKE", "PRIME") === "Deep Strike Prime", "formatSkillName for family DEEP_STRIKE");
 
-  // 12. MOMENTUM_SWING and BROKEN_PLAY_RESCUE cannot roll if they have no implemented mechanics
-  assert(LEGACY_TO_MECHANIC_MAP["MOMENTUM_SWING"].length === 0, "MOMENTUM_SWING has empty mechanics");
+  // 12. BROKEN_PLAY_RESCUE cannot roll if they have no implemented mechanics, but MOMENTUM_SWING is active
+  assert(LEGACY_TO_MECHANIC_MAP["MOMENTUM_SWING"].length === 1, "MOMENTUM_SWING has one mechanic");
   assert(LEGACY_TO_MECHANIC_MAP["BROKEN_PLAY_RESCUE"].length === 0, "BROKEN_PLAY_RESCUE has empty mechanics");
-  assert(!SPECIAL_SKILL_NAMES.includes("MOMENTUM_SWING"), "MOMENTUM_SWING is NOT in the active rolling pool");
+  assert(SPECIAL_SKILL_NAMES.includes("MOMENTUM_SWING"), "MOMENTUM_SWING is in the active rolling pool");
   assert(!SPECIAL_SKILL_NAMES.includes("BROKEN_PLAY_RESCUE"), "BROKEN_PLAY_RESCUE is NOT in the active rolling pool");
 
   // Final validation exit status

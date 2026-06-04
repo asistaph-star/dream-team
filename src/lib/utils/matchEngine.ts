@@ -85,6 +85,11 @@ import {
   calculateEnforcerScale
 } from "../match/archetypeEffects";
 import {
+  getMomentumSwingIdentity,
+  calculateMomentumSwingRecovery,
+  shouldMomentumSwingTrigger
+} from "../match/momentumSwing";
+import {
   getTovStamMod as extGetTovStamMod,
   getLowestStaminaPlayer as extGetLowestStaminaPlayer,
   getPrimaryBallHandler as extGetPrimaryBallHandler,
@@ -549,6 +554,50 @@ export function simulateTick(
     skillLog(`${leader.name}'s Bench Captain stabilizes ${lowestStamPlayer.name}'s stamina (+${staminaRecover})${formText}`, isUserTeam);
   };
 
+  let momentumSwingBump: 'user' | 'ai' | null = null;
+  const applyMomentumSwing = (team: Player[], isUserTeam: boolean) => {
+    // Only eligible after defensive momentum events
+    if (!shouldMomentumSwingTrigger(state.lastPlayCategory)) return;
+
+    const teamName = isUserTeam ? "User" : "AI";
+    const useKey = `${teamName} Momentum Swing Q${newQuarter}`;
+    if (hasTeamSkillUsed(isUserTeam, useKey)) return;
+
+    if (!rollSpecialMechanic(team, "MOMENTUM_SWING_STABILIZE", newStamina, (h) => {
+      return getMomentumSwingIdentity(h);
+    })) return;
+
+    const holders = team.filter(p => hasSpecialSkillMechanic(p, "MOMENTUM_SWING_STABILIZE"));
+    const leader = [...holders].sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
+    if (!leader) return;
+
+    markTeamSkillUsed(isUserTeam, useKey);
+
+    const leaderIdentity = getMomentumSwingIdentity(leader);
+    const recovery = calculateMomentumSwingRecovery(leaderIdentity, getCalmRating(leader));
+
+    // Stamina recovery to lowest-stamina active teammate
+    const lowestStamPlayer = getLowestStaminaPlayer(team);
+    let staminaText = "";
+    if (lowestStamPlayer) {
+      recoverSkillStamina(lowestStamPlayer, recovery.staminaRecover);
+      staminaText = ` steadies ${lowestStamPlayer.name}'s stamina (+${recovery.staminaRecover})`;
+    }
+
+    // Form recovery to leader if cold
+    let formText = "";
+    ensureForm(leader.id);
+    if (newFormRating[leader.id] < 1.0) {
+      newFormRating[leader.id] = clampForm(newFormRating[leader.id] + recovery.formRecover);
+      formText = ` and focus (+${(recovery.formRecover * 100).toFixed(2)}%)`;
+    }
+
+    // Track momentum bump for application in STEP 11 (where newUserMom/newAiMom are declared)
+    momentumSwingBump = isUserTeam ? 'user' : 'ai';
+
+    skillLog(`${leader.name}'s Momentum Swing stabilizes after the play${staminaText}${formText}`, isUserTeam);
+  };
+
   const applyDefensiveAnchor = (defendingTeam: Player[], attackingTeam: Player[], isDefendingUserTeam: boolean) => {
     if (pace === 'fastbreak') return;
 
@@ -774,6 +823,8 @@ export function simulateTick(
   applyGreenSupport(aiLineup, false);
   applyBenchCaptain(userLineup, true);
   applyBenchCaptain(aiLineup, false);
+  applyMomentumSwing(userLineup, true);
+  applyMomentumSwing(aiLineup, false);
 
   if (currentPossession === "user") {
     // AI is defending, User is attacking
@@ -3056,6 +3107,11 @@ export function simulateTick(
 
   // ═══ STEP 11: MOMENTUM ═══
   let newUserMom = state.userMomentum, newAiMom = state.aiMomentum;
+  if (momentumSwingBump === 'user') {
+    newUserMom = Math.min(100, newUserMom + 3);
+  } else if (momentumSwingBump === 'ai') {
+    newAiMom = Math.min(100, newAiMom + 3);
+  }
   let consUserRun = state.consecutiveUserRun, consAiRun = state.consecutiveAiRun;
 
   if (pointsScored > 0) {
