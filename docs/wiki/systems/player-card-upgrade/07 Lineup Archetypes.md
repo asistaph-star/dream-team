@@ -539,3 +539,27 @@ Phase LineupArchetype-1M2 established the regression baseline for the **Anti-Met
    * **Alternative A:** Anti-Meta documentation lock.
    * **Alternative B:** matchEngine refactor planning (audit/design phase).
    * **Alternative C:** PlayerCard stamina bar fix as a separate UI phase.
+
+---
+
+## 24. Match Engine Modularization (Phase Refactor-1B)
+
+Phase Refactor-1B successfully modularized `matchEngine.ts` by extracting static/pure code into dedicated modules under `src/lib/match/`. This was a behavior-preserving architecture cleanup only, with no changes to gameplay math, balance, saved data, or OVR/star-up calculations.
+
+### Summary of Changes:
+* **Created Modules:**
+  * `src/lib/match/matchTypes.ts`: Relocated core types and interfaces (`Difficulty`, `PlayerMatchStats`, `MatchEvent`, `MatchState`).
+  * `src/lib/match/staminaConfig.ts`: Relocated the `STAMINA_CONFIG` constant byte-for-byte.
+  * `src/lib/match/matchHelpers.ts`: Relocated stateless, pure helper functions (`getIndividualThreePointShotMod`, `isShaiGilgeousAlexander`, `getFlopFoulPressureBonus`, `getGlassStrikeOrebBoost`, `getGlassStrikePutbackBoost`, `getStaminaCostScale`, `getCounterModifier`, `getSubtleStrategyHint`).
+  * `src/lib/match/mockTeams.ts`: Relocated AI team and mock roster setup data (`aiPlayer`, `withAssignedSkills`, `buildAiTeam`, `mockAiTeams`).
+* **Backward Compatibility:**
+  * Updated `matchEngine.ts` to import these components from the new modules.
+  * Re-exported all moved variables, types, config structures, and helpers in `matchEngine.ts` to ensure compatibility with existing imports across UI pages and contexts.
+* **Execution Guards & Constraints Preserved:**
+  * `simulateTick` logic, User possession flow, and AI possession flow remain completely untouched.
+  * RNG call order was strictly preserved.
+  * Event logging paths are fully unchanged.
+* **Verification:**
+  * Codebase successfully passed `npx tsc --noEmit`.
+  * All regression and simulator validation scripts completed successfully.
+
