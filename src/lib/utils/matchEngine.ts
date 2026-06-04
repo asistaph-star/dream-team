@@ -9,6 +9,18 @@ import {
   getPlayerMaxStamina,
   getEffectiveRevertThreshold, isStrategyRevertBlocked
 } from "./matchTypes";
+import { STAMINA_CONFIG } from "../match/staminaConfig";
+import { mockAiTeams } from "../match/mockTeams";
+import {
+  getIndividualThreePointShotMod,
+  isShaiGilgeousAlexander,
+  getFlopFoulPressureBonus,
+  getGlassStrikeOrebBoost,
+  getGlassStrikePutbackBoost,
+  getStaminaCostScale,
+  getCounterModifier,
+  getSubtleStrategyHint
+} from "../match/matchHelpers";
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
@@ -34,435 +46,32 @@ import { resolveLineupArchetypes } from "../lineup/lineupArchetypeResolver";
 // Re-export everything the UI needs
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
 export { createInitialMatchState, getStaminaMod, getPlayerStaminaMod, getStaminaPercent, getPlayerMaxStamina, computeTeamScore, computeEffective, avgStamina, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, formatClock, clampForm, emptyStats, getShotZoneModifier, getMatchupBonus, getShotClockReset, getSkillHolders, hasSkillStack, getEnteredPlayerIds, resolveFlagrantFoul, translateOffIQBoost, translateDefIQBoost, isStrategyRevertBlocked, getEffectiveRevertThreshold, isSkillBlocked, getSkillRate } from "./matchTypes";
+export { STAMINA_CONFIG } from "../match/staminaConfig";
+export { mockAiTeams } from "../match/mockTeams";
+export {
+  getIndividualThreePointShotMod,
+  isShaiGilgeousAlexander,
+  getFlopFoulPressureBonus,
+  getGlassStrikeOrebBoost,
+  getGlassStrikePutbackBoost,
+  getStaminaCostScale,
+  getCounterModifier,
+  getSubtleStrategyHint
+} from "../match/matchHelpers";
 
 const MAX_3PT_POSITIVE_ADDITIVE_BONUS = 0.08;
 
-function getIndividualThreePointShotMod(shooting: number | undefined): number {
-  return Math.max(0.72, Math.min(1.0, 0.72 + ((shooting ?? 50) / 100) * 0.35));
-}
 
-const isShaiGilgeousAlexander = (player: Player): boolean => {
-  return player.name.toLowerCase().includes("shai gilgeous-alexander");
-};
 
-const getFlopFoulPressureBonus = (scorer: Player): number => {
-  const baseBonus = 0.04;
-  return isShaiGilgeousAlexander(scorer) && hasSpecialSkillMechanic(scorer, "FLOP_SELL_CONTACT") ? baseBonus * 2 : baseBonus;
-};
 
-const getGlassStrikeOrebBoost = (level: number): number => {
-  if (level === 1) return 0.015;
-  if (level === 2) return 0.025;
-  if (level === 3) return 0.035;
-  return 0;
-};
 
-const getGlassStrikePutbackBoost = (level: number): number => {
-  if (level === 1) return 0;
-  if (level === 2) return 0.010;
-  if (level === 3) return 0.015;
-  return 0;
-};
 
-const getStaminaCostScale = (player: Player | undefined): number => {
-  const maxStamina = getPlayerMaxStamina(player);
-  return Math.min(1.15, Math.max(1, Math.sqrt(maxStamina / 100)));
-};
 
-const STAMINA_CONFIG = {
-  movement: {
-    normalPerSecond: 0.020,
-    randomPerSecond: 0.004,
-    fastbreak: 1.50,
-    earlyOffense: 1.20,
-    fullCourtPress: 1.16,
-    overtime: 1.18,
-    road: 0.08,
-  },
-  shooting: {
-    openCatchShoot: 2.4,
-    normalJumper: 3.8,
-    pullUp: 5.2,
-    stepBackOrFadeaway: 7.0,
-    contestedShot: 6.2,
-    heavilyContestedShot: 8.8,
-    blockedJumper: 11.5,
-  },
-  rim: {
-    drive: 5.8,
-    layup: 7.0,
-    dunk: 8.0,
-    contactFinish: 10.5,
-    blockedLayup: 13.5,
-    blockedDunk: 15.5,
-    offensiveFoul: 9.0,
-  },
-  ballHandling: {
-    quickTouch: 0.45,
-    turnover: 1.85,
-    isolation: 2.5,
-    lateClockCreation: 2.4,
-    doubleTeamEscape: 3.2,
-  },
-  defense: {
-    lightContest: 1.8,
-    hardCloseout: 2.8,
-    jumpContest: 3.6,
-    blockAttempt: 4.8,
-    successfulBlock: 5.6,
-    failedBlock: 6.4,
-    stealAttempt: 4.2,
-    successfulSteal: 5.2,
-    failedSteal: 7.0,
-    pressChase: 1.4,
-    trapRotation: 1.8,
-    foul: 1.0,
-    scoredOnContest: 1.2,
-  },
-  rebounding: {
-    easyRebound: 2.0,
-    normalRebound: 2.8,
-    contestedRebound: 4.8,
-    offensiveReboundBattle: 5.4,
-    putbackAttempt: 5.0,
-  },
-  recovery: {
-    benchHomePerTick: 1.5,
-    benchAwayPerTick: 1.2,
-    timeout: 5,
-    quarterBreak: 3,
-    halftime: 6,
-    overtimeBreak: 8,
-    skillSupport: 8,
-  },
-  modifiers: {
-    globalWorkloadScale: 0.74,
-    make: 0.82,
-    miss: 1.06,
-    foul: 0.92,
-    block: 1.22,
-    heavyContact: 1.18,
-    clutchTime: 1.08,
-    overtime: 1.18,
-    highUsage: 1.08,
-    backToBackPossession: 1.08,
-    alreadyTired: 1.10,
-    exhausted: 1.18,
-    transition: 1.12,
-    lateClock: 1.12,
-    fullCourtPress: 1.12,
-    orebSecondChance: 1.10,
-  },
-} as const;
 
-export const getCounterModifier = (offense: string, defense: string): { offMult: number; narrative: string } => {
-  // 🛡️ Defense Countering Offense
-  
-  // Outside Shoot & Corner 3s countered by 3-2 Zone & Switch Defense
-  if ((offense === "Outside Shoot" || offense === "Corner 3s" || offense === "5-Out Spacing") && 
-      (defense === "3-2 Zone" || defense === "Switch Defense")) {
-    return { 
-      offMult: 0.90, 
-      narrative: `Broadcast Booth: "The defensive rotation shifts beautifully to seal the perimeter, completely smothering the outside shooters!"` 
-    };
-  }
 
-  // Inside Score countered by Protect the Lane & 2-3 Zone
-  if ((offense === "Inside Score" || offense === "Post Isolation") && 
-      (defense === "Protect the Lane" || defense === "2-3 Zone")) {
-    return { 
-      offMult: 0.90, 
-      narrative: `Courtside Report: "The interior defense packs the key, completely walling off the driving lane!"` 
-    };
-  }
 
-  // Pick & Roll countered by Blitz/Trap & Switch Defense & Combination Defense
-  if (offense === "Pick & Roll" && 
-      (defense === "Blitz/Trap" || defense === "Switch Defense" || defense === "Combination Defense")) {
-    return { 
-      offMult: 0.92, 
-      narrative: `Sideline Analyst: "The defenders communicate perfectly on the high screen, intercepting the pick-and-roll action!"` 
-    };
-  }
 
-  // Run & Gun countered by Half-court press & Full-court press
-  if (offense === "Run & Gun" && 
-      (defense === "Half-court press" || defense === "Half-Court Press" || 
-       defense === "Full-court press" || defense === "Full-Court Press")) {
-    return { 
-      offMult: 0.91, 
-      narrative: `Broadcast Booth: "The trapping defense stops the ball early, halting the transition run in its tracks!"` 
-    };
-  }
 
-  // Princeton Offense, Hawk Entry, Outside Cut Entry countered by Man-to-Man & Combination Defense
-  if ((offense === "Princeton Offense" || offense === "Hawk Entry" || offense === "Outside Cut Entry") && 
-      (defense === "Man-to-Man" || defense === "Combination Defense" || defense === "Switch Defense")) {
-    return { 
-      offMult: 0.92, 
-      narrative: `Scouting Insight: "Disciplined defender switches and tight off-ball coverage successfully check the backdoor cutters!"` 
-    };
-  }
-
-  // 🏀 Offense Countering Defense (Offense exploits Defense)
-  
-  // 2-3 Zone & Protect the Lane exposed by Outside Shoot & Corner 3s & 5-Out Spacing
-  if ((defense === "2-3 Zone" || defense === "Protect the Lane") && 
-      (offense === "Outside Shoot" || offense === "Corner 3s" || offense === "5-Out Spacing")) {
-    return { 
-      offMult: 1.08, 
-      narrative: `Broadcast Booth: "Excellent perimeter ball movement draws the packed zone defenders out, creating wide-open looks from deep!"` 
-    };
-  }
-
-  // Full-court press & Half-court press & Blitz/Trap broken by Princeton Offense & Motion Offense & Pick & Roll
-  if ((defense === "Full-court press" || defense === "Full-Court Press" || 
-       defense === "Half-court press" || defense === "Half-Court Press" || 
-       defense === "Blitz/Trap") && 
-      (offense === "Princeton Offense" || offense === "Motion Offense" || offense === "Pick & Roll")) {
-    return { 
-      offMult: 1.08, 
-      narrative: `Sideline Analyst: "Crisp team passing and quick ball reversals shred the high-pressure defensive trap!"` 
-    };
-  }
-
-  // 3-2 Zone exposed by Inside Score & Post Isolation & Hawk Entry
-  if (defense === "3-2 Zone" && 
-      (offense === "Inside Score" || offense === "Post Isolation" || offense === "Hawk Entry")) {
-    return { 
-      offMult: 1.09, 
-      narrative: `Courtside Report: "The defense is stretched high on the perimeter, leaving the low block exposed for easy inside scoring!"` 
-    };
-  }
-
-  // Switch Defense punished by Isolation (ISO) & Post Isolation
-  if (defense === "Switch Defense" && 
-      (offense === "Isolation (ISO)" || offense === "Post Isolation")) {
-    return { 
-      offMult: 1.07, 
-      narrative: `Scouting Insight: "Defensive screen switching creates a major mismatch on the block, letting the primary scorer operate 1-on-1!"` 
-    };
-  }
-
-  // 1-3-1 Zone punished by Princeton Offense & Motion Offense
-  if (defense === "1-3-1 Zone" && 
-      (offense === "Princeton Offense" || offense === "Motion Offense")) {
-    return { 
-      offMult: 1.08, 
-      narrative: `Broadcast Booth: "Methodical player cuts and passing completely bypass the active trapping zone along the sidelines!"` 
-    };
-  }
-
-  return { offMult: 1.0, narrative: "" };
-};
-
-export const getSubtleStrategyHint = (strategy: string, isOffense: boolean): string => {
-  const clean = strategy.trim();
-  if (isOffense) {
-    switch (clean) {
-      case "Outside Shoot":
-        return Math.random() < 0.5 
-          ? "Their perimeter players are moving out, stretching our defenders far beyond the arc."
-          : "They seem heavily focused on creating space along the outer boundary.";
-      case "Corner 3s":
-        return Math.random() < 0.5 
-          ? "Their wings are continuously flaring out towards the corners, waiting to spot up."
-          : "The baseline boundaries look crowded as they hunt for quick kick-out looks.";
-      case "Inside Score":
-        return Math.random() < 0.5 
-          ? "They are aggressively attacking the restricted area and cutting deep inside."
-          : "It looks like their primary goal is paint dominance and high-percentage rim scoring.";
-      case "Hawk Entry":
-        return Math.random() < 0.5 
-          ? "Their big men are setting screens around the elbow, looking to free up baseline cutters."
-          : "They're running high post entry sets to slide their wings backdoor.";
-      case "Outside Cut Entry":
-        return Math.random() < 0.5 
-          ? "The ball is staying out on the perimeter while their off-ball guards look to slice backdoor."
-          : "They are holding the perimeter and scanning for quick baseline cuts.";
-      case "Princeton Offense":
-        return Math.random() < 0.5 
-          ? "They are moving in constant, deliberate patterns, waiting patiently to bait a defensive over-pursuit."
-          : "Their offense is playing extremely slow and methodical, relying heavily on backdoors.";
-      case "Isolation (ISO)":
-        return Math.random() < 0.5 
-          ? "The floor is completely cleared out on one side as their primary scorer sizes up 1-on-1."
-          : "They've completely stopped ball movement, letting one player operate solo.";
-      case "Pick & Roll":
-        return Math.random() < 0.5 
-          ? "Their big man is high at the key, continuously setting screens for the ball handler."
-          : "They are looking to exploit screen-and-roll action on almost every sequence.";
-      case "Run & Gun":
-        return Math.random() < 0.5 
-          ? "They are pushing the ball immediately on the outlet, hunting for rapid transition looks."
-          : "Their players are flying up the court in transition, trying to score under 7 seconds.";
-      case "Motion Offense":
-        return Math.random() < 0.5 
-          ? "They are moving the ball fluidly from side to side, keeping all 5 players in continuous action."
-          : "Their offense is balanced, executing quick passes and off-ball movement.";
-      case "5-Out Spacing":
-        return Math.random() < 0.5 
-          ? "All five of their players have completely cleared out of the paint, standing beyond the three-point line."
-          : "They are utilizing total five-man perimeter spacing to drag our rim protectors out.";
-      case "Post Isolation":
-        return Math.random() < 0.5 
-          ? "They are feeding the low block immediately, letting their big man push physical back-down plays."
-          : "Their offense is slowing down to let their post players operate down low.";
-      case "Pace & Space":
-        return Math.random() < 0.5 
-          ? "They are playing at a modern, uptempo speed, hunting early-clock three-point looks."
-          : "They are continuously moving the ball to look for open high-volume outer shots.";
-      default:
-        return "";
-    }
-  } else {
-    // Defense Hints
-    switch (clean) {
-      case "Full-court press":
-      case "Full-Court Press":
-        return Math.random() < 0.5 
-          ? "Their defenders have suddenly locked up on us full-court, swarming our inbound passer."
-          : "The defense looks extremely aggressive, matching us stride-for-stride from our own backcourt.";
-      case "Half-court press":
-      case "Half-Court Press":
-        return Math.random() < 0.5 
-          ? "Their guards are waiting past the timeline, locking in traps along the sidelines."
-          : "They've locked down on defense past midcourt, trying to pressure our handlers into early turnovers.";
-      case "3-2 Zone":
-        return Math.random() < 0.5 
-          ? "Their defense is standing high and wide on the perimeter, stunting heavily at our wing shooters."
-          : "They've packed the outer arc in a high zone, making it extremely difficult to get clean wing passes.";
-      case "Protect the Lane":
-        return Math.random() < 0.5 
-          ? "Their defenders have completely sagged back, packing the restricted area and walling off the rim."
-          : "They are refusing to contest our mid-range, completely focused on stopping inside drives.";
-      case "1-3-1 Zone":
-        return Math.random() < 0.5 
-          ? "They've deployed a highly active, shifting zone, actively trying to intercept sideline passes."
-          : "Their defensive zone is shifting dynamically, trapping our ball handler near the sideline corners.";
-      case "Combination Defense":
-        return Math.random() < 0.5 
-          ? "They are running a hybrid scheme — one defender is matching our top star step-for-step while the others play zone."
-          : "They've locked down their best defender onto our primary scorer, ignoring the rest of our motion.";
-      case "Man-to-Man":
-        return Math.random() < 0.5 
-          ? "They are playing disciplined, traditional coverage, matching up strictly one-on-one."
-          : "Their defenders are tracking their individual assignments with traditional focus.";
-      case "2-3 Zone":
-        return Math.random() < 0.5 
-          ? "They are clogging the interior paint with three zone-defenders stationed low."
-          : "Their defense is packed tight inside a 2-3 alignment, inviting us to shoot from the outside.";
-      case "Drop Coverage":
-        return Math.random() < 0.5 
-          ? "Their big man sags low on every screen action, giving up the mid-range to protect the rim."
-          : "They are dropping their center deep inside the paint, daring us to take perimeter jump shots.";
-      case "Switch Defense":
-        return Math.random() < 0.5 
-          ? "They are switching screen assignments instantly, closing down all off-ball spacing."
-          : "Their defenders are fluidly switching every single screening action without hesitation.";
-      case "Blitz/Trap":
-        return Math.random() < 0.5 
-          ? "They are throwing sudden double teams at our ball handler, trying to force panic passes."
-          : "They are aggressively trapping key playmakers to force early turnovers.";
-      default:
-        return "";
-    }
-  }
-};
-
-// ─── AI TEAM DATA (unchanged) ───
-const aiPlayer = (id: string, name: string, pos: PlayerPosition, ovr: number, off: number, def: number, rarity: PlayerRarity, img: string, shooting: number, speed: number, strength: number, playmaking: number): Player => ({
-  id, name, position: pos, rarity, level: Math.round(ovr / 2), maxLevel: 50, exp: 0, ovr, offense: off, defense: def, imageUrl: img, shooting, speed, strength, playmaking
-});
-const withAssignedSkills = (roster: Player[]): Player[] =>
-  roster.map(p => ({
-    ...p,
-    baseSkills: p.baseSkills ?? assignBaseSkillsFromStats(p),
-    specialSkillSlots: p.specialSkillSlots ?? assignSpecialSkillsFromStats(p),
-  }));
-const buildAiTeam = (name: string, arena: string, color: string, roster: Player[]) => ({
-  name,
-  arena,
-  color,
-  roster: withAssignedSkills(roster),
-  off: roster.slice(0, 5).reduce((sum, p) => sum + p.offense, 0),
-  def: roster.slice(0, 5).reduce((sum, p) => sum + p.defense, 0),
-});
-
-export const mockAiTeams: Record<Difficulty, { name: string; arena: string; off: number; def: number; color: string; roster: Player[] }> = {
-  EASY: buildAiTeam('Portland Trail Blazers', 'Moda Center', 'text-green-400', [
-    { id: 'por_scoot_henderson', name: 'Scoot Henderson', position: 'PG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 78, offense: 76, defense: 72, shooting: 68, speed: 90, strength: 62, playmaking: 82, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/scoothenderson.webp' },
-    { id: 'por_anfernee_simons', name: 'Anfernee Simons', position: 'SG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 83, offense: 84, defense: 65, shooting: 86, speed: 82, strength: 52, playmaking: 78, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/anferneesimons.webp' },
-    { id: 'por_deni_avdija', name: 'Deni Avdija', position: 'SF', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 80, offense: 80, defense: 82, shooting: 74, speed: 76, strength: 74, playmaking: 72, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/deniavdija.webp' },
-    { id: 'por_jerami_grant', name: 'Jerami Grant', position: 'PF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 82, offense: 82, defense: 76, shooting: 82, speed: 75, strength: 72, playmaking: 68, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/jeramigrant.webp' },
-    { id: 'por_deandre_ayton', name: 'Deandre Ayton', position: 'C', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 80, offense: 80, defense: 78, shooting: 62, speed: 68, strength: 82, playmaking: 55, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/deandreayton.webp' },
-    { id: 'por_dalano_banton', name: 'Dalano Banton', position: 'PG', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 75, offense: 74, defense: 70, shooting: 70, speed: 84, strength: 58, playmaking: 72, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/dalanobanton.webp' },
-    { id: 'por_shaedon_sharpe', name: 'Shaedon Sharpe', position: 'SG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 79, offense: 80, defense: 72, shooting: 76, speed: 85, strength: 60, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/shaedonsharpe.webp' },
-    { id: 'por_toumani_camara', name: 'Toumani Camara', position: 'SF', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 76, offense: 70, defense: 80, shooting: 70, speed: 74, strength: 72, playmaking: 62, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/toumanicamara.webp' },
-    { id: 'por_jabari_walker', name: 'Jabari Walker', position: 'PF', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 76, offense: 72, defense: 74, shooting: 68, speed: 70, strength: 76, playmaking: 60, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/jabariwalker.webp' },
-    { id: 'por_donovan_clingan', name: 'Donovan Clingan', position: 'C', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 76, offense: 70, defense: 78, shooting: 50, speed: 58, strength: 84, playmaking: 52, imageUrl: 'https://www.dreamteamph.com/players/newplayers/blazers/donovanclingan.webp' }
-  ]),
-  NORMAL: buildAiTeam('New York Knicks', 'Madison Square Garden', 'text-dt-cyan', [
-    { id: 'nyk_jalen_brunson', name: 'Jalen Brunson', position: 'PG', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 93, offense: 94, defense: 78, shooting: 90, speed: 85, strength: 64, playmaking: 92, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/jalenbrunson.webp' },
-    { id: 'nyk_mikal_bridges', name: 'Mikal Bridges', position: 'SG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 84, offense: 80, defense: 84, shooting: 82, speed: 78, strength: 65, playmaking: 72, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/mikalbridges.webp' },
-    { id: 'nyk_og_anunoby', name: 'OG Anunoby', position: 'SF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 84, offense: 78, defense: 88, shooting: 80, speed: 76, strength: 75, playmaking: 65, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/oganunoby.webp' },
-    { id: 'nyk_karl_anthony_towns', name: 'Karl-Anthony Towns', position: 'PF', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 89, offense: 90, defense: 76, shooting: 88, speed: 72, strength: 80, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/karlanthonytowns.webp' },
-    { id: 'nyk_mitchell_robinson', name: 'Mitchell Robinson', position: 'C', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 79, offense: 68, defense: 84, shooting: 40, speed: 64, strength: 86, playmaking: 48, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/mitchellrobinson.webp' },
-    { id: 'nyk_cameron_payne', name: 'Cameron Payne', position: 'PG', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 75, offense: 75, defense: 68, shooting: 78, speed: 82, strength: 52, playmaking: 76, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/cameronpayne.webp' },
-    { id: 'nyk_miles_mcbride', name: 'Miles McBride', position: 'SG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 77, offense: 76, defense: 76, shooting: 80, speed: 82, strength: 55, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/milesmcbride.webp' },
-    { id: 'nyk_josh_hart', name: 'Josh Hart', position: 'SF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 82, offense: 78, defense: 82, shooting: 75, speed: 80, strength: 72, playmaking: 78, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/joshhart.webp' },
-    { id: 'nyk_precious_achiuwa', name: 'Precious Achiuwa', position: 'PF', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 77, offense: 74, defense: 76, shooting: 65, speed: 74, strength: 78, playmaking: 58, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/preciousachiuwa.webp' },
-    { id: 'nyk_jericho_sims', name: 'Jericho Sims', position: 'C', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 73, offense: 64, defense: 74, shooting: 35, speed: 68, strength: 78, playmaking: 45, imageUrl: 'https://www.dreamteamph.com/players/newplayers/knicks/jerichosims.webp' }
-  ]),
-  HARD: buildAiTeam('Golden State Warriors', 'Chase Center', 'text-dt-gold', [
-    { id: 'gsw_stephen_curry', name: 'Stephen Curry', position: 'PG', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 95, offense: 97, defense: 78, shooting: 99, speed: 85, strength: 60, playmaking: 95, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/stephencurry.webp' },
-    { id: 'gsw_brandin_podziemski', name: 'Brandin Podziemski', position: 'SG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 78, offense: 76, defense: 74, shooting: 78, speed: 78, strength: 62, playmaking: 76, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/brandinpodziemski.webp' },
-    { id: 'gsw_andrew_wiggins', name: 'Andrew Wiggins', position: 'SF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 80, offense: 78, defense: 78, shooting: 78, speed: 80, strength: 70, playmaking: 68, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/andrewwiggins.webp' },
-    { id: 'gsw_jonathan_kuminga', name: 'Jonathan Kuminga', position: 'PF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 80, offense: 80, defense: 74, shooting: 72, speed: 84, strength: 76, playmaking: 68, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/jonathankuminga.webp' },
-    { id: 'gsw_trayce_jackson_davis', name: 'Trayce Jackson-Davis', position: 'C', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 78, offense: 68, defense: 78, shooting: 40, speed: 70, strength: 78, playmaking: 62, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/traycejacksondavis.webp' },
-    { id: 'gsw_deanthony_melton', name: 'De\'Anthony Melton', position: 'PG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 78, offense: 75, defense: 78, shooting: 78, speed: 80, strength: 60, playmaking: 72, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/deanthonymelton.webp' },
-    { id: 'gsw_buddy_hield', name: 'Buddy Hield', position: 'SG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 80, offense: 82, defense: 68, shooting: 88, speed: 75, strength: 58, playmaking: 68, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/buddyhield.webp' },
-    { id: 'gsw_gary_payton_ii', name: 'Gary Payton II', position: 'SF', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 77, offense: 72, defense: 84, shooting: 70, speed: 82, strength: 65, playmaking: 64, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/garypaytonii.webp' },
-    { id: 'gsw_draymond_green', name: 'Draymond Green', position: 'PF', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 81, offense: 74, defense: 86, shooting: 72, speed: 70, strength: 78, playmaking: 84, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/draymondgreen.webp' },
-    { id: 'gsw_kevon_looney', name: 'Kevon Looney', position: 'C', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 76, offense: 68, defense: 76, shooting: 40, speed: 58, strength: 80, playmaking: 60, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/kevonlooney.webp' }
-  ]),
-  EXPERT: buildAiTeam('Boston Celtics', 'TD Garden', 'text-green-500', [
-    { id: 'bos_jrue_holiday', name: 'Jrue Holiday', position: 'PG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 88, offense: 84, defense: 93, shooting: 82, speed: 80, strength: 75, playmaking: 85, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/jrueholiday.webp' },
-    { id: 'bos_derrick_white', name: 'Derrick White', position: 'SG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 88, offense: 85, defense: 89, shooting: 85, speed: 82, strength: 68, playmaking: 82, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/derrickwhite.webp' },
-    { id: 'bos_jaylen_brown', name: 'Jaylen Brown', position: 'SF', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 94, offense: 94, defense: 86, shooting: 88, speed: 86, strength: 82, playmaking: 75, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/jaylenbrown.webp' },
-    { id: 'bos_jayson_tatum', name: 'Jayson Tatum', position: 'PF', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 95, defense: 88, shooting: 92, speed: 82, strength: 80, playmaking: 80, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/jaysontatum.webp' },
-    { id: 'bos_kristaps_porzingis', name: 'Kristaps Porzingis', position: 'C', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 88, offense: 88, defense: 84, shooting: 85, speed: 65, strength: 80, playmaking: 60, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/kristapsporzingis.webp' },
-    { id: 'bos_al_horford', name: 'Al Horford', position: 'PF', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 82, offense: 78, defense: 84, shooting: 80, speed: 60, strength: 78, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/alhorford.webp' },
-    { id: 'bos_payton_pritchard', name: 'Payton Pritchard', position: 'PG', rarity: 'Rare', level: 30, maxLevel: 30, exp: 0, ovr: 78, offense: 78, defense: 70, shooting: 82, speed: 84, strength: 52, playmaking: 76, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/paytonpritchard.webp' },
-    { id: 'bos_sam_hauser', name: 'Sam Hauser', position: 'SF', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 76, offense: 75, defense: 72, shooting: 84, speed: 70, strength: 68, playmaking: 55, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/samhauser.webp' },
-    { id: 'bos_luke_kornet', name: 'Luke Kornet', position: 'C', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 74, offense: 68, defense: 74, shooting: 40, speed: 55, strength: 78, playmaking: 50, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/lukekornet.webp' },
-    { id: 'bos_xavier_tillman', name: 'Xavier Tillman', position: 'PF', rarity: 'Common', level: 30, maxLevel: 30, exp: 0, ovr: 75, offense: 70, defense: 78, shooting: 60, speed: 68, strength: 76, playmaking: 58, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/xaviertillman.webp' }
-  ]),
-  HELL_EXPERT: buildAiTeam('USA Dream Team', 'Olympic Arena', 'text-dt-red', [
-    { id: 'usa_stephen_curry', name: 'Stephen Curry', position: 'PG', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 99, offense: 99, defense: 88, shooting: 99, speed: 88, strength: 65, playmaking: 96, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/stephencurry.webp' },
-    { id: 'usa_devin_booker', name: 'Devin Booker', position: 'SG', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 94, offense: 95, defense: 80, shooting: 92, speed: 85, strength: 70, playmaking: 84, imageUrl: 'https://www.dreamteamph.com/players/newplayers/suns/devinbooker.webp' },
-    { id: 'usa_lebron_james', name: 'LeBron James', position: 'SF', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 99, offense: 99, defense: 98, shooting: 94, speed: 92, strength: 95, playmaking: 99, imageUrl: 'https://www.dreamteamph.com/players/newplayers/lakers/lebronjames.webp' },
-    { id: 'usa_kevin_durant', name: 'Kevin Durant', position: 'PF', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 99, offense: 99, defense: 92, shooting: 98, speed: 85, strength: 80, playmaking: 88, imageUrl: 'https://www.dreamteamph.com/players/newplayers/suns/kevindurant.webp' },
-    { id: 'usa_anthony_davis', name: 'Anthony Davis', position: 'C', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 98, offense: 96, defense: 99, shooting: 78, speed: 80, strength: 92, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/lakers/anthonydavis.webp' },
-    { id: 'usa_joel_embiid', name: 'Joel Embiid', position: 'C', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 96, defense: 94, shooting: 82, speed: 70, strength: 95, playmaking: 68, imageUrl: 'https://www.dreamteamph.com/players/newplayers/sixers/joelembiid.webp' },
-    { id: 'usa_jayson_tatum', name: 'Jayson Tatum', position: 'SF', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 95, defense: 88, shooting: 92, speed: 82, strength: 80, playmaking: 80, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/jaysontatum.webp' },
-    { id: 'usa_anthony_edwards', name: 'Anthony Edwards', position: 'SG', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 94, offense: 95, defense: 88, shooting: 88, speed: 92, strength: 82, playmaking: 78, imageUrl: 'https://www.dreamteamph.com/players/newplayers/wolves/anthonyedwards.webp' },
-    { id: 'usa_jrue_holiday', name: 'Jrue Holiday', position: 'PG', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 88, offense: 84, defense: 93, shooting: 82, speed: 80, strength: 75, playmaking: 85, imageUrl: 'https://www.dreamteamph.com/players/newplayers/celtics/jrueholiday.webp' },
-    { id: 'usa_bam_adebayo', name: 'Bam Adebayo', position: 'C', rarity: 'Epic', level: 30, maxLevel: 30, exp: 0, ovr: 88, offense: 84, defense: 94, shooting: 60, speed: 76, strength: 88, playmaking: 74, imageUrl: 'https://www.dreamteamph.com/players/newplayers/heat/bamadebayo.webp' }
-  ]),
-  DREAM_TEAM: buildAiTeam('Dream Team', 'Dream Center', 'text-dt-cyan', [
-    { id: 'dt_stephen_curry', name: 'Stephen Curry', position: 'PG', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 97, defense: 78, shooting: 99, speed: 85, strength: 60, playmaking: 95, imageUrl: 'https://www.dreamteamph.com/players/newplayers/warriors/stephencurry.webp' },
-    { id: 'dt_shai_gilgeous', name: 'Shai Gilgeous-Alexander', position: 'SG', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 98, offense: 98, defense: 92, shooting: 90, speed: 88, strength: 68, playmaking: 94, imageUrl: 'https://www.dreamteamph.com/players/newplayers/thunder/shaigilgeousalexander.webp' },
-    { id: 'dt_lebron_james', name: 'LeBron James', position: 'SF', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 91, offense: 92, defense: 88, shooting: 85, speed: 84, strength: 90, playmaking: 90, imageUrl: 'https://www.dreamteamph.com/players/newplayers/lakers/lebronjames.webp' },
-    { id: 'dt_giannis_anteto', name: 'Giannis Antetokounmpo', position: 'PF', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 98, offense: 98, defense: 95, shooting: 70, speed: 88, strength: 92, playmaking: 82, imageUrl: 'https://www.dreamteamph.com/players/newplayers/bucks/giannisantetokounmpo.webp' },
-    { id: 'dt_victor_wemby', name: 'Victor Wembanyama', position: 'C', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 94, defense: 99, shooting: 80, speed: 80, strength: 82, playmaking: 75, imageUrl: 'https://www.dreamteamph.com/players/newplayers/spurs/victorwembanyama.webp' },
-    { id: 'dt_anthony_edwards', name: 'Anthony Edwards', position: 'SG', rarity: 'Legendary', level: 30, maxLevel: 30, exp: 0, ovr: 94, offense: 95, defense: 88, shooting: 88, speed: 92, strength: 82, playmaking: 78, imageUrl: 'https://www.dreamteamph.com/players/newplayers/wolves/anthonyedwards.webp' },
-    { id: 'dt_anthony_davis', name: 'Anthony Davis', position: 'C', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 98, offense: 96, defense: 99, shooting: 78, speed: 80, strength: 92, playmaking: 70, imageUrl: 'https://www.dreamteamph.com/players/newplayers/lakers/anthonydavis.webp' },
-    { id: 'dt_kevin_durant', name: 'Kevin Durant', position: 'PF', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 99, offense: 99, defense: 92, shooting: 98, speed: 85, strength: 80, playmaking: 88, imageUrl: 'https://www.dreamteamph.com/players/newplayers/suns/kevindurant.webp' },
-    { id: 'dt_luka_doncic', name: 'Luka Doncic', position: 'PG', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 96, offense: 97, defense: 78, shooting: 90, speed: 78, strength: 80, playmaking: 96, imageUrl: 'https://www.dreamteamph.com/players/newplayers/mavs/lukadoncic.webp' },
-    { id: 'dt_nikola_jokic', name: 'Nikola Jokic', position: 'C', rarity: 'Mythic', level: 30, maxLevel: 30, exp: 0, ovr: 97, offense: 97, defense: 82, shooting: 84, speed: 68, strength: 92, playmaking: 98, imageUrl: 'https://www.dreamteamph.com/players/newplayers/nuggets/nikolajokic.webp' }
-  ]),
-};
 
 // ─── MAIN TICK ───
 export function simulateTick(
