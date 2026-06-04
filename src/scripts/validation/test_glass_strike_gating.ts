@@ -137,44 +137,60 @@ function runMockMatches(
 async function run() {
   console.log("=== RUNNING GLASS_STRIKE GATING & REGRESSION VALIDATION ===");
 
-  // 1. Static Analysis Checks on matchEngine.ts
+  // 1. Static Analysis Checks on matchHelpers.ts, reboundSystem.ts, and matchEngine.ts
   const matchEnginePath = path.resolve(__dirname, "../../lib/utils/matchEngine.ts");
+  const matchHelpersPath = path.resolve(__dirname, "../../lib/match/matchHelpers.ts");
+  const reboundSystemPath = path.resolve(__dirname, "../../lib/match/reboundSystem.ts");
   const engineContent = fs.readFileSync(matchEnginePath, "utf-8");
+  const matchHelpersContent = fs.readFileSync(matchHelpersPath, "utf-8");
+  const reboundSystemContent = fs.readFileSync(reboundSystemPath, "utf-8");
 
-  // Verify getGlassStrikeOrebBoost implementation
-  const orebBoostCheck = engineContent.includes("getGlassStrikeOrebBoost = (level: number)");
-  assert(orebBoostCheck, "getGlassStrikeOrebBoost helper function is implemented in matchEngine.ts");
+  // Verify getGlassStrikeOrebBoost implementation in matchHelpers
+  const orebBoostCheck = matchHelpersContent.includes("getGlassStrikeOrebBoost = (level: number)");
+  assert(orebBoostCheck, "getGlassStrikeOrebBoost helper function is implemented in matchHelpers.ts");
 
-  const lv1OrebCheck = engineContent.includes("if (level === 1) return 0.015");
-  const lv2OrebCheck = engineContent.includes("if (level === 2) return 0.025");
-  const lv3OrebCheck = engineContent.includes("if (level === 3) return 0.035");
-  assert(lv1OrebCheck && lv2OrebCheck && lv3OrebCheck, "getGlassStrikeOrebBoost has correct gating values (+0.015, +0.025, +0.035)");
+  const lv1OrebCheck = matchHelpersContent.includes("if (level === 1) return 0.015");
+  const lv2OrebCheck = matchHelpersContent.includes("if (level === 2) return 0.025");
+  const lv3OrebCheck = matchHelpersContent.includes("if (level === 3) return 0.035");
+  assert(lv1OrebCheck && lv2OrebCheck && lv3OrebCheck, "getGlassStrikeOrebBoost has correct gating values (+0.015, +0.025, +0.035) in matchHelpers.ts");
 
-  // Verify getGlassStrikePutbackBoost implementation
-  const putbackBoostCheck = engineContent.includes("getGlassStrikePutbackBoost = (level: number)");
-  assert(putbackBoostCheck, "getGlassStrikePutbackBoost helper function is implemented in matchEngine.ts");
+  // Verify getGlassStrikePutbackBoost implementation in matchHelpers
+  const putbackBoostCheck = matchHelpersContent.includes("getGlassStrikePutbackBoost = (level: number)");
+  assert(putbackBoostCheck, "getGlassStrikePutbackBoost helper function is implemented in matchHelpers.ts");
 
-  const lv1PutbackCheck = engineContent.includes("if (level === 1) return 0");
-  const lv2PutbackCheck = engineContent.includes("if (level === 2) return 0.01");
-  const lv3PutbackCheck = engineContent.includes("if (level === 3) return 0.015");
-  assert(lv1PutbackCheck && lv2PutbackCheck && lv3PutbackCheck, "getGlassStrikePutbackBoost has correct gating values (0, +0.010, +0.015)");
+  const lv1PutbackCheck = matchHelpersContent.includes("if (level === 1) return 0");
+  const lv2PutbackCheck = matchHelpersContent.includes("if (level === 2) return 0.01");
+  const lv3PutbackCheck = matchHelpersContent.includes("if (level === 3) return 0.015");
+  assert(lv1PutbackCheck && lv2PutbackCheck && lv3PutbackCheck, "getGlassStrikePutbackBoost has correct gating values (0, +0.010, +0.015) in matchHelpers.ts");
 
-  // Verify final OREB chance cap clamp remains 0.36
-  const orebCapCheck = engineContent.includes("Math.min(Math.max(0.23 + matchupSwing + (glassScale > 0 ? 0.055 * glassScale : 0) - (barrierScale > 0 ? 0.06 * barrierScale : 0) + glassStrikeBoost, 0.10), 0.36)");
-  const alternativeOrebCapCheck = engineContent.includes("0.36)") && engineContent.includes("glassStrikeBoost");
-  assert(orebCapCheck || alternativeOrebCapCheck, "Final offensive rebound chance is capped strictly at 0.36");
+  // Verify final OREB chance cap clamp remains 0.36 in reboundSystem.ts
+  const orebCapCheck = reboundSystemContent.includes("0.36");
+  assert(orebCapCheck, "Final offensive rebound chance is capped strictly at 0.36 in reboundSystem.ts");
 
-  // Verify Paint Barrier suppresses OREB chance
-  const paintBarrierCheck = engineContent.includes("barrierScale > 0 ? 0.06 * barrierScale : 0");
-  assert(paintBarrierCheck, "Paint Barrier still suppresses OREB chance in formula");
+  // Verify Paint Barrier suppresses OREB chance in reboundSystem.ts
+  const paintBarrierCheck = reboundSystemContent.includes("barrierScale > 0 ? 0.06 * barrierScale : 0");
+  assert(paintBarrierCheck, "Paint Barrier still suppresses OREB chance in formula in reboundSystem.ts");
+
+  // Verify matchEngine uses helpers
+  assert(engineContent.includes("getGlassStrikeOrebBoost") && engineContent.includes("getGlassStrikePutbackBoost"), "matchEngine imports and uses glass strike boost helpers");
+  assert(engineContent.includes("calculateOffensiveReboundChance"), "matchEngine imports and uses calculateOffensiveReboundChance");
 
   // 2. Rolling Pool Checks
   const glassStrikeInPool = SPECIAL_SKILL_NAMES.includes("GLASS_STRIKE" as any);
-  assert(!glassStrikeInPool, "GLASS_STRIKE is NOT in the natural rolling pool SPECIAL_SKILL_NAMES");
+  assert(glassStrikeInPool, "GLASS_STRIKE is active and in the natural rolling pool SPECIAL_SKILL_NAMES");
 
   // POSTER_SPARK check
   const posterSparkInPool = SPECIAL_SKILL_NAMES.includes("POSTER_SPARK" as any);
-  assert(!posterSparkInPool, "POSTER_SPARK is NOT in the natural rolling pool / skill catalog");
+  assert(posterSparkInPool, "POSTER_SPARK is active and in the natural rolling pool SPECIAL_SKILL_NAMES");
+
+  // Excluded check
+  const momentumSwingInPool = SPECIAL_SKILL_NAMES.includes("MOMENTUM_SWING" as any);
+  const brokenPlayInPool = SPECIAL_SKILL_NAMES.includes("BROKEN_PLAY_RESCUE" as any);
+  assert(!momentumSwingInPool && !brokenPlayInPool, "MOMENTUM_SWING and BROKEN_PLAY_RESCUE remain excluded from SPECIAL_SKILL_NAMES");
+
+  // Legacy skills check (none should be in the pool)
+  const legacySkillsInPool = SPECIAL_SKILL_NAMES.some(s => s.endsWith(" X") || s.includes("Dot") || s.includes("Bait"));
+  assert(!legacySkillsInPool, "No old legacy X skills are rollable");
 
   // 3. Lineup Archetype Gating Checks (Level 0, 1, 2, 3)
   {

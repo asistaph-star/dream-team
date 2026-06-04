@@ -163,7 +163,10 @@ async function run() {
   assert(engineContent.includes("teamAvg >= 65 && lowestStam >= 45"), "BENCH_CAPTAIN trigger threshold teamAvg < 65 OR lowestStam < 45 is preserved");
 
   // Check stamina recovery cap is strictly Math.min(8, Math.round(6 * scale))
-  assert(engineContent.includes("Math.min(8, Math.round(6 * scale))"), "Stamina recovery cap remains strictly capped at Math.min(8, Math.round(6 * scale))");
+  const archetypeEffectsPath = path.resolve(__dirname, "../../lib/match/archetypeEffects.ts");
+  const effectsContent = fs.readFileSync(archetypeEffectsPath, "utf-8");
+  assert(effectsContent.includes("Math.min(8, Math.round(6 * scale))"), "Stamina recovery cap remains strictly capped at Math.min(8, Math.round(6 * scale)) in archetypeEffects.ts");
+  assert(engineContent.includes("calculateBenchCaptainRecovery"), "matchEngine imports and calls calculateBenchCaptainRecovery");
 
   // Check once-per-quarter limit remains active
   assert(engineContent.includes("Bench Captain Q${newQuarter}"), "BENCH_CAPTAIN uses once-per-quarter cooldown key per quarter");

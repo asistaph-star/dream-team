@@ -1,6 +1,8 @@
 import { Player } from "../../lib/types/player";
 import { simulateTick } from "../../lib/utils/matchEngine";
 import { MatchState } from "../../lib/utils/matchTypes";
+import { LEGACY_TO_MECHANIC_MAP } from "../../lib/skills/skillMechanics";
+import { FIVE_MAN_SQUEEZE_BASE, FIVE_MAN_SQUEEZE_BOOSTED } from "../../lib/match/staminaSkillEffects";
 
 // Helper to create a mock player
 function createMockPlayer(
@@ -194,14 +196,24 @@ console.log("=== RUNNING GATED DEFENSIVE ANCHOR TESTS ===");
   const primaryTargetId = "user1";
   assert(nextState.playerStamina[primaryTargetId] < 100, `Inactive mode: Primary playmaker ${userLineup[0].name} stamina should be drained`);
   
-  // Others should not be drained by defensive anchor
+  // Under Math.random() = 0.0, both Defensive Anchor and Five-Man Squeeze trigger.
+  // Five-Man Squeeze drains ALL players by 25.
+  // Defensive Anchor single-target drains only the primary target (user1).
+  // So the primary target (user1) should lose more stamina than others,
+  // and the others (user2-5) should all have identical stamina (only decay + Five-Man Squeeze).
   const others = userLineup.slice(1);
-  const othersUndrained = others.every(p => nextState.playerStamina[p.id] >= 99.7); // might lose small time decay (0.24), but not skill drain
-  assert(othersUndrained, "Inactive mode: Non-target players should not experience defensive anchor drain");
+  const primaryTargetStamina = nextState.playerStamina[primaryTargetId];
+  const targetStaminaDiff = nextState.playerStamina[others[0].id] - primaryTargetStamina;
+  assert(targetStaminaDiff > 0.5, `Inactive mode: Primary playmaker should experience single-target pressure drain (difference observed: ${targetStaminaDiff})`);
+  
+  const othersIdentical = others.every(p => Math.abs(nextState.playerStamina[p.id] - nextState.playerStamina[others[0].id]) < 0.01);
+  assert(othersIdentical, "Inactive mode: Non-target players should not experience defensive anchor drain (they all have identical stamina)");
 
   // Cooldown checked
   assert(nextState.skillUsedThisGame.ai.includes("AI Defensive Anchor Q1"), "Inactive mode: Cooldown should be registered on successful trigger");
 }
+
+let user1StamNoLeader = 0;
 
 // 2. Level 1 (Bronze) - Team-Wide Drain
 {
@@ -229,9 +241,50 @@ console.log("=== RUNNING GATED DEFENSIVE ANCHOR TESTS ===");
   state.possessionTeam = "user";
 
   const nextState = simulateTick(state, 80, 80, mockAiTeamObj, userLineup, userLineup);
+  user1StamNoLeader = nextState.playerStamina["user1"];
+
+  // 1. Verify both Defensive Anchor mechanics can trigger under deterministic success
+  const hasAnchorTriggered = nextState.events.some(e => e.text.includes("Defensive Anchor exerts team-wide pressure"));
+  const hasSqueezeTriggered = nextState.events.some(e => e.text.includes("Five-Man Squeeze X drains"));
+  assert(hasAnchorTriggered && hasSqueezeTriggered, "Both Defensive Anchor and Five-Man Squeeze trigger under deterministic success");
+
+  // 2. Verify Five-Man Squeeze uses the rebalanced 25/40 values (baseline 25)
+  const squeezeEventBase = nextState.events.find(e => e.text.includes("Five-Man Squeeze X drains"));
+  assert(squeezeEventBase !== undefined && squeezeEventBase.text.includes("25 stamina"), "Five-Man Squeeze uses rebalanced base value (25)");
 
   const allDrained = userLineup.every(p => nextState.playerStamina[p.id] < 90);
   assert(allDrained, "Level 1: Team-wide drain should drain stamina from all 5 opponents");
+
+  // 3. Verify Five-Man Squeeze uses boosted value (40) when 3+ players are marked
+  {
+    const stateBoosted = buildInitialState(userLineup, aiLineup);
+    stateBoosted.possessionTeam = "user";
+    stateBoosted.skillMarks = {
+      "user1": [{ mark: "Tilted", possessionsLeft: 3, sourceSkill: "Test" }],
+      "user2": [{ mark: "Tilted", possessionsLeft: 3, sourceSkill: "Test" }],
+      "user3": [{ mark: "Tilted", possessionsLeft: 3, sourceSkill: "Test" }]
+    };
+    const nextStateBoosted = simulateTick(stateBoosted, 80, 80, mockAiTeamObj, userLineup, userLineup);
+    const squeezeEventBoosted = nextStateBoosted.events.find(e => e.text.includes("Five-Man Squeeze X drains"));
+    assert(squeezeEventBoosted !== undefined && squeezeEventBoosted.text.includes("40 stamina"), "Five-Man Squeeze uses boosted value (40) when 3+ players are marked");
+  }
+
+  // 4. Verify anti-snowball scaling applies correctly
+  {
+    // If a player starts at 40 stamina, they are in the [30, 50) bracket, scaling by 0.60.
+    // 25 * 0.60 = 15.
+    const stateLow = buildInitialState(userLineup, aiLineup);
+    stateLow.possessionTeam = "user";
+    stateLow.playerStamina["user2"] = 40;
+
+    const nextStateLow = simulateTick(stateLow, 80, 80, mockAiTeamObj, userLineup, userLineup);
+    const finalStaminaUser2 = nextStateLow.playerStamina["user2"];
+    assert(finalStaminaUser2 > 15, `Anti-snowball scaling correctly prevents user2's stamina from plummeting (final stamina: ${finalStaminaUser2} > 15)`);
+  }
+
+  // 5. Verify stamina does not drop because of old 40/60 values
+  assert(FIVE_MAN_SQUEEZE_BASE === 25, "FIVE_MAN_SQUEEZE_BASE is correctly rebalanced to 25");
+  assert(FIVE_MAN_SQUEEZE_BOOSTED === 40, "FIVE_MAN_SQUEEZE_BOOSTED is correctly rebalanced to 40");
 }
 
 // 3. Counterplay: Team Leadership Resistance
@@ -261,9 +314,51 @@ console.log("=== RUNNING GATED DEFENSIVE ANCHOR TESTS ===");
   const nextState = simulateTick(state, 80, 80, mockAiTeamObj, userLineup, userLineup);
   
   // Leadership reduces the drain
-  const user1StamNoLeader = 82; // approximate expected without counter, lets check if counter leaves player with more stamina
-  console.log(`User PG Stamina with leader: ${nextState.playerStamina["user1"]}`);
-  assert(nextState.playerStamina["user1"] > 80, "Team Leadership counterplay reduces the team-wide stamina drain amount");
+  console.log(`User PG Stamina with leader: ${nextState.playerStamina["user1"]} vs without leader: ${user1StamNoLeader}`);
+  assert(nextState.playerStamina["user1"] > user1StamNoLeader, "Team Leadership counterplay reduces the team-wide stamina drain amount");
+}
+
+// 4. User/AI Symmetry Check
+{
+  const userLineup = [
+    createMockPlayer("user1", "User Defensive Anchor", 90, ["Paint Magnet", "Connector Hub", "Tempo Surgeon"], ["DEFENSIVE_ANCHOR"], 1, { defense: 85, stamina: 100, strength: 80, speed: 80 }),
+    createMockPlayer("user2", "User 2", 90, ["Power Driver", "Connector Hub", "Tempo Surgeon"]),
+    createMockPlayer("user3", "User 3", 90, ["Screen Breaker", "Connector Hub", "Tempo Surgeon"]),
+    createMockPlayer("user4", "User 4", 90, ["Rim Warden", "Connector Hub", "Tempo Surgeon"]),
+    createMockPlayer("user5", "User 5", 90, ["Rim Warden", "Connector Hub", "Tempo Surgeon"]),
+  ];
+
+  const aiLineup = [
+    createMockPlayer("ai1", "AI PG", 80, ["Rim Warden", "Connector Hub", "Tempo Surgeon"], [], 0, { stamina: 100 }),
+    createMockPlayer("ai2", "AI SG", 80, ["Rim Warden", "Connector Hub", "Tempo Surgeon"], [], 0, { stamina: 100 }),
+    createMockPlayer("ai3", "AI SF", 80, ["Rim Warden", "Connector Hub", "Tempo Surgeon"], [], 0, { stamina: 100 }),
+    createMockPlayer("ai4", "AI PF", 80, ["Rim Warden", "Connector Hub", "Tempo Surgeon"], [], 0, { stamina: 100 }),
+    createMockPlayer("ai5", "AI C", 80, ["Rim Warden", "Connector Hub", "Tempo Surgeon"], [], 0, { stamina: 100 }),
+  ];
+
+  mockAiTeamObj.roster = aiLineup;
+
+  const state = buildInitialState(userLineup, aiLineup);
+  state.possessionTeam = "ai"; // AI attacking, User defending
+
+  const nextState = simulateTick(state, 80, 80, mockAiTeamObj, userLineup, userLineup);
+
+  const hasAnchorTriggered = nextState.events.some(e => e.text.includes("Defensive Anchor exerts team-wide pressure"));
+  const hasSqueezeTriggered = nextState.events.some(e => e.text.includes("Five-Man Squeeze X drains"));
+  assert(hasAnchorTriggered && hasSqueezeTriggered, "Symmetry: Both Defensive Anchor and Five-Man Squeeze trigger when User is defending");
+
+  const allDrained = aiLineup.every(p => nextState.playerStamina[p.id] < 90);
+  assert(allDrained, "Symmetry: Team-wide drain drains all AI opponents when User is defending");
+}
+
+// 5. Skill Family Mapping Check
+{
+  const mechanics = LEGACY_TO_MECHANIC_MAP["DEFENSIVE_ANCHOR"];
+  assert(mechanics !== undefined, "DEFENSIVE_ANCHOR family is defined in mapping");
+  assert(mechanics.includes("DEFENSIVE_ANCHOR_TEAM_PRESSURE"), "DEFENSIVE_ANCHOR includes DEFENSIVE_ANCHOR_TEAM_PRESSURE");
+  assert(mechanics.includes("DEFENSIVE_ANCHOR_CORNER_TRAP"), "DEFENSIVE_ANCHOR includes DEFENSIVE_ANCHOR_CORNER_TRAP");
+  assert(mechanics.includes("DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE"), "DEFENSIVE_ANCHOR includes DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE");
+  assert(mechanics.length === 3, "DEFENSIVE_ANCHOR maps precisely to 3 mechanics");
 }
 
 // Restore Math.random
@@ -276,3 +371,4 @@ if (testsFailed) {
   console.log("🎉 ALL DEFENSIVE ANCHOR VALIDATION TESTS PASSED!");
   process.exit(0);
 }
+
