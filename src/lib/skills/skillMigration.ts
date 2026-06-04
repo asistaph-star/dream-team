@@ -1,60 +1,6 @@
 import { Player } from "../types/player";
 import { SpecialSkillFamilyId, isSpecialSkillFamilyId } from "./skillFamilies";
-
-const LEGACY_SKILL_NAMES = [
-  "Red Dot X",
-  "Four-Point Bait X",
-  "Lung Burner X",
-  "Chain Pass X",
-  "Debt Collector X",
-  "Five-Man Squeeze X",
-  "Cold Timeout X",
-  "Dead Air X",
-  "Clean Contest X",
-  "Contact Tax X",
-  "Cage Step X",
-  "Corner Trap X",
-  "Pressure Coach X",
-  "Flop X",
-  "Composure X"
-];
-
-export const isLegacySpecialSkillName = (rawSkill: string): boolean => {
-  return LEGACY_SKILL_NAMES.includes(rawSkill);
-};
-
-export const normalizeSpecialSkillId = (rawSkill: string): string => {
-  // Phase 2A1: We do NOT migrate to new IDs yet because matchEngine still requires the old strings.
-  // We simply pass through the raw skill string to preserve compatibility.
-  return rawSkill;
-};
-
-export interface MigrationResult {
-  legacyName: string;
-  futureSkillId: string;
-  displayName: string;
-}
-
-export const migrateLegacySpecialSkill = (rawSkill: string): MigrationResult => {
-  // Temporary pass-through until Phase 2A3 (Engine Mechanics Replacement)
-  return {
-    legacyName: rawSkill,
-    futureSkillId: rawSkill, // Still using legacy string as ID for engine compatibility
-    displayName: rawSkill
-  };
-};
-
-export const migratePlayerSpecialSkillSlots = (player: Player): (string | null)[] => {
-  if (!player.specialSkillSlots) return [null, null];
-  
-  return player.specialSkillSlots.map(slot => {
-    if (!slot) return null;
-    // For Phase 2A1, we just return the normalized ID which is still the legacy string
-    return normalizeSpecialSkillId(slot);
-  });
-};
-
-// Phase 2A4: Family-Aware Skill Resolver Helpers
+import { getSkillDisplayName } from "./skillDisplay";
 
 export const LEGACY_TO_FAMILY_MAP: Record<string, SpecialSkillFamilyId> = {
   "Red Dot X": "DEEP_STRIKE",
@@ -73,6 +19,72 @@ export const LEGACY_TO_FAMILY_MAP: Record<string, SpecialSkillFamilyId> = {
   "Five-Man Squeeze X": "DEFENSIVE_ANCHOR",
   "Pressure Coach X": "BENCH_CAPTAIN",
 };
+
+const LEGACY_SKILL_NAMES = Object.keys(LEGACY_TO_FAMILY_MAP);
+
+export const isLegacySpecialSkillName = (rawSkill: string): boolean => {
+  return LEGACY_SKILL_NAMES.includes(rawSkill);
+};
+
+export const normalizeSpecialSkillId = (rawSkill: string): string => {
+  if (LEGACY_TO_FAMILY_MAP[rawSkill]) {
+    return LEGACY_TO_FAMILY_MAP[rawSkill];
+  }
+  return rawSkill;
+};
+
+export interface MigrationResult {
+  legacyName: string;
+  futureSkillId: string;
+  displayName: string;
+}
+
+export const migrateLegacySpecialSkill = (rawSkill: string): MigrationResult => {
+  const familyId = normalizeSpecialSkillId(rawSkill);
+  return {
+    legacyName: rawSkill,
+    futureSkillId: familyId,
+    displayName: getSkillDisplayName(familyId)
+  };
+};
+
+export const migratePlayerSpecialSkillSlots = (player: Player): (string | null)[] => {
+  if (!player.specialSkillSlots) return [null, null];
+  
+  return player.specialSkillSlots.map(slot => {
+    if (!slot) return null;
+    return normalizeSpecialSkillId(slot);
+  });
+};
+
+export const migratePlayerSpecialSkills = (player: Player): Player => {
+  const specialSkillSlots = migratePlayerSpecialSkillSlots(player);
+
+  const skillRarities: Record<string, 'Common' | 'Rare' | 'Elite' | 'Epic' | 'Legendary'> = {};
+  if (player.skillRarities) {
+    for (const [key, value] of Object.entries(player.skillRarities)) {
+      const migratedKey = normalizeSpecialSkillId(key);
+      skillRarities[migratedKey] = value;
+    }
+  }
+
+  const skillTiers: Record<string, 'Base' | 'X' | 'XR' | 'XR-ULT'> = {};
+  if (player.skillTiers) {
+    for (const [key, value] of Object.entries(player.skillTiers)) {
+      const migratedKey = normalizeSpecialSkillId(key);
+      skillTiers[migratedKey] = value;
+    }
+  }
+
+  return {
+    ...player,
+    specialSkillSlots,
+    skillRarities,
+    skillTiers,
+  };
+};
+
+// Phase 2A4: Family-Aware Skill Resolver Helpers
 
 export const resolveSpecialSkillFamily = (rawSkill: string): SpecialSkillFamilyId | null => {
   if (isSpecialSkillFamilyId(rawSkill)) {
@@ -106,4 +118,3 @@ export const wouldCreateDuplicateFamily = (player: Player, rolledSkillOrFamilyId
   
   return hasSpecialSkillFamily(player, rolledFamily);
 };
-

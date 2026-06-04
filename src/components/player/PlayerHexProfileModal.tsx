@@ -9,7 +9,7 @@ import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEX
 import { SpecialSkillName, BaseSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
-import { formatSkillName } from "../../lib/skills/skillDisplay";
+import { formatSkillName, getSkillDisplayName } from "../../lib/skills/skillDisplay";
 import { getDefaultSkillTier } from "../../lib/players/playerEra";
 
 interface PlayerHexProfileModalProps {
@@ -893,7 +893,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   <div className="px-1.5 py-0.5 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-sm">New</div>
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Skill Discovered</div>
                 </div>
-                <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{pendingSkillTraining.newSkill}</h2>
+                <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(pendingSkillTraining.newSkill)}</h2>
                 <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
                   <span className="text-gray-300 font-bold">Effect:</span> {SPECIAL_SKILL_TEXT[pendingSkillTraining.newSkill as SpecialSkillName]} 
                   {' '}When in a game, there is a <span className={`font-black text-[12px] ${getQualityColor(pendingSkillTraining.newQuality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)}</span> rate to trigger this effect.
@@ -1146,7 +1146,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         {showSkillInfo.quality} {showSkillInfo.isSpecial ? "Signature" : "Base"} Skill
                       </div>
                     </div>
-                    <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{showSkillInfo.name}</h2>
+                    <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(showSkillInfo.name)}</h2>
                     <p className="text-gray-400 text-[11px] leading-relaxed mt-2 border-t border-white/10 pt-2">
                       <span className="text-gray-300 font-bold">Effect:</span> {showSkillInfo.isSpecial ? SPECIAL_SKILL_TEXT[showSkillInfo.name as SpecialSkillName] : BASE_SKILL_TEXT[showSkillInfo.name as BaseSkillName] || "Provides standard boosts during matches."}
                       {showSkillInfo.isSpecial && (

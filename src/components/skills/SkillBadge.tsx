@@ -1,5 +1,6 @@
 import React from "react";
 import { SKILL_QUALITY_ORDER, getSkillQualityRate, SkillQuality } from "@/lib/skills/skillCatalog";
+import { getSkillDisplayName } from "@/lib/skills/skillDisplay";
 
 export type SkillBadgeColor = "red" | "blue" | "green" | "special";
 
@@ -77,6 +78,7 @@ export function SkillBadge({
   actionLabel,
 }: SkillBadgeProps) {
   const shortName = name.replace(/\s+/g, " ").trim();
+  const displayName = getSkillDisplayName(shortName);
   const activeQuality = quality ?? "Common";
   const artSrc = getSkillArtSrc(shortName, color, locked, activeQuality);
   const lockLabel = unlockText ? `Unlocks at ${unlockText}` : "Locked 85+";
@@ -86,7 +88,7 @@ export function SkillBadge({
     <div
       className={`group/skill relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br shadow-[0_0_16px_var(--tw-shadow-color)] transition-transform duration-150 hover:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-black/30" : unlockedStyle
         } ${!locked && color === "special" && (activeQuality === "Epic" || activeQuality === "Legendary") ? "skill-fire-aura" : ""} ${!locked && color === "special" && activeQuality === "Legendary" ? "skill-fire-aura-legendary" : ""}`}
-      title={locked ? `${shortName} ${lockLabel}` : `${shortName}${color === "special" ? ` (${activeQuality})` : ""}`}
+      title={locked ? `${displayName} ${lockLabel}` : `${displayName}${color === "special" ? ` (${activeQuality})` : ""}`}
       onClick={(e) => {
         e.stopPropagation();
         if (!locked && onClick) onClick();
@@ -94,13 +96,13 @@ export function SkillBadge({
     >
       <img
         src={artSrc}
-        alt={locked ? "Locked skill" : shortName}
+        alt={locked ? "Locked skill" : displayName}
         className="absolute inset-0 h-full w-full object-contain p-[3px] contrast-[1.08] saturate-[1.14] drop-shadow-[0_2px_3px_rgba(0,0,0,0.85)]"
         draggable={false}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.12),transparent_30%,rgba(0,0,0,0.2)_100%)]" />
       <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-32 -translate-x-1/2 rounded border border-white/10 bg-black/95 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow-xl group-hover/skill:block">
-        <div className="whitespace-nowrap">{locked ? lockLabel : shortName}</div>
+        <div className="whitespace-nowrap">{locked ? lockLabel : displayName}</div>
         {!locked && color === "special" && maxRate && (
           <div className="mt-1 grid gap-0.5 text-left  text-[7px] normal-case tracking-normal">
             {SKILL_QUALITY_ORDER.map((tier) => (

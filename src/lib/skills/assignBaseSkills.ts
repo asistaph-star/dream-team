@@ -25,30 +25,21 @@ export type BaseSkillName =
   | "Enforcer Lift";
 
 export type SpecialSkillName =
-  | "Red Dot X"
-  | "Four-Point Bait X"
-  | "Lung Burner X"
-  | "Chain Pass X"
-  | "Debt Collector X"
-  | "Five-Man Squeeze X"
-  | "Cold Timeout X"
-  | "Dead Air X"
-  | "Clean Contest X"
-  | "Contact Tax X"
-  | "Cage Step X"
-  | "Corner Trap X"
-  | "Pressure Coach X"
-  | "Flop X"
-  | "Composure X"
-  | "CLEAN_CHALLENGE"
-  | "COMPOSURE_SHIELD"
-  | "TIMEOUT_RESET"
+  | "DEEP_STRIKE"
   | "COURT_VISION_ENGINE"
-  | "BENCH_CAPTAIN"
-  | "LOCK_CHAIN"
+  | "POSTER_SPARK"
+  | "FLOP"
+  | "BROKEN_PLAY_RESCUE"
   | "SKY_WALL"
+  | "LOCK_CHAIN"
   | "DEFENSIVE_ANCHOR"
-  | "GLASS_STRIKE";
+  | "CLEAN_CHALLENGE"
+  | "GLASS_STRIKE"
+  | "BENCH_CAPTAIN"
+  | "MOMENTUM_SWING"
+  | "COMPOSURE_SHIELD"
+  | "GAMEPLAN_JAMMER"
+  | "TIMEOUT_RESET";
 
 const safeRatio = (a = 0, b = 0): number => a / Math.max(0.5, b);
 
@@ -153,22 +144,22 @@ export function assignSpecialSkillsFromStats(player: Player): (SpecialSkillName 
   const addSkill = (skill: SpecialSkillName) => {
     if (!skills.includes(skill)) skills.push(skill);
   };
-  if (player.name.toLowerCase().includes("shai gilgeous-alexander")) addSkill("Flop X");
-  if (player.shooting >= 86 && ppg >= 18) addSkill("Red Dot X");
-  if (player.shooting >= 92 && ppg >= 24) addSkill("Four-Point Bait X");
-  if (player.strength >= 84 && ppg >= 18) addSkill("Lung Burner X");
-  if (apg >= 5.5) addSkill("Chain Pass X");
-  if (spg >= 1.2 || bpg >= 1.2) addSkill("Debt Collector X");
-  if (player.defense >= 175 || player.defense >= 84) addSkill("Five-Man Squeeze X");
-  if (player.ovr >= 88 && player.playmaking >= 75) addSkill("Cold Timeout X");
-  if (player.defense >= 160 && player.playmaking >= 75) addSkill("Dead Air X");
-  if ((player.defense >= 150 || player.defense >= 78) && pfpg <= 2.2) addSkill("Clean Contest X");
-  if (player.strength >= 82 && ppg >= 18) addSkill("Contact Tax X");
-  if (spg >= 1.2 || player.speed >= 86) addSkill("Cage Step X");
-  if ((player.defense >= 80 || player.defense >= 150) && player.speed >= 78) addSkill("Corner Trap X");
-  if (player.ovr >= 86 && player.playmaking >= 72) addSkill("Pressure Coach X");
-  if (pfpg >= 2.4 || ppg >= 22) addSkill("Flop X");
-  if (pfpg <= 2.0 && player.defense >= 78) addSkill("Composure X");
+  if (player.name.toLowerCase().includes("shai gilgeous-alexander")) addSkill("FLOP");
+  if (player.shooting >= 86 && ppg >= 18) addSkill("DEEP_STRIKE");
+  if (player.shooting >= 92 && ppg >= 24) addSkill("DEEP_STRIKE");
+  if (player.strength >= 84 && ppg >= 18) addSkill("POSTER_SPARK");
+  if (apg >= 5.5) addSkill("COURT_VISION_ENGINE");
+  if (spg >= 1.2 || bpg >= 1.2) addSkill("GAMEPLAN_JAMMER");
+  if (player.defense >= 175 || player.defense >= 84) addSkill("DEFENSIVE_ANCHOR");
+  if (player.ovr >= 88 && player.playmaking >= 75) addSkill("TIMEOUT_RESET");
+  if (player.defense >= 160 && player.playmaking >= 75) addSkill("GAMEPLAN_JAMMER");
+  if ((player.defense >= 150 || player.defense >= 78) && pfpg <= 2.2) addSkill("CLEAN_CHALLENGE");
+  if (player.strength >= 82 && ppg >= 18) addSkill("POSTER_SPARK");
+  if (spg >= 1.2 || player.speed >= 86) addSkill("LOCK_CHAIN");
+  if ((player.defense >= 80 || player.defense >= 150) && player.speed >= 78) addSkill("DEFENSIVE_ANCHOR");
+  if (player.ovr >= 86 && player.playmaking >= 72) addSkill("BENCH_CAPTAIN");
+  if (pfpg >= 2.4 || ppg >= 22) addSkill("FLOP");
+  if (pfpg <= 2.0 && player.defense >= 78) addSkill("COMPOSURE_SHIELD");
 
   return [skills[0] ?? null, skills[1] ?? null];
 }

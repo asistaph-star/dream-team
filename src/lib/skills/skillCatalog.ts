@@ -61,7 +61,25 @@ export const BASE_SKILL_TEXT: Record<BaseSkillName, string> = {
   "Enforcer Lift": "Turns controlled physical defense into team stamina support. Recovers ~6 stamina for the team when triggered.",
 };
 
-export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
+export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<string, string> = {
+  // Family Skills (Official)
+  "DEEP_STRIKE": "Boosts chance of 3PT pressure moment and interacts with Exposed.",
+  "COURT_VISION_ENGINE": "Provides a small team shot creation boost on assists.",
+  "POSTER_SPARK": "Creates strong finish or poster moments with minor localized stamina pressure.",
+  "FLOP": "Signature foul-drawing mechanic to sell contact into foul pressure.",
+  "BROKEN_PLAY_RESCUE": "Rare clutch ability to recover a near-turnover into a tough 2PT or 2+1. (OFFICIAL FAMILY / NOT YET MECHANIC-WIRED)",
+  "SKY_WALL": "Triggers intense block pressure and stops interior momentum.",
+  "LOCK_CHAIN": "Triggers perimeter steal pressure creating transition opportunities.",
+  "DEFENSIVE_ANCHOR": "Provides a stable team defensive control boost that does not stack.",
+  "CLEAN_CHALLENGE": "Counters foul baiting and prevents foul pressure from converting.",
+  "GLASS_STRIKE": "Satisfying chance to instantly score on a putback after an offensive rebound.",
+  "BENCH_CAPTAIN": "Improves stamina recovery for benched players. Does not stack.",
+  "MOMENTUM_SWING": "Chance to gain possession or recover team rhythm with minor stamina recovery. (OFFICIAL FAMILY / NOT YET MECHANIC-WIRED)",
+  "COMPOSURE_SHIELD": "Cleanly counters foul pressure, Tilted marks, or bad momentum.",
+  "GAMEPLAN_JAMMER": "Tactically blocks one opponent special skill trigger. Does not stack.",
+  "TIMEOUT_RESET": "Cleanses marks or reduces pressure during low-stamina moments.",
+
+  // Legacy Skills (Compatibility Lookup)
   "Red Dot X": "Applies Exposed (lasts 2 possessions) through perimeter pressure.",
   "Four-Point Bait X": "Pressures Exposed defenders into 3PT shooting fouls, adding +9.0% foul pressure.",
   "Lung Burner X": "Drains stamina when attacking marked defenders. Drains 110 stamina from the defender (190 if they have a Debt mark).",
@@ -77,18 +95,24 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "Pressure Coach X": "Marked opponents lose extra stamina when acting. Drains 12 stamina from each marked opponent during triggers.",
   "Flop X": "Sells light contact into foul pressure. Adds +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
   "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",
-  "CLEAN_CHALLENGE": "Challenges foul-bait pressure with a disciplined contest.",
-  "COMPOSURE_SHIELD": "Keeps the team calm under foul and momentum pressure.",
-  "TIMEOUT_RESET": "Resets pressure by cleansing a mark during dangerous moments.",
-  "COURT_VISION_ENGINE": "Creates better rhythm from smart passing and organized offense.",
-  "BENCH_CAPTAIN": "Stabilizes the rotation when fatigue and pressure start building.",
-  "LOCK_CHAIN": "Pressures ball handlers with disciplined on-ball defense and controlled stamina drain.",
-  "SKY_WALL": "Challenges paint attacks with vertical rim pressure and controlled contest fatigue.",
-  "DEFENSIVE_ANCHOR": "Applies disciplined team pressure that wears down opponents across half-court possessions.",
-  "GLASS_STRIKE": "Crashes the glass with disciplined timing, improving second-chance pressure for rebound-built lineups.",
 };
 
-export const SPECIAL_SKILL_NAMES = Object.keys(SPECIAL_SKILL_TEXT).filter(name => name.endsWith(" X")) as SpecialSkillName[];
+// Exclude MOMENTUM_SWING and BROKEN_PLAY_RESCUE from the active rolling pool as they do not have gameplay mechanics in matchEngine.ts yet.
+export const SPECIAL_SKILL_NAMES: SpecialSkillName[] = [
+  "DEEP_STRIKE",
+  "COURT_VISION_ENGINE",
+  "POSTER_SPARK",
+  "FLOP",
+  "SKY_WALL",
+  "LOCK_CHAIN",
+  "DEFENSIVE_ANCHOR",
+  "CLEAN_CHALLENGE",
+  "GLASS_STRIKE",
+  "BENCH_CAPTAIN",
+  "COMPOSURE_SHIELD",
+  "GAMEPLAN_JAMMER",
+  "TIMEOUT_RESET",
+];
 
 export const BASE_SKILL_RATES: Partial<Record<BaseSkillName, [number, number, number]>> = {
   "Tempo Surgeon": [120, 190, 270],
@@ -114,7 +138,25 @@ export const BASE_SKILL_RATES: Partial<Record<BaseSkillName, [number, number, nu
   "Enforcer Lift": [160, 240, 0],
 };
 
-export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
+export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> & Record<string, number> = {
+  // Family Skills (Official)
+  "DEEP_STRIKE": 300,
+  "COURT_VISION_ENGINE": 240,
+  "POSTER_SPARK": 280,
+  "FLOP": 230,
+  "BROKEN_PLAY_RESCUE": 220,
+  "SKY_WALL": 240,
+  "LOCK_CHAIN": 240,
+  "DEFENSIVE_ANCHOR": 220,
+  "CLEAN_CHALLENGE": 260,
+  "GLASS_STRIKE": 220,
+  "BENCH_CAPTAIN": 220,
+  "MOMENTUM_SWING": 220,
+  "COMPOSURE_SHIELD": 330,
+  "GAMEPLAN_JAMMER": 220,
+  "TIMEOUT_RESET": 260,
+
+  // Legacy Skills (Compatibility Lookup)
   "Red Dot X": 300,
   "Four-Point Bait X": 250,
   "Lung Burner X": 280,
@@ -130,13 +172,4 @@ export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
   "Pressure Coach X": 1000,
   "Flop X": 230,
   "Composure X": 330,
-  "CLEAN_CHALLENGE": 260,
-  "COMPOSURE_SHIELD": 330,
-  "TIMEOUT_RESET": 260,
-  "COURT_VISION_ENGINE": 240,
-  "BENCH_CAPTAIN": 220,
-  "LOCK_CHAIN": 240,
-  "SKY_WALL": 240,
-  "DEFENSIVE_ANCHOR": 220,
-  "GLASS_STRIKE": 220,
 };

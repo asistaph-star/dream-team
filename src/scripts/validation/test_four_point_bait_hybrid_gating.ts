@@ -74,9 +74,8 @@ async function run() {
   assert(engineContent.includes("const baitSummary = resolveLineupArchetypes(aiLineup);"), "baitSummary resolved for aiLineup");
 
   // Check Option B conditional mapping logic:
-  // (baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020
-  const boostMapping = "(baitDsLevel >= 1 && baitFdLevel >= 1) ? 0.090 : (baitDsLevel >= 1 || baitFdLevel >= 1) ? 0.045 : 0.020";
-  assert(engineContent.includes(boostMapping), "Boost mapping logic matches Option B values");
+  // We check that it resolves via calculateFourPointBaitBoost helper
+  assert(engineContent.includes("calculateFourPointBaitBoost(baitDsLevel, baitFdLevel)"), "Boost mapping logic resolves via calculateFourPointBaitBoost");
 
   // Check MAX_SHOOTING_FOUL_CHANCE remains exactly 0.28
   assert(engineContent.includes("const MAX_SHOOTING_FOUL_CHANCE = 0.28;"), "MAX_SHOOTING_FOUL_CHANCE remains 0.28");

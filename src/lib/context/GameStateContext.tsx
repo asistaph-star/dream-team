@@ -8,7 +8,7 @@ import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
-import { wouldCreateDuplicateFamily } from "@/lib/skills/skillMigration";
+import { wouldCreateDuplicateFamily, migratePlayerSpecialSkills } from "@/lib/skills/skillMigration";
 import { getRequiredDuplicateCount, hasLearnedSkills, getLearnedSkillSummary } from "@/lib/utils/starRequirements";
 
 export interface PendingAscendWarning {
@@ -139,7 +139,8 @@ const normalizeRoster = (players: Player[]): Player[] => {
     }
     
     const updatedPlayer = { ...player, starLevel: targetStarLevel, rarity: targetRarity };
-    return unlockSpecialSkillQualities(repairStarGrowth(updatedPlayer, baseline), targetStarLevel);
+    const migratedPlayer = migratePlayerSpecialSkills(updatedPlayer);
+    return unlockSpecialSkillQualities(repairStarGrowth(migratedPlayer, baseline), targetStarLevel);
   });
 };
 

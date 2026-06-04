@@ -11,6 +11,7 @@ import {
   SPECIAL_SKILL_RATES,
 } from "./skillCatalog";
 import { getOffenseRating, getOnBallDefenseRating, getAssistRating } from "../utils/playerIdentity";
+import { normalizeSpecialSkillId } from "./skillMigration";
 
 export type SkillMarks = MatchState["skillMarks"];
 export type SkillMarkImmunity = MatchState["markImmunity"];
@@ -20,8 +21,13 @@ export const getBaseSkills = (player: Player): [BaseSkillName, BaseSkillName, Ba
 };
 
 export const normalizeSpecialSkillName = (skill: string): SpecialSkillName | null => {
-  if (skill === "False Whistle X") return "Flop X";
-  return (SPECIAL_SKILL_RATES as Record<string, number>)[skill] ? (skill as SpecialSkillName) : null;
+  let normalized = skill;
+  if (skill === "False Whistle X") {
+    normalized = "FLOP";
+  } else {
+    normalized = normalizeSpecialSkillId(skill);
+  }
+  return (SPECIAL_SKILL_RATES as Record<string, number>)[normalized] ? (normalized as SpecialSkillName) : null;
 };
 
 export const getActiveBaseSkills = (player: Player): BaseSkillName[] => {
@@ -53,7 +59,7 @@ export const lineupHasSpecial = (lineup: Player[], skill: SpecialSkillName): boo
 };
 
 export const getSpecialSkillQuality = (player: Player, skill: SpecialSkillName): SkillQuality => {
-  const quality = player.skillRarities?.[skill] ?? (skill === "Flop X" ? player.skillRarities?.["False Whistle X"] : undefined);
+  const quality = player.skillRarities?.[skill] ?? (skill === "FLOP" ? player.skillRarities?.["False Whistle X"] ?? player.skillRarities?.["Flop X"] : undefined);
   return isSkillQuality(quality) ? quality : "Common";
 };
 
