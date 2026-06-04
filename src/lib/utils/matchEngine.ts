@@ -369,7 +369,28 @@ export function simulateTick(
   let stealPlayerId = '';
   let eventIndicator: { playerId: string; type: 'BLK' | 'STL' | 'TOV' | 'REB' | 'OREB' | 'AST' | 'FOL' } | undefined;
   const skillLog = (text: string, isUserTeam: boolean) => {
-    newEvents.push(makeEvent(newQuarter, newClock, `SKILL: ${text}`, isUserTeam));
+    let cleanText = text;
+    const legacyMap: Record<string, string> = {
+      "Red Dot X": "Deep Strike",
+      "Four-Point Bait X": "Deep Strike",
+      "Lung Burner X": "Poster Spark",
+      "Chain Pass X": "Court Vision Engine",
+      "Debt Collector X": "Gameplan Jammer",
+      "Five-Man Squeeze X": "Defensive Anchor",
+      "Cold Timeout X": "Timeout Reset",
+      "Dead Air X": "Gameplan Jammer",
+      "Clean Contest X": "Clean Challenge",
+      "Contact Tax X": "Poster Spark",
+      "Cage Step X": "Lock Chain",
+      "Corner Trap X": "Defensive Anchor",
+      "Pressure Coach X": "Bench Captain",
+      "Flop X": "Flop",
+      "Composure X": "Composure Shield",
+    };
+    for (const [legacy, clean] of Object.entries(legacyMap)) {
+      cleanText = cleanText.replace(new RegExp(legacy, 'g'), clean);
+    }
+    newEvents.push(makeEvent(newQuarter, newClock, `SKILL: ${cleanText}`, isUserTeam));
   };
   const getLowestStaminaPlayer = (lineup: Player[]): Player =>
     [...lineup].sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))[0] ?? lineup[0];
