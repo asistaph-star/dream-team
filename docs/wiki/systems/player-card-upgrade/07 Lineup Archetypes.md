@@ -563,3 +563,23 @@ Phase Refactor-1B successfully modularized `matchEngine.ts` by extracting static
   * Codebase successfully passed `npx tsc --noEmit`.
   * All regression and simulator validation scripts completed successfully.
 
+---
+
+## 25. Injury & Roster Calibration Extraction (Phase Refactor-1C)
+
+Phase Refactor-1C successfully extracted the pre-match injury reports generation and starter calibration from `matchEngine.ts` into a dedicated injury helper module under `src/lib/match/`. This was a behavior-preserving architecture cleanup only, with no changes to gameplay math, balance, saved data, or OVR/star-up calculations.
+
+### Summary of Changes:
+* **Created Module:**
+  * `src/lib/match/injuryHelpers.ts`: Relocated pre-match injury generation and roster lineup calibration functions (`generatePreMatchInjuries`, `calibrateLineupForInjuries`).
+* **Backward Compatibility:**
+  * Updated `matchEngine.ts` to import these functions from the new `injuryHelpers.ts` module.
+  * Re-exported the functions in `matchEngine.ts` to guarantee backward compatibility with existing imports in client pages (e.g. `src/app/match/page.tsx`).
+* **Execution Guards & Constraints Preserved:**
+  * `simulateTick` logic, active match injury/ejection logic, user/AI possession blocks, and RNG ordering within `simulateTick` remain completely untouched.
+  * Personal foul replacements and ejections remain in-place.
+* **Verification:**
+  * Codebase successfully passed `npx tsc --noEmit`.
+  * All regression scripts and match balance simulations passed.
+
+
