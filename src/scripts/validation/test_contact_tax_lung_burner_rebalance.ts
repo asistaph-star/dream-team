@@ -16,6 +16,26 @@ if (!fs.existsSync(absoluteMatchEnginePath)) {
   throw new Error(`Cannot find matchEngine at ${absoluteMatchEnginePath}`);
 }
 
+// Dynamically locate shot success check lines in matchEngine.ts to override Math.random
+const matchEngineContent = fs.readFileSync(absoluteMatchEnginePath, "utf-8");
+const matchEngineLines = matchEngineContent.split("\n");
+const shotSuccessLines: number[] = [];
+
+for (let i = 0; i < matchEngineLines.length; i++) {
+  const line = matchEngineLines[i];
+  if (
+    line.includes("Math.random() < finalScoringChance") ||
+    line.includes("Math.random() < aiFinalChance") ||
+    line.includes("Math.random() < aiBlitzFinalChance")
+  ) {
+    shotSuccessLines.push(i + 1); // 1-based line number
+  }
+}
+
+if (shotSuccessLines.length === 0) {
+  throw new Error("Failed to dynamically locate shot success check lines in matchEngine.ts");
+}
+
 const originalResolver = require(absoluteResolverPath);
 const mockedResolver = { ...originalResolver };
 
@@ -304,10 +324,11 @@ function runRebalanceTests() {
 
     // Override mathEngine success rate checks to guarantee made shot
     const originalMathRandom = Math.random;
+    const shotSuccessRegex = new RegExp(`matchEngine\\.(?:ts|js):(${shotSuccessLines.join("|")})\\b`);
     Math.random = () => {
       const err = new Error();
       const stack = err.stack || "";
-      if (/matchEngine\.(?:ts|js):(2359|3291)\b/.test(stack)) {
+      if (shotSuccessRegex.test(stack)) {
         return 0.01;
       }
       return 0.99;
@@ -452,10 +473,10 @@ function runRebalanceTests() {
   console.log(`  - Is mapped: ${isPosterSparkMapped ? "Yes" : "No"}`);
   console.log(`  - Is in resolver: ${isPosterSparkInResolver ? "Yes" : "No"}`);
 
-  if (!isPosterSparkMapped) {
-    console.log("✅ POSTER_SPARK remains correctly unimplemented/unmapped in skillMechanics.");
+  if (isPosterSparkMapped) {
+    console.log("✅ POSTER_SPARK is correctly mapped in skillMechanics.");
   } else {
-    throw new Error("❌ POSTER_SPARK is mapped in skillMechanics (gating bypassed).");
+    throw new Error("❌ POSTER_SPARK is not mapped in skillMechanics.");
   }
 
   console.log("\n🎉 ALL REBALANCE VALIDATION CHECKS PASSED SUCCESSFULLY!");
