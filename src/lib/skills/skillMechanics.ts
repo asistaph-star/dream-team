@@ -22,7 +22,8 @@ export type SpecialSkillMechanicId =
   | "SKY_WALL_RIM_PRESSURE"
   | "DEFENSIVE_ANCHOR_TEAM_PRESSURE"
   | "GLASS_STRIKE_REBOUND"
-  | "MOMENTUM_SWING_STABILIZE";
+  | "MOMENTUM_SWING_STABILIZE"
+  | "BROKEN_PLAY_RESCUE_SAVE";
 
 export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = {
   // Family Skills (Official)
@@ -40,7 +41,7 @@ export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = 
   "GAMEPLAN_JAMMER": ["GAMEPLAN_DEAD_AIR", "GAMEPLAN_DEBT_COLLECTOR"],
   "TIMEOUT_RESET": ["TIMEOUT_RESET_CLEANSE"],
   "MOMENTUM_SWING": ["MOMENTUM_SWING_STABILIZE"],
-  "BROKEN_PLAY_RESCUE": [],
+  "BROKEN_PLAY_RESCUE": ["BROKEN_PLAY_RESCUE_SAVE"],
 
   // Legacy Skills (Compatibility Lookup)
   "Red Dot X": ["DEEP_STRIKE_EXPOSE_SETUP"],

@@ -186,7 +186,7 @@ async function run() {
   // Excluded check
   const momentumSwingInPool = SPECIAL_SKILL_NAMES.includes("MOMENTUM_SWING" as any);
   const brokenPlayInPool = SPECIAL_SKILL_NAMES.includes("BROKEN_PLAY_RESCUE" as any);
-  assert(momentumSwingInPool && !brokenPlayInPool, "MOMENTUM_SWING is active, while BROKEN_PLAY_RESCUE remains excluded from SPECIAL_SKILL_NAMES");
+  assert(momentumSwingInPool && brokenPlayInPool, "Both MOMENTUM_SWING and BROKEN_PLAY_RESCUE are active in SPECIAL_SKILL_NAMES");
 
   // Legacy skills check (none should be in the pool)
   const legacySkillsInPool = SPECIAL_SKILL_NAMES.some(s => s.endsWith(" X") || s.includes("Dot") || s.includes("Bait"));

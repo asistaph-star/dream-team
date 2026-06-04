@@ -17,12 +17,13 @@ function assert(condition: boolean, message: string) {
 async function run() {
   console.log("=== RUNNING FAMILY SKILL MECHANICS OWNERSHIP VALIDATION ===\n");
 
-  // 1. All 14 active rollable families resolve to at least one mechanic.
+  // 1. All 15 active rollable families resolve to at least one mechanic.
   const activeFamilies: SpecialSkillName[] = [
     "DEEP_STRIKE",
     "COURT_VISION_ENGINE",
     "POSTER_SPARK",
     "FLOP",
+    "BROKEN_PLAY_RESCUE",
     "SKY_WALL",
     "LOCK_CHAIN",
     "DEFENSIVE_ANCHOR",
@@ -35,16 +36,16 @@ async function run() {
     "TIMEOUT_RESET",
   ];
 
-  // Verify that SPECIAL_SKILL_NAMES contains exactly these 14 active families
-  assert(SPECIAL_SKILL_NAMES.length === 14, `Expected exactly 14 active families in rolling pool, found ${SPECIAL_SKILL_NAMES.length}`);
+  // Verify that SPECIAL_SKILL_NAMES contains exactly these 15 active families
+  assert(SPECIAL_SKILL_NAMES.length === 15, `Expected exactly 15 active families in rolling pool, found ${SPECIAL_SKILL_NAMES.length}`);
   for (const family of activeFamilies) {
     assert(SPECIAL_SKILL_NAMES.includes(family), `Active family ${family} is in SPECIAL_SKILL_NAMES`);
     const mechanics = resolveSpecialSkillMechanics(family);
     assert(mechanics.length > 0, `Active family ${family} resolves to at least one mechanic: [${mechanics.join(", ")}]`);
   }
 
-  // 2. BROKEN_PLAY_RESCUE does not roll while mechanic-empty.
-  const inactiveFamilies = ["BROKEN_PLAY_RESCUE"];
+  // 2. No families are currently inactive.
+  const inactiveFamilies: string[] = [];
   for (const family of inactiveFamilies) {
     assert(!SPECIAL_SKILL_NAMES.includes(family as any), `Inactive family ${family} is NOT in the active rolling pool`);
     const mechanics = resolveSpecialSkillMechanics(family);
@@ -91,7 +92,7 @@ async function run() {
     GAMEPLAN_JAMMER: ["GAMEPLAN_DEAD_AIR", "GAMEPLAN_DEBT_COLLECTOR"],
     TIMEOUT_RESET: ["TIMEOUT_RESET_CLEANSE"],
     MOMENTUM_SWING: ["MOMENTUM_SWING_STABILIZE"],
-    BROKEN_PLAY_RESCUE: [],
+    BROKEN_PLAY_RESCUE: ["BROKEN_PLAY_RESCUE_SAVE"],
   };
 
   for (const [family, expectedMechanics] of Object.entries(expectedMechanicMap)) {

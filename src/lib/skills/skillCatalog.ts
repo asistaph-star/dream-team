@@ -67,7 +67,7 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<strin
   "COURT_VISION_ENGINE": "Creates rhythm passing bonuses on assists and places Debt (lasts 2 possessions) on marked opponents after assisted scores.",
   "POSTER_SPARK": "Drains 110 stamina (190 if marked with Debt) when attacking marked defenders, and applies Tilted (lasts 3 possessions) and drains 45 stamina from tired defenders.",
   "FLOP": "Sells light contact into foul pressure, adding +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
-  "BROKEN_PLAY_RESCUE": "Rare clutch ability to recover a near-turnover into a tough 2PT or 2+1. (OFFICIAL FAMILY / NOT YET MECHANIC-WIRED)",
+  "BROKEN_PLAY_RESCUE": "Rare clutch ability to recover a near-turnover into a difficult 2PT rescue shot attempt, costing stamina to the rescuer.",
   "SKY_WALL": "Triggers intense vertical rim block pressure, reducing shot quality and draining stamina on paint attacks.",
   "LOCK_CHAIN": "Applies Hooked (lasts 2 possessions) to pressured ball handlers (drains 38 stamina per possession) and drains stamina from ball handlers on turnovers.",
   "DEFENSIVE_ANCHOR": "Drains 40 stamina from the opposing lineup (60 if 3+ marked) on defensive triggers, and applies Pinned (lasts 2 possessions) on corner actions to prevent stamina recovery.",
@@ -97,12 +97,13 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<strin
   "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",
 };
 
-// Exclude BROKEN_PLAY_RESCUE from the active rolling pool as it does not have gameplay mechanics in matchEngine.ts yet.
+// All 15 official Special Skill Families are active.
 export const SPECIAL_SKILL_NAMES: SpecialSkillName[] = [
   "DEEP_STRIKE",
   "COURT_VISION_ENGINE",
   "POSTER_SPARK",
   "FLOP",
+  "BROKEN_PLAY_RESCUE",
   "SKY_WALL",
   "LOCK_CHAIN",
   "DEFENSIVE_ANCHOR",

@@ -90,6 +90,12 @@ import {
   shouldMomentumSwingTrigger
 } from "../match/momentumSwing";
 import {
+  getBrokenPlayRescueIdentity,
+  calculateBrokenPlayRescueChanceScale,
+  calculateBrokenPlayRescueStaminaCost,
+  calculateBrokenPlayRescueShotPenalty
+} from "../match/brokenPlayRescue";
+import {
   getTovStamMod as extGetTovStamMod,
   getLowestStaminaPlayer as extGetLowestStaminaPlayer,
   getPrimaryBallHandler as extGetPrimaryBallHandler,
@@ -1357,9 +1363,30 @@ export function simulateTick(
       return 0.90 + (cageStepIdentity / 100) * 0.20;
     }) ? 1.12 : 1.0;
     const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure * lockChainTOVMod);
-    if (Math.random() < finalTOVChance) {
+    let userBrokenPlayRescued = false;
+    let userBrokenPlayRescuedScorer: Player | null = null;
+    let isTovRolled = Math.random() < finalTOVChance;
+    let committerForRescue: Player | null = null;
+    if (isTovRolled) {
+      committerForRescue = pickCommitter(userLineup);
+      const rescueUsesKey = `User Broken Play Rescue Q${newQuarter}`;
+      if (!hasTeamSkillUsed(true, rescueUsesKey) && rollSpecialMechanic([committerForRescue], "BROKEN_PLAY_RESCUE_SAVE", newStamina, (h) => {
+        return calculateBrokenPlayRescueChanceScale(getBrokenPlayRescueIdentity(h), staminaPct(h));
+      })) {
+        const identity = getBrokenPlayRescueIdentity(committerForRescue);
+        const cost = calculateBrokenPlayRescueStaminaCost(identity, staminaPct(committerForRescue));
+        drainStamina(newStamina, committerForRescue, userLineup, cost);
+        skillLog(`${committerForRescue.name} rescues a broken play!`, true);
+        markTeamSkillUsed(true, rescueUsesKey);
+        userBrokenPlayRescued = true;
+        userBrokenPlayRescuedScorer = committerForRescue;
+        isTovRolled = false;
+      }
+    }
+
+    if (isTovRolled) {
       turnoverOccurred = true;
-      const committer = pickCommitter(userLineup);
+      const committer = committerForRescue!;
       if (cageStepPressure > 1) {
         newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
         skillLog(`Cage Step X hooks ${committer.name}'s handle`, false);
@@ -1407,7 +1434,7 @@ export function simulateTick(
       // No turnover — check fouls then scoring
 
       // ── SHOT CLOCK VIOLATION CHECK ──
-      const sclViolationChance = getShotClockViolationChance(
+      const sclViolationChance = userBrokenPlayRescued ? 0 : getShotClockViolationChance(
         currentOff, userAvg, state.aiDefStrategy
       );
       if (Math.random() < sclViolationChance) {
@@ -1427,7 +1454,7 @@ export function simulateTick(
       if (!turnoverOccurred) {
         // ═══ ROLL NSF: NON-SHOOTING FOUL CHECK (AI defending user) ═══
         const defAvg_nsf = avgStamina(aiLineup, newStamina);
-        const nsfChance = 0.045 * getFoulStamMod(defAvg_nsf); // ~5-6 NSF/game per team
+        const nsfChance = userBrokenPlayRescued ? 0 : 0.045 * getFoulStamMod(defAvg_nsf); // ~5-6 NSF/game per team
         if (Math.random() < nsfChance) {
         const committer = pickFoulCommitter(aiLineup);
         ensureStats(committer.id);
@@ -1465,7 +1492,9 @@ export function simulateTick(
         if (hasHotUser) finalChance *= 1.04;
 
         let scorer = userLineup[userLineup.length - 1];
-        if (currentOff === "Isolation (ISO)") {
+        if (userBrokenPlayRescued && userBrokenPlayRescuedScorer) {
+          scorer = userBrokenPlayRescuedScorer;
+        } else if (currentOff === "Isolation (ISO)") {
           scorer = [...userLineup].sort((a, b) => b.ovr - a.ovr)[0];
         } else if (currentOff === "Post Isolation") {
           const bigs = userLineup
@@ -1492,7 +1521,10 @@ export function simulateTick(
         let is3PTBaseCheck = undefined as boolean | undefined;
         if (currentOff === "5-Out Spacing" && staminaPct(scorer) >= 50) is3PTBaseCheck = true;
         if (currentOff === "Post Isolation") is3PTBaseCheck = false;
-        const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
+        let shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
+        if (userBrokenPlayRescued) {
+          shotInfo = { is3PT: false, type: 'hookShot' };
+        }
         const is3PT = shotInfo.is3PT;
         const shotType = shotInfo.type;
         ensureForm(scorer.id);
@@ -1509,6 +1541,11 @@ export function simulateTick(
 
         // ═══ tryBlock — BEFORE Roll F and Roll 3 ═══
         let skillShotBonus = 0;
+        if (userBrokenPlayRescued) {
+          const identity = getBrokenPlayRescueIdentity(scorer);
+          const penalty = calculateBrokenPlayRescueShotPenalty(identity, staminaPct(scorer));
+          skillShotBonus -= penalty;
+        }
         if (currentOff !== "Isolation (ISO)" && currentOff !== "Post Isolation") {
           const pbSummary = resolveLineupArchetypes(userLineup);
           const pbLevel = pbSummary.allResults.find(r => r.id === "playmaking")?.level ?? 0;
@@ -2098,13 +2135,13 @@ export function simulateTick(
       is3PTBaseCheck = false;
     }
     const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
-    const is3PT = shotInfo.is3PT;
-    const shotType = shotInfo.type;
+    let is3PT = shotInfo.is3PT;
+    let shotType = shotInfo.type;
 
     const SLOT_POS = ['PG','SG','SF','PF','C'] as const;
     const scorerSlotIdx = SLOT_POS.indexOf(scorer.position as typeof SLOT_POS[number]);
-    const primaryDefender = scorerSlotIdx >= 0 ? userLineup[scorerSlotIdx] : undefined;
-    const matchupBonus = getMatchupBonus(scorer, primaryDefender) + (hasBaseSkill(scorer, "Position Flex") ? 0.02 : 0);
+    let primaryDefender = scorerSlotIdx >= 0 ? userLineup[scorerSlotIdx] : undefined;
+    let matchupBonus = getMatchupBonus(scorer, primaryDefender) + (hasBaseSkill(scorer, "Position Flex") ? 0.02 : 0);
     if (matchupBonus >= 0.12 && primaryDefender) {
       newEvents.push(makeEvent(newQuarter, newClock,
         `MISMATCH: ${scorer.name} has a clear advantage over ${primaryDefender.name}`, false
@@ -2484,9 +2521,30 @@ export function simulateTick(
         return 0.90 + (cageStepIdentity / 100) * 0.20;
       }) ? 1.12 : 1.0;
       const aiFinalTOVChance = Math.min(0.25, aiBaseTOVRate * userDefPressureMod * aiTovMod * aiLateClockMod * userHandsActivePressure * userScreenBreakerPressure * userCageStepPressure * userLockChainTOVMod);
-      if (Math.random() < aiFinalTOVChance) {
+      let aiBrokenPlayRescued = false;
+      let aiBrokenPlayRescuedScorer: Player | null = null;
+      let isAiTovRolled = Math.random() < aiFinalTOVChance;
+      let aiCommitterForRescue: Player | null = null;
+      if (isAiTovRolled) {
+        aiCommitterForRescue = pickCommitter(aiLineup);
+        const rescueUsesKey = `AI Broken Play Rescue Q${newQuarter}`;
+        if (!hasTeamSkillUsed(false, rescueUsesKey) && rollSpecialMechanic([aiCommitterForRescue], "BROKEN_PLAY_RESCUE_SAVE", newStamina, (h) => {
+          return calculateBrokenPlayRescueChanceScale(getBrokenPlayRescueIdentity(h), staminaPct(h));
+        })) {
+          const identity = getBrokenPlayRescueIdentity(aiCommitterForRescue);
+          const cost = calculateBrokenPlayRescueStaminaCost(identity, staminaPct(aiCommitterForRescue));
+          drainStamina(newStamina, aiCommitterForRescue, aiLineup, cost);
+          skillLog(`${aiCommitterForRescue.name} rescues a broken play!`, false);
+          markTeamSkillUsed(false, rescueUsesKey);
+          aiBrokenPlayRescued = true;
+          aiBrokenPlayRescuedScorer = aiCommitterForRescue;
+          isAiTovRolled = false;
+        }
+      }
+
+      if (isAiTovRolled) {
         turnoverOccurred = true;
-        const committer = pickCommitter(aiLineup);
+        const committer = aiCommitterForRescue!;
         if (userCageStepPressure > 1) {
           newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
           skillLog(`Cage Step X hooks ${committer.name}'s handle`, true);
@@ -2534,7 +2592,7 @@ export function simulateTick(
 
         // ═══ ROLL NSF: NON-SHOOTING FOUL CHECK (user defending AI) ═══
         const defAvg_nsf_ai = avgStamina(userLineup, newStamina);
-        const nsfChance_ai = 0.045 * getFoulStamMod(defAvg_nsf_ai); // ~5-6 NSF/game per team
+        const nsfChance_ai = aiBrokenPlayRescued ? 0 : 0.045 * getFoulStamMod(defAvg_nsf_ai); // ~5-6 NSF/game per team
         if (Math.random() < nsfChance_ai) {
           const committer = pickFoulCommitter(userLineup);
           ensureStats(committer.id);
@@ -2564,6 +2622,19 @@ export function simulateTick(
         }
 
         if (!nonShootingFoulToFT) {
+          if (aiBrokenPlayRescued && aiBrokenPlayRescuedScorer) {
+            scorer = aiBrokenPlayRescuedScorer;
+            activePlayerId = scorer.id;
+            ensureStats(scorer.id);
+            is3PT = false;
+            shotType = 'hookShot';
+            const scorerSlotIdx = SLOT_POS.indexOf(scorer.position as typeof SLOT_POS[number]);
+            primaryDefender = scorerSlotIdx >= 0 ? userLineup[scorerSlotIdx] : undefined;
+            matchupBonus = getMatchupBonus(scorer, primaryDefender) + (hasBaseSkill(scorer, "Position Flex") ? 0.02 : 0);
+            const identity = getBrokenPlayRescueIdentity(scorer);
+            const penalty = calculateBrokenPlayRescueShotPenalty(identity, staminaPct(scorer));
+            aiSkillShotBonus = -penalty;
+          }
           ensureForm(scorer.id);
           tryBlock(userLineup, scorer, true, shotType, is3PT);
           if (blockOccurred) {
