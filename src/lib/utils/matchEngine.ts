@@ -61,6 +61,36 @@ import {
   calculateAiPutbackChance,
   calculateFinalScoringChance
 } from "../match/shotResolution";
+import {
+  calculateBlockChance,
+  getSkyWallIdentity,
+  calculateSkyWallScale
+} from "../match/blockSystem";
+import {
+  calculateOffensiveStrategyMultiplier,
+  calculateStrategyLevelMultiplier,
+  checkStrategyDegradation
+} from "../match/strategyEffects";
+import {
+  getBenchCaptainIdentity,
+  calculateBenchCaptainRecovery,
+  getDefensiveAnchorIdentity,
+  calculateDefensiveAnchorTriggerScale,
+  calculateDefensiveAnchorLeaderScale,
+  calculateDefensiveAnchorLeadershipReduction,
+  calculateDefensiveAnchorTargetResistance,
+  getPressureCoachIdentity,
+  calculatePressureCoachScale,
+  getEnforcerIdentity,
+  calculateEnforcerScale
+} from "../match/archetypeEffects";
+import {
+  getTovStamMod as extGetTovStamMod,
+  getLowestStaminaPlayer as extGetLowestStaminaPlayer,
+  getPrimaryBallHandler as extGetPrimaryBallHandler,
+  isEnergyDrinkLocked as extIsEnergyDrinkLocked,
+  getUsageMod as extGetUsageMod
+} from "../match/playerMatchModifiers";
 import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating } from "./playerIdentity";
 import {
   addMark,
@@ -403,7 +433,7 @@ export function simulateTick(
     newEvents.push(makeEvent(newQuarter, newClock, `SKILL: ${text}`, isUserTeam));
   };
   const getLowestStaminaPlayer = (lineup: Player[]): Player =>
-    [...lineup].sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))[0] ?? lineup[0];
+    extGetLowestStaminaPlayer(lineup, newStamina);
   const applyDebtCollector = (
     triggerTeam: Player[],
     targetTeam: Player[],
@@ -416,7 +446,7 @@ export function simulateTick(
       return 0.90 + (debtCollectorIdentity / 100) * 0.20;
     })) return;
     newSkillMarks = consumeMark(newSkillMarks, target.id, "Debt");
-    const splashTargets = targetTeam
+    const splashTargets = [...targetTeam]
       .filter(p => p.id !== target.id)
       .sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))
       .slice(0, 2);
@@ -490,26 +520,25 @@ export function simulateTick(
     const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
 
     if (!rollSpecialMechanic(team, "BENCH_CAPTAIN_STABILIZE", newStamina, (h) => {
-      const benchCaptainIdentity = (getCalmRating(h) + getStaminaRating(h) + getAssistRating(h)) / 3;
-      return (0.90 + (benchCaptainIdentity / 100) * 0.20) * scaleMultiplier;
+      return getBenchCaptainIdentity(h) * scaleMultiplier;
     })) return;
 
     const holders = team.filter(p => hasSpecialSkillMechanic(p, "BENCH_CAPTAIN_STABILIZE"));
-    const leader = holders.sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
+    const leader = [...holders].sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
     if (!leader) return;
 
     markTeamSkillUsed(isUserTeam, useKey);
 
-    const leaderIdentity = (getCalmRating(leader) + getStaminaRating(leader) + getAssistRating(leader)) / 3;
-    const scale = 0.85 + (leaderIdentity / 100) * 0.30;
-    const staminaRecover = Math.min(8, Math.round(6 * scale));
+    const leaderIdentity = getBenchCaptainIdentity(leader);
+    const recovery = calculateBenchCaptainRecovery(leaderIdentity, getCalmRating(leader));
+    const staminaRecover = recovery.staminaRecover;
 
     recoverSkillStamina(lowestStamPlayer, staminaRecover);
 
     ensureForm(lowestStamPlayer.id);
     let formText = "";
     if (newFormRating[lowestStamPlayer.id] < 1.0) {
-      const formStabilize = Math.min(0.008, 0.004 + (getCalmRating(leader) / 100) * 0.004);
+      const formStabilize = recovery.formStabilize;
       newFormRating[lowestStamPlayer.id] = clampForm(newFormRating[lowestStamPlayer.id] + formStabilize);
       formText = ` and focus (+${(formStabilize * 100).toFixed(2)}%)`;
     }
@@ -528,43 +557,27 @@ export function simulateTick(
     const staminaDrainResult = summary.allResults.find(r => r.id === "stamina-drain");
     const level = staminaDrainResult ? staminaDrainResult.level : 0;
 
-    let triggerMultiplier = 1.0;
-    if (level === 2) triggerMultiplier = 1.15;
-    else if (level === 3) triggerMultiplier = 1.30;
-
     if (!rollSpecialMechanic(defendingTeam, "DEFENSIVE_ANCHOR_TEAM_PRESSURE", newStamina, (h) => {
-      const identity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStrengthRating(h) + getStealRating(h)) / 4;
-      const baseScale = 0.90 + (identity / 100) * 0.20;
-      return baseScale * triggerMultiplier;
+      return calculateDefensiveAnchorTriggerScale(getDefensiveAnchorIdentity(h), level);
     })) return;
 
     const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_PRESSURE"));
-    const leader = holders.sort((a_p, b_p) => {
-      const aId = (getOnBallDefenseRating(a_p) + getStaminaRating(a_p) + getStrengthRating(a_p) + getStealRating(a_p)) / 4;
-      const bId = (getOnBallDefenseRating(b_p) + getStaminaRating(b_p) + getStrengthRating(b_p) + getStealRating(b_p)) / 4;
-      return bId - aId;
+    const leader = [...holders].sort((a_p, b_p) => {
+      return getDefensiveAnchorIdentity(b_p) - getDefensiveAnchorIdentity(a_p);
     })[0];
     if (!leader) return;
 
     markTeamSkillUsed(isDefendingUserTeam, useKey);
 
-    const leaderIdentity = (getOnBallDefenseRating(leader) + getStaminaRating(leader) + getStrengthRating(leader) + getStealRating(leader)) / 4;
-    const scale = 0.90 + (leaderIdentity / 100) * 0.20;
-
-    const getPrimaryBallHandler = (team: Player[]): Player => {
-      return [...team].sort((a, b) => {
-        const aVal = (getAssistRating(a) + getHandleRating(a)) / 2;
-        const bVal = (getAssistRating(b) + getHandleRating(b)) / 2;
-        return bVal - aVal;
-      })[0] ?? team[0];
-    };
+    const leaderIdentity = getDefensiveAnchorIdentity(leader);
+    const scale = calculateDefensiveAnchorLeaderScale(leaderIdentity);
 
     if (level === 0) {
-      const target = getPrimaryBallHandler(attackingTeam);
+      const target = extGetPrimaryBallHandler(attackingTeam);
       if (!target) return;
 
       const baseAmount = getDefensiveAnchorPressureDrain(scale);
-      const targetResistance = (getStaminaRating(target) / 100) * 0.15;
+      const targetResistance = calculateDefensiveAnchorTargetResistance(getStaminaRating(target));
       let playerDrain = Math.round(baseAmount * (1 - targetResistance));
 
       playerDrain = applyAntiSnowballScaling(playerDrain, staminaPct(target));
@@ -589,13 +602,11 @@ export function simulateTick(
       let leadershipReduction = 0;
       let counterLeaderName = "";
       if (counterLeaders.length > 0) {
-        const bestLeader = counterLeaders.sort((a, b) => {
-          const aId = (getCalmRating(a) + getStaminaRating(a) + getAssistRating(a)) / 3;
-          const bId = (getCalmRating(b) + getStaminaRating(b) + getAssistRating(b)) / 3;
-          return bId - aId;
+        const bestLeader = [...counterLeaders].sort((a, b) => {
+          return getBenchCaptainIdentity(b) - getBenchCaptainIdentity(a);
         })[0];
-        const counterIdentity = (getCalmRating(bestLeader) + getStaminaRating(bestLeader) + getAssistRating(bestLeader)) / 3;
-        leadershipReduction = Math.min(0.20, 0.10 + (counterIdentity / 100) * 0.10);
+        const counterIdentity = getBenchCaptainIdentity(bestLeader);
+        leadershipReduction = calculateDefensiveAnchorLeadershipReduction(counterIdentity);
         counterLeaderName = bestLeader.name;
       }
 
@@ -603,7 +614,7 @@ export function simulateTick(
 
       attackingTeam.forEach(p => {
         // Player Natural Resistance (Counter Type A)
-        const targetResistance = (getStaminaRating(p) / 100) * 0.15;
+        const targetResistance = calculateDefensiveAnchorTargetResistance(getStaminaRating(p));
         let playerDrain = Math.round(teamDrain * (1 - targetResistance));
 
         // Anti-Snowball Low-Stamina Reduction (Counter Type C)
@@ -646,8 +657,7 @@ export function simulateTick(
   };
   const applyPressureCoach = (sourceTeam: Player[], targetTeam: Player[], isSourceUser: boolean) => {
     if (!rollSpecialMechanic(sourceTeam, "GAMEPLAN_PRESSURE_COACH", newStamina, (h) => {
-      const pressureCoachIdentity = (getAssistRating(h) + getOnBallDefenseRating(h) + getStaminaRating(h)) / 3;
-      return 0.90 + (pressureCoachIdentity / 100) * 0.20;
+      return calculatePressureCoachScale(getPressureCoachIdentity(h));
     })) return;
     const targets = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id));
     if (targets.length === 0) return;
@@ -672,10 +682,10 @@ export function simulateTick(
     if (foulsThisQuarter > 0 && rollBaseSkill(team, "Enforcer Lift", newStamina)) {
       const enforcerHolders = team.filter(p => hasBaseSkill(p, "Enforcer Lift"));
       const bestEnforcer = enforcerHolders.reduce((best, p) => {
-        const id = (getOnBallDefenseRating(p) + getStrengthRating(p) + getStaminaRating(p)) / 3;
+        const id = getEnforcerIdentity(p);
         return id > best ? id : best;
       }, 50);
-      const enforcerLiftScale = 0.85 + (bestEnforcer / 100) * 0.30;
+      const enforcerLiftScale = calculateEnforcerScale(bestEnforcer);
       team.forEach(p => recoverSkillStamina(p, 6 * enforcerLiftScale));
       skillLog(`Enforcer Lift turns physical play into team energy`, isUserTeam);
     }
@@ -684,8 +694,7 @@ export function simulateTick(
   // ═══ ENERGY DRINK: Lock helpers ═══
   const newEnergyDrinkLocked = { ...state.energyDrinkLocked };
   const isEnergyDrinkLocked = (playerId: string): boolean => {
-    const lockedUntil = newEnergyDrinkLocked[playerId];
-    return !!lockedUntil && gameTimeSec < lockedUntil;
+    return extIsEnergyDrinkLocked(newEnergyDrinkLocked[playerId], gameTimeSec);
   };
   // ═══ ENERGY DRINK: PendingForm one-tick boost ═══
   if (state.energyDrinkPendingForm) {
@@ -810,221 +819,21 @@ export function simulateTick(
     warnings.push(`ALERT: ${oop.name} (${oop.position}) playing out of position at ${slot}`);
   }
 
-  // ISO check
-  if (currentOff === "Isolation (ISO)") {
-    const star = [...userLineup].sort((a, b) => b.ovr - a.ovr)[0];
-    if (staminaPct(star) < 40) {
-      currentOff = "Motion Offense";
-      newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText("Isolation (ISO)", "Motion Offense", star.name), true));
-    }
-  }
-
-  // Pick & Roll check
-  if (currentOff === "Pick & Roll") {
-    const pg = userLineup.find(p => p.position === 'PG');
-    const big = userLineup.find(p => p.position === 'C' || p.position === 'PF');
-    if (pg && big && (staminaPct(pg) < 45 || staminaPct(big) < 45)) {
-      const tired = staminaPct(pg) < 45 ? pg : big!;
-      warnings.push(`Pick & Roll DEGRADED — ${tired.name} fatigued`);
-    }
-  }
-
-  // 5-Out check
-  if (currentOff === "5-Out Spacing" && userAvg < 55) {
-    warnings.push("5-Out Spacing DEGRADED — team too fatigued for spacing");
-  }
-
-  // Run & Gun check
-  if (currentOff === "Run & Gun") {
-    if (userAvg < 50) {
-      currentOff = "Motion Offense";
-      newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText("Run & Gun", "Motion Offense", "Team"), true));
-    } else if (userAvg < 65) {
-      warnings.push("Run & Gun DEGRADED — team losing transition speed");
-    }
-  }
-
-  // Pace & Space check
-  if (currentOff === "Pace & Space") {
-    const sg = userLineup.find(p => p.position === 'SG');
-    const sf = userLineup.find(p => p.position === 'SF');
-    if (sg && sf && (staminaPct(sg) < 45 || staminaPct(sf) < 45)) {
-      const tired = staminaPct(sg) < 45 ? sg : sf!;
-      warnings.push(`Pace & Space DEGRADED — shooter ${tired.name} fatigued`);
-    }
-  }
-
-  // Outside Shoot check
-  if (currentOff === "Outside Shoot") {
-    const pg = userLineup.find(p => p.position === 'PG');
-    const sg = userLineup.find(p => p.position === 'SG');
-    if (pg && sg && (staminaPct(pg) < 40 || staminaPct(sg) < 40)) {
-      const tired = staminaPct(pg) < 40 ? pg : sg!;
-      warnings.push(`Outside Shoot DEGRADED — perimeter threat ${tired.name} fatigued`);
-    }
-  }
-
-  // Corner 3s check
-  if (currentOff === "Corner 3s") {
-    const sg = userLineup.find(p => p.position === 'SG');
-    const sf = userLineup.find(p => p.position === 'SF');
-    if (sg && sf && (staminaPct(sg) < 40 || staminaPct(sf) < 40)) {
-      const tired = staminaPct(sg) < 40 ? sg : sf!;
-      warnings.push(`Corner 3s DEGRADED — corner shooter ${tired.name} fatigued`);
-    }
-  }
-
-  // Inside Score check
-  if (currentOff === "Inside Score") {
-    const pf = userLineup.find(p => p.position === 'PF');
-    const c = userLineup.find(p => p.position === 'C');
-    if (pf && c && (staminaPct(pf) < 40 || staminaPct(c) < 40)) {
-      const tired = staminaPct(pf) < 40 ? pf : c!;
-      warnings.push(`Inside Score DEGRADED — paint physical presence ${tired.name} fatigued`);
-    }
-  }
-
-  // Hawk Entry check
-  if (currentOff === "Hawk Entry") {
-    const sf = userLineup.find(p => p.position === 'SF');
-    const pf = userLineup.find(p => p.position === 'PF');
-    if (sf && pf && (staminaPct(sf) < 40 || staminaPct(pf) < 40)) {
-      const tired = staminaPct(sf) < 40 ? sf : pf!;
-      warnings.push(`Hawk Entry DEGRADED — cutter/screener ${tired.name} fatigued`);
-    }
-  }
-
-  // Outside Cut Entry check
-  if (currentOff === "Outside Cut Entry") {
-    const sf = userLineup.find(p => p.position === 'SF');
-    const sg = userLineup.find(p => p.position === 'SG');
-    if (sf && sg && (staminaPct(sf) < 40 || staminaPct(sg) < 40)) {
-      const tired = staminaPct(sf) < 40 ? sf : sg!;
-      warnings.push(`Outside Cut Entry DEGRADED — wing playmaker/cutter ${tired.name} fatigued`);
-    }
-  }
-
-  // Princeton Offense check
-  if (currentOff === "Princeton Offense" && userAvg < 50) {
-    currentOff = "Outside Shoot";
-    newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText("Princeton Offense", "Outside Shoot", "Team"), true));
-  }
-
-  // Switch Defense auto-revert
-  if (currentDef === "Switch Defense") {
-    const weak = userLineup.find(p => staminaPct(p) < 40);
-    if (weak) {
-      currentDef = "Man-to-Man";
-      newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText("Switch Defense", "Man-to-Man", weak.name), true));
-    }
-  }
-
-  // Full-court press auto-revert
-  if (currentDef === "Full-court press" || currentDef === "Full-Court Press") {
-    if (userAvg < 40) {
-      currentDef = "Man-to-Man";
-      newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText(currentDef, "Man-to-Man", "Team"), true));
-    } else if (userAvg < 55) {
-      warnings.push("Full-court press DEGRADED — low team stamina for press");
-    }
-  }
-
-  // Half-court press auto-revert
-  if (currentDef === "Half-court press" || currentDef === "Half-Court Press") {
-    if (userAvg < 45) {
-      currentDef = "Man-to-Man";
-      newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText(currentDef, "Man-to-Man", "Team"), true));
-    } else if (userAvg < 60) {
-      warnings.push("Half-court press DEGRADED — team too fatigued to trap sideline");
-    }
-  }
-
-  // Protect the Lane check
-  if (currentDef === "Protect the Lane") {
-    const pf = userLineup.find(p => p.position === 'PF');
-    const c = userLineup.find(p => p.position === 'C');
-    if (pf && c && (staminaPct(pf) < 40 || staminaPct(c) < 40)) {
-      const tired = staminaPct(pf) < 40 ? pf : c!;
-      warnings.push(`Protect the Lane DEGRADED — rim protectors fatigued (${tired.name})`);
-    }
-  }
-
-  // 3-2 Zone check
-  if (currentDef === "3-2 Zone" && userAvg < 50) {
-    warnings.push("3-2 Zone DEGRADED — team too slow to cover the wings");
-  }
-
-  // 1-3-1 Zone check
-  if (currentDef === "1-3-1 Zone" && userAvg < 50) {
-    currentDef = "Man-to-Man";
-    newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText("1-3-1 Zone", "Man-to-Man", "Team"), true));
-  }
-
-  // Blitz/Trap degradation
-  if (currentDef === "Blitz/Trap" && userAvg < 50) {
-    warnings.push("Blitz/Trap DEGRADED — team too fatigued to trap");
-  }
+  const deg = checkStrategyDegradation(currentOff, currentDef, userLineup, newStamina);
+  currentOff = deg.newOffStrategy;
+  currentDef = deg.newDefStrategy;
+  warnings.push(...deg.warnings);
+  deg.reverts.forEach(r => {
+    newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText(r.from, r.to, r.playerName || "Team"), true));
+  });
 
   // ═══ STEP 4: RECALCULATE TEAM STATS (Layer 4) ═══
-  // ISO scaling
-  let offMult = 1.0;
-  if (currentOff === "Isolation (ISO)") {
-    const star = [...userLineup].sort((a, b) => b.ovr - a.ovr)[0];
-    const ss = newStamina[star.id] ?? 100;
-    offMult = ss >= 70 ? 1.05 : ss >= 50 ? 1.0 : ss >= 30 ? 0.92 : 0.85;
-  }
-  if (currentOff === "Pick & Roll") {
-    const pg = userLineup.find(p => p.position === 'PG');
-    const big = userLineup.find(p => p.position === 'C' || p.position === 'PF');
-    if (pg && big && (staminaPct(pg) < 45 || staminaPct(big) < 45)) offMult = 0.98 / 1.02;
-  }
-  if (currentOff === "Run & Gun") {
-    offMult = userAvg >= 75 ? 1.06 : userAvg >= 60 ? 1.02 : 0.94;
-  }
-  if (currentOff === "Pace & Space") {
-    const sg = userLineup.find(p => p.position === 'SG');
-    const sf = userLineup.find(p => p.position === 'SF');
-    const avgShooterStamina = ((newStamina[sg?.id ?? ''] ?? 100) + (newStamina[sf?.id ?? ''] ?? 100)) / 2;
-    offMult = avgShooterStamina >= 70 ? 1.04 : avgShooterStamina >= 50 ? 1.00 : 0.92;
-  }
-  if (currentOff === "Outside Shoot") {
-    const pg = userLineup.find(p => p.position === 'PG');
-    const sg = userLineup.find(p => p.position === 'SG');
-    const avgPerimeterStam = ((newStamina[pg?.id ?? ''] ?? 100) + (newStamina[sg?.id ?? ''] ?? 100)) / 2;
-    offMult = avgPerimeterStam >= 70 ? 1.04 : avgPerimeterStam >= 50 ? 1.00 : 0.92;
-  }
-  if (currentOff === "Corner 3s") {
-    const sg = userLineup.find(p => p.position === 'SG');
-    const sf = userLineup.find(p => p.position === 'SF');
-    const avgShooterStam = ((newStamina[sg?.id ?? ''] ?? 100) + (newStamina[sf?.id ?? ''] ?? 100)) / 2;
-    offMult = avgShooterStam >= 70 ? 1.05 : avgShooterStam >= 50 ? 1.01 : 0.91;
-  }
-  if (currentOff === "Inside Score") {
-    const pf = userLineup.find(p => p.position === 'PF');
-    const c = userLineup.find(p => p.position === 'C');
-    const avgBigStam = ((newStamina[pf?.id ?? ''] ?? 100) + (newStamina[c?.id ?? ''] ?? 100)) / 2;
-    offMult = avgBigStam >= 70 ? 1.05 : avgBigStam >= 50 ? 1.01 : 0.90;
-  }
-  if (currentOff === "Hawk Entry") {
-    const sf = userLineup.find(p => p.position === 'SF');
-    const pf = userLineup.find(p => p.position === 'PF');
-    const avgPostStam = ((newStamina[sf?.id ?? ''] ?? 100) + (newStamina[pf?.id ?? ''] ?? 100)) / 2;
-    offMult = avgPostStam >= 68 ? 1.03 : avgPostStam >= 48 ? 1.00 : 0.93;
-  }
-  if (currentOff === "Outside Cut Entry") {
-    const sf = userLineup.find(p => p.position === 'SF');
-    const sg = userLineup.find(p => p.position === 'SG');
-    const avgCutStam = ((newStamina[sf?.id ?? ''] ?? 100) + (newStamina[sg?.id ?? ''] ?? 100)) / 2;
-    offMult = avgCutStam >= 70 ? 1.04 : avgCutStam >= 50 ? 1.00 : 0.92;
-  }
-  if (currentOff === "Princeton Offense") {
-    offMult = userAvg >= 75 ? 1.05 : userAvg >= 60 ? 1.02 : 0.94;
-  }
+  let offMult = calculateOffensiveStrategyMultiplier(currentOff, userLineup, newStamina);
 
   const userOffLevel = state.strategyLevels?.[currentOff]?.level || 1;
   const userDefLevel = state.strategyLevels?.[currentDef]?.level || 1;
-  const strategyOffMultiplier = 1.0 + (userOffLevel - 1) * 0.02;
-  const strategyDefMultiplier = 1.0 + (userDefLevel - 1) * 0.02;
+  const strategyOffMultiplier = calculateStrategyLevelMultiplier(userOffLevel);
+  const strategyDefMultiplier = calculateStrategyLevelMultiplier(userDefLevel);
 
   // ─── TACTICAL COUNTER STRATEGY MODIFIERS ───
   let userCounterMult = 1.0;
@@ -1205,7 +1014,7 @@ export function simulateTick(
     for (let i = 0; i < lineup.length; i++) { r -= ws[i]; if (r <= 0) return lineup[i]; }
     return lineup[lineup.length - 1];
   };
-  const getTovStamMod = (avg: number) => avg >= 70 ? 1.0 : avg >= 50 ? 1.10 : avg >= 30 ? 1.22 : 1.35;
+  const getTovStamMod = (avg: number) => extGetTovStamMod(avg);
   const unforcedTovMsg = (c: Player, team: string): string => {
     const msgs = [
       `${c.name} turns it over: bad pass`,
@@ -1222,14 +1031,7 @@ export function simulateTick(
   const USAGE_WINDOW = 20;
   const newPossessionHistory = [...(state.possessionHistory || [])].slice(-USAGE_WINDOW);
   const getUsageMod = (playerId: string, team: 'user' | 'ai'): number => {
-    const window = newPossessionHistory.filter(h => h.team === team);
-    if (window.length < 5) return 1.0; // not enough data yet
-    const playerUses = window.filter(h => h.playerId === playerId).length;
-    const usageRate = playerUses / window.length;
-    if (usageRate >= 0.50) return 0.82; // extreme hero ball
-    if (usageRate >= 0.42) return 0.88; // heavy usage
-    if (usageRate >= 0.35) return 0.94; // above threshold — defense keying in
-    return 1.0;
+    return extGetUsageMod(playerId, team, newPossessionHistory);
   };
 
   // ═══ BLOCK HELPER ═══
@@ -1244,9 +1046,8 @@ export function simulateTick(
   const tryBlock = (defLineup: Player[], shooter: Player, isDefUser: boolean, shotType: ShotType = 'pullUpMid', is3PT = false): boolean => {
     const candidate = pickBlocker(defLineup);
     const rimWardenTriggered = rollBaseSkill(defLineup, "Rim Warden", newStamina);
-    const baseBlockChance = (getBlockRating(candidate) / 100) * (rimWardenTriggered ? 0.095 : 0.055);
     const stamMod = getPlayerStaminaMod(candidate, newStamina[candidate.id]);
-    const blockChance = baseBlockChance * stamMod;
+    const blockChance = calculateBlockChance(getBlockRating(candidate), rimWardenTriggered, stamMod);
     const blockRoll = Math.random();
     if (blockRoll < blockChance) {
       blockOccurred = true;
@@ -1792,17 +1593,15 @@ export function simulateTick(
         ];
         if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
           if (rollSpecialMechanic(aiLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
-            const identity = (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4;
-            return 0.90 + (identity / 100) * 0.20;
+            return calculateSkyWallScale(getSkyWallIdentity(h)).scale;
           })) {
             const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
             if (holders.length > 0) {
-              const identities = holders.map(h => (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4);
+              const identities = holders.map(h => getSkyWallIdentity(h));
               const bestIdentity = Math.max(...identities);
-              const scale = 0.90 + (bestIdentity / 100) * 0.20;
-              const penalty = Math.min(0.013, 0.008 + (bestIdentity / 100) * 0.004);
+              const { scale, penalty, baseDrain } = calculateSkyWallScale(bestIdentity);
               skillShotBonus -= penalty;
-              const drain = drainStamina(newStamina, scorer, userLineup, Math.min(10, Math.round(7 * scale)));
+              const drain = drainStamina(newStamina, scorer, userLineup, baseDrain);
               skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, false);
             }
           }
@@ -2397,17 +2196,15 @@ export function simulateTick(
     ];
     if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
       if (rollSpecialMechanic(userLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
-        const identity = (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4;
-        return 0.90 + (identity / 100) * 0.20;
+        return calculateSkyWallScale(getSkyWallIdentity(h)).scale;
       })) {
         const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
         if (holders.length > 0) {
-          const identities = holders.map(h => (getBlockRating(h) + getStrengthRating(h) + getStaminaRating(h) + getOnBallDefenseRating(h)) / 4);
+          const identities = holders.map(h => getSkyWallIdentity(h));
           const bestIdentity = Math.max(...identities);
-          const scale = 0.90 + (bestIdentity / 100) * 0.20;
-          const penalty = Math.min(0.013, 0.008 + (bestIdentity / 100) * 0.004);
+          const { scale, penalty, baseDrain } = calculateSkyWallScale(bestIdentity);
           aiSkillShotBonus -= penalty;
-          const drain = drainStamina(newStamina, scorer, aiLineup, Math.min(10, Math.round(7 * scale)));
+          const drain = drainStamina(newStamina, scorer, aiLineup, baseDrain);
           skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, true);
         }
       }
