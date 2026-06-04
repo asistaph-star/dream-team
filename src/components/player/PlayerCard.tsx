@@ -139,7 +139,8 @@ export function PlayerCard({
   const [imageError, setImageError] = useState(false);
   const { roster, firePlayer } = useGameState();
 
-  const player = roster.find(p => p.id === initialPlayer.id) || initialPlayer;
+  const rosterPlayer = roster.find(p => p.id === initialPlayer.id);
+  const player = rosterPlayer ? { ...rosterPlayer, ...initialPlayer } : initialPlayer;
   const tierRating = getTierRating(player.ovr);
   const tierColor = getTierColor(tierRating);
   const mainStarInfo = getStarTierAndLevel(player.starLevel ?? 0);
