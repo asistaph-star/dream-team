@@ -46,3 +46,24 @@ Applying `Math.max(scaleW, scaleH)` successfully filled widescreen monitors, but
 
 > [!IMPORTANT]
 > **Scaling Guardrail**: Do NOT use `Math.max` for scaling the global container unless the HUD (scoreboard, action buttons) and court are completely decoupled into responsive layout sheets. Monolithic scaling must strictly use `Math.min` with ambient background fill to keep the HUD visible.
+
+---
+
+## 3. Sandbox Match Selection & Opponent Naming
+
+### Naming Mismatch Fix
+Historically, playing stage 17 ("Milwaukee Bucks") would display "Boston Celtics" in the match scoreboard and event logs. This occurred because the match page loaded opponents directly from `mockAiTeams[difficulty]`, which hardcodes a single team name per difficulty (e.g. `EXPERT` was always "Boston Celtics").
+* **Solution**: The `startMatch` handler now accepts a `customName?: string` parameter. If present, it initializes `opponentName` state. A component-level memoized `aiTeam` object overrides the default team name dynamically:
+  ```typescript
+  const aiTeam = useMemo(() => {
+    const baseTeam = mockAiTeams[selectedDifficulty];
+    return { ...baseTeam, name: opponentName || baseTeam.name };
+  }, [selectedDifficulty, opponentName]);
+  ```
+This ensures that both the preview screen, scoreboard, logs, and simulation engine use the correct campaign stage name.
+
+### Sandbox Mode UI
+A tabbed toggle (**CAMPAIGN vs SANDBOX**) was added to the slanted Next Match card on the Season Map.
+* **Campaign Mode**: Follows the user's campaign stage progression and disables the button once completed.
+* **Sandbox Mode**: Bypasses campaign completion locks and presents a color-coded 6-difficulty selection grid (`EASY` to `DREAM_TEAM`). Selectable difficulties load the corresponding roster assets and coefficients while allowing free sandbox testing.
+* **Opponent Logo Watermark**: A responsive watermark of the selected opponent's logo was added to the background of the Next Match card, automatically updating and expanding on hover.
