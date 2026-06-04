@@ -51,6 +51,16 @@ import {
   ShotStaminaOutcome,
   DefensiveEffortType
 } from "../match/actionStaminaCosts";
+import {
+  getHomeCourtBoost as extGetHomeCourtBoost,
+  getAwayPenalty as extGetAwayPenalty,
+  getClutchMod as extGetClutchMod,
+  getAssistChance as extGetAssistChance,
+  calculateAndOneChance,
+  calculateUserPutbackChance,
+  calculateAiPutbackChance,
+  calculateFinalScoringChance
+} from "../match/shotResolution";
 import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating } from "./playerIdentity";
 import {
   addMark,
@@ -1146,33 +1156,12 @@ export function simulateTick(
       : state.aiScore < state.userScore && scoreDiff <= 10),
   };
 
-  // ═══ STEP 8 LAYER 3: HOME COURT SCORING HELPERS ═══
   const getHomeCourtBoost = (player: Player): number => {
-    const base: Record<string, number> = {
-      'Mythic':    0.005,
-      'Legendary': 0.010,
-      'Epic':      0.015,
-      'Rare':      0.020,
-      'Common':    0.025,
-    };
-    const rarityBoost = base[player.rarity] ?? 0.015;
-    const energyScaled = rarityBoost * homeCourt.crowdEnergy;
-    const rallyBonus = homeCourt.rallyMode ? 0.01 : 0.00;
-    return Math.min(0.025, energyScaled + rallyBonus);
+    return extGetHomeCourtBoost(player.rarity, homeCourt.crowdEnergy, homeCourt.rallyMode);
   };
 
   const getAwayPenalty = (player: Player): number => {
-    const base: Record<string, number> = {
-      'Mythic':    0.005,
-      'Legendary': 0.008,
-      'Epic':      0.010,
-      'Rare':      0.012,
-      'Common':    0.015,
-    };
-    const rarityPenalty = base[player.rarity] ?? 0.010;
-    const energyScaled = rarityPenalty * homeCourt.crowdEnergy;
-    const rallyPenalty = homeCourt.rallyMode ? 0.01 : 0.00;
-    return Math.min(0.020, energyScaled + rallyPenalty);
+    return extGetAwayPenalty(player.rarity, homeCourt.crowdEnergy, homeCourt.rallyMode);
   };
 
   let pointsScored = 0;
@@ -1230,8 +1219,6 @@ export function simulateTick(
   let blockOccurred = false;
 
   // ═══ PILLAR 3: ROLLING USAGE WINDOW (Hero Ball Tax) ═══
-  // Track rolling last 20 possessions per player. If any player exceeds 35% usage rate
-  // within the window, apply a progressive defensive focus penalty. [DESIGN PARAMETER]
   const USAGE_WINDOW = 20;
   const newPossessionHistory = [...(state.possessionHistory || [])].slice(-USAGE_WINDOW);
   const getUsageMod = (playerId: string, team: 'user' | 'ai'): number => {
@@ -1239,7 +1226,6 @@ export function simulateTick(
     if (window.length < 5) return 1.0; // not enough data yet
     const playerUses = window.filter(h => h.playerId === playerId).length;
     const usageRate = playerUses / window.length;
-    // 35% threshold from plan [DESIGN PARAMETER]
     if (usageRate >= 0.50) return 0.82; // extreme hero ball
     if (usageRate >= 0.42) return 0.88; // heavy usage
     if (usageRate >= 0.35) return 0.94; // above threshold — defense keying in
@@ -1263,16 +1249,13 @@ export function simulateTick(
     const blockChance = baseBlockChance * stamMod;
     const blockRoll = Math.random();
     if (blockRoll < blockChance) {
-      // Block occurred!
       blockOccurred = true;
       ensureStats(candidate.id);
       newPlayerStats[candidate.id].BLK = (newPlayerStats[candidate.id].BLK ?? 0) + 1;
-      // Form updates
       ensureForm(candidate.id);
       newFormRating[candidate.id] = clampForm(newFormRating[candidate.id] + 0.04);
       ensureForm(shooter.id);
       newFormRating[shooter.id] = clampForm(newFormRating[shooter.id] - 0.03);
-      // Play-by-play
       const clutch = newQuarter === 4 && Math.abs(state.userScore - state.aiScore) <= 5;
       const isBigOnSmall = (candidate.position === 'C' || candidate.position === 'PF') && (shooter.position === 'PG' || shooter.position === 'SG');
       const isISO = isDefUser ? currentDef === 'Isolation (ISO)' : currentOff === 'Isolation (ISO)';
@@ -1303,9 +1286,6 @@ export function simulateTick(
   };
 
   // ═══ REBOUND HELPER ═══
-  // REB_W, calculateTeamReboundScore, calculateOffensiveReboundChance,
-  // calculateGlassScale, calculateBarrierScale imported from ../match/reboundSystem
-  // pickRebounder and awardReb remain here (RNG / state mutations)
   const pickRebounder = (lineup: Player[]): Player => {
     const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
     const tw = ws.reduce((s, w) => s + w, 0);
@@ -1339,27 +1319,20 @@ export function simulateTick(
   };
 
   const getAssistChance = (passer: Player): number => {
-    return Math.max(0.38, Math.min(0.72, 0.38 + ((getAssistRating(passer) ?? 70) / 330)));
+    return extGetAssistChance(getAssistRating(passer) ?? 70);
   };
 
-  // ═══ STEP 7: CLUTCH HELPERS (Layers 2, 3, 8) ═══
+  // ═══ CLUTCH HELPERS ═══
   const getClutchRating = (player: Player): number => {
     return getClutchRatingByRarity(player.rarity);
   };
 
   const getClutchMod = (player: Player, situation: typeof clutchSituation): number => {
-    if (!situation.active) return 1.0;
     const clutchRating = getClutchRating(player);
-    const intensityMult = situation.intensity === 'high' ? 1.4 : 1.0;
     const currentForm = newFormRating[player.id] ?? 1.0;
-    const formAmplification = currentForm >= 1.10 ? 0.03 : currentForm <= 0.90 ? -0.02 : 0.00;
-    const staminaOverride = 0.04;
-    const totalMod = 1.0 + (clutchRating * intensityMult) + formAmplification + staminaOverride;
-    return Math.max(0.88, Math.min(1.20, totalMod));
+    return extGetClutchMod(clutchRating, situation.active, situation.intensity, currentForm);
   };
 
-  
-  
   const newFouledOut = [...state.fouledOut];
   let nonShootingFoulToFT = false;
   let shootingFoulOccurred = false;
@@ -1488,20 +1461,13 @@ export function simulateTick(
       nextLastPlayCategory = 'turnover';
     } else {
     // ═══ PILLAR 6: TURNOVER CHECK — fires BEFORE shot math [NBA DATA: 11-14 TOV/game]
-    // Base rate calibrated so each team turns it over ~12-13 times per 100 possessions.
-    // Factors: playmaking quality, defensive pressure, shot clock urgency, stamina.
     const userAvgPly = userLineup.reduce((s, p) => s + getHandleRating(p), 0) / 5;
-    // Base TOV rate: ~12% per possession baseline, scaled by ball-handling skill
-    // (league avg playmaking ~72 → ~11-12% rate; poor playmaking → higher)
     const baseTOVRate = 0.085 * (80 / Math.max(55, userAvgPly));
-    // Defensive pressure modifier (Pillar 4 interaction — Blitz/Trap forces more mistakes)
     const defPressureMod = state.aiDefStrategy === 'Blitz/Trap' ? 1.35
       : state.aiDefStrategy === 'Full-Court Press' ? 1.25
       : state.aiDefStrategy === 'Switch Defense' ? 1.08
       : 1.0;
-    // Pillar 5 interaction — fatigued players are turnover-prone
     const tovStamMod = getTovStamMod(userAvg);
-    // Late clock desperation forces risky passes [DESIGN PARAMETER]
     const lateClockMod = pace === 'late_clock' ? 1.30 : 1.0;
     let handsActivePressure = 1.0;
     if (rollBaseSkill(aiLineup, "Hands Active", newStamina)) {
@@ -1561,7 +1527,6 @@ export function simulateTick(
       newFormRating[committer.id] = clampForm(newFormRating[committer.id] - 0.035);
       const pfx = clutchSituation.active ? 'CRUCIAL TURNOVER — ' : '';
       if (Math.random() < 0.55) {
-        // Weighted random steal selection — distributes steals across roster by defensive rating
         const stlWeights = aiLineup.map(p => getStealRating(p));
         const stlTotalW = stlWeights.reduce((s, w) => s + w, 0);
         let stlR = Math.random() * stlTotalW;
@@ -1587,7 +1552,6 @@ export function simulateTick(
       // No turnover — check fouls then scoring
 
       // ── SHOT CLOCK VIOLATION CHECK ──
-      // Applied before the play resolves: ~3% base rate, higher with tired ISO / press defense
       const sclViolationChance = getShotClockViolationChance(
         currentOff, userAvg, state.aiDefStrategy
       );
@@ -1649,7 +1613,6 @@ export function simulateTick(
         if (currentOff === "Isolation (ISO)") {
           scorer = [...userLineup].sort((a, b) => b.ovr - a.ovr)[0];
         } else if (currentOff === "Post Isolation") {
-          // Auto-pick highest OVR big (C or PF)
           const bigs = userLineup
             .filter(p => p.position === 'C' || p.position === 'PF')
             .sort((a, b) => b.ovr - a.ovr);
@@ -1672,7 +1635,6 @@ export function simulateTick(
         const shooterStam = newStamina[scorer.id] ?? 100;
         const shooterStamMod = getPlayerStaminaMod(scorer, shooterStam);
         let is3PTBaseCheck = undefined as boolean | undefined;
-        // 5-Out forces 3PT; Post-ISO forbids 3PT (post players don't shoot 3s)
         if (currentOff === "5-Out Spacing" && staminaPct(scorer) >= 50) is3PTBaseCheck = true;
         if (currentOff === "Post Isolation") is3PTBaseCheck = false;
         const shotInfo = generateShot(scorer, newFormRating[scorer.id] || 1.0, staminaPct(scorer), is3PTBaseCheck, pace);
@@ -1680,7 +1642,6 @@ export function simulateTick(
         const shotType = shotInfo.type;
         ensureForm(scorer.id);
 
-        // Identify primary defender (opponent player in same slot for matchup bonus)
         const SLOT_POS = ['PG','SG','SF','PF','C'] as const;
         const scorerSlotIdx = SLOT_POS.indexOf(scorer.position as typeof SLOT_POS[number]);
         const primaryDefender = scorerSlotIdx >= 0 ? aiLineup[scorerSlotIdx] : undefined;
@@ -1691,7 +1652,7 @@ export function simulateTick(
           ));
         }
 
-        // ═══ tryBlock — BEFORE Roll F and Roll 3 (confirmed Step 4 order) ═══
+        // ═══ tryBlock — BEFORE Roll F and Roll 3 ═══
         let skillShotBonus = 0;
         if (currentOff !== "Isolation (ISO)" && currentOff !== "Post Isolation") {
           const pbSummary = resolveLineupArchetypes(userLineup);
@@ -1945,30 +1906,20 @@ export function simulateTick(
           }
         }
 
-        // ═══ ROLL 3: MAKE/MISS (only if no block and no shooting foul) ═══
+        // ═══ ROLL 3: MAKE/MISS ═══
         if (!blockOccurred && !shootingFoulOccurred) {
-          // ═══ PILLAR 2+3+4: INTERACTION MATRIX — multiplicative with hard guardrails ═══
-          // Formula: Final_Shot_Prob = Base × Stamina × Defense × Usage
-          // Source: Implementation Plan Interaction Matrix [DESIGN PARAMETER]
           const clutchMod = getClutchMod(scorer, clutchSituation);
-          // Pillar 4: Zone modifier scales defensive pressure per shot type
           const zoneMod = getShotZoneModifier(shotType, state.aiDefStrategy);
           const pressMod = (state.aiDefStrategy === 'Full-Court Press') ? getShotZoneModifier(shotType, 'Full-Court Press') : 1.0;
-          // Pillar 3: Hero ball usage tax applied multiplicatively
           const usageMod = getUsageMod(scorer.id, 'user');
-          // Fast break bypass: ignore defensive mod on open-court break (Pillar 1 interaction)
           const effectiveZoneMod = pace === 'fastbreak' ? 1.0 : zoneMod;
           const effectivePressMod = pace === 'fastbreak' ? 1.0 : pressMod;
-          // Assemble: Base × Stamina × Defense(zone) × Defense(press) × Usage × Clutch
-          const clutchAdjustedChance = finalChance * shooterStamMod * newFormRating[scorer.id] * clutchMod * effectiveZoneMod * effectivePressMod * usageMod;
           const matchupAdj = matchupBonus;
-          // Layer 3 (Step 8): Home court scoring adjustment
           const userHomeAdj = userIsHome
             ? getHomeCourtBoost(scorer)
             : -getAwayPenalty(scorer);
           const goodSubRatio = state.subsMade > 0 ? state.goodSubsMade / state.subsMade : 0.5;
           const decisionWeightMod = 1.0 + ((goodSubRatio - 0.5) * 0.05);
-          // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
           const shotValueDifficulty = is3PT ? -0.095 : 0;
           const realEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
           
@@ -1978,9 +1929,21 @@ export function simulateTick(
             : additiveBonusSum;
 
           const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
-          const adjustedChanceWithIndividual3PT = (clutchAdjustedChance * decisionWeightMod) * individual3ptMod;
 
-          const finalScoringChance = Math.max(0.15, Math.min(0.85, adjustedChanceWithIndividual3PT + cappedAdditiveBonus + shotValueDifficulty));
+          const finalScoringChance = calculateFinalScoringChance({
+            finalChance,
+            staminaMod: shooterStamMod,
+            formRating: newFormRating[scorer.id],
+            clutchMod,
+            effectiveZoneMod,
+            effectivePressMod,
+            usageMod,
+            individual3ptMod,
+            additiveBonus: cappedAdditiveBonus,
+            difficultyMod: shotValueDifficulty,
+            decisionWeightMod,
+            maxCeilingLimit: 0.85
+          });
           const isSuccess = Math.random() < finalScoringChance;
           if (is3PT) {
             const baseHalfWidth = 2.0;
@@ -2020,11 +1983,9 @@ export function simulateTick(
           if (isSuccess) {
             trackShotStamina(scorer.id, shotType, is3PT, 'make');
             trackDefensiveStamina(primaryDefender, shotType, is3PT, 'make');
-            // Record to possession history for rolling usage window
             newPossessionHistory.push({ team: 'user', playerId: scorer.id, wasTOV: false });
             pointsScored = is3PT ? 3 : 2;
             newPlayerStats[scorer.id].PTS += pointsScored;
-            // Shot tracking
             newPlayerStats[scorer.id].FGM = (newPlayerStats[scorer.id].FGM ?? 0) + 1;
             newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
             if (is3PT) {
@@ -2049,7 +2010,6 @@ export function simulateTick(
               skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, true);
               applyDebtCollector(userLineup, aiLineup, primaryDefender, true);
             }
-            // Layer 7: clutch form delta on make
             if (clutchSituation.active) {
               const formBoost = clutchSituation.intensity === 'high' ? 0.04 : 0.02;
               newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + formBoost);
@@ -2085,13 +2045,14 @@ export function simulateTick(
                 skillLog(`Chain Pass X places Debt on ${debtTarget.name}`, true);
               }
             }
-            // ═══ ROLL A: AND-1 CHECK (only if no prior FT this tick) ═══
+            // ═══ ROLL A: AND-1 CHECK ═══
             if (!nonShootingFoulToFT) {
               const finishingRating = scorer && !is3PT ? getFinishingRating(scorer) : 50;
-              const finishingAnd1Mod = 0.85 + (finishingRating / 100) * 0.30;
-              let and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(aiLineup, newStamina)) * finishingAnd1Mod; // Reduced And-1 rate
-              const MAX_AND1_CHANCE = 0.15;
-              and1Chance = Math.min(MAX_AND1_CHANCE, and1Chance);
+              const and1Chance = calculateAndOneChance(
+                is3PT,
+                avgStamina(aiLineup, newStamina),
+                finishingRating
+              );
               if (Math.random() < and1Chance) {
                 const and1Committer = pickFoulCommitter(aiLineup);
                 ensureStats(and1Committer.id);
@@ -2111,10 +2072,8 @@ export function simulateTick(
             trackDefensiveStamina(primaryDefender, shotType, is3PT, 'miss');
             const missEvtText = clutchSituation.active ? clutchMissText(scorer, clutchSituation) : missText(scorer, shotType, currentOff);
             newEvents.push(makeEvent(newQuarter, newClock, missEvtText, true, 0, scorer.id));
-            // Shot tracking — miss
             newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
             if (is3PT) newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1;
-            // Layer 7: clutch form delta on miss
             if (clutchSituation.active) {
               const formPenalty = clutchSituation.intensity === 'high' ? -0.04 : -0.02;
               newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + formPenalty);
@@ -2157,9 +2116,7 @@ export function simulateTick(
               }
               nextPossessionTeam = 'user';
               nextLastPlayCategory = 'miss_oreb';
-              // NBA 2018+ rule: shot clock resets to 14s on OREB of a rim shot
-              // (tracked via possessionClock in state, applied at end of tick)
-              // ═══ OREB SECOND-CHANCE: Roll F before fc2 (Layer 5b) ═══
+              // ═══ OREB SECOND-CHANCE ═══
               const sc2 = userLineup[Math.floor(Math.random() * userLineup.length)];
               ensureStats(sc2.id); ensureForm(sc2.id);
               let orebFoulFired = false;
@@ -2184,15 +2141,23 @@ export function simulateTick(
               }
               if (!orebFoulFired) {
                 const stm2 = getPlayerStaminaMod(sc2, newStamina[sc2.id]);
-                const goodSubRatio = state.subsMade > 0 ? state.goodSubsMade / state.subsMade : 0.5;
                 const decisionWeightMod = 1.0 + ((goodSubRatio - 0.5) * 0.05); // ±2.5% modifier
-                const fc2 = Math.max(0.20, Math.min(0.80, (eUO / ((eUO + eAD) || 1)) * getStaminaMod(userAvg) * momentumBonus * stm2 * newFormRating[sc2.id] * decisionWeightMod + (glassTouch ? 0.035 : 0) + (glassStrikeTriggered ? getGlassStrikePutbackBoost(userReboundLevel) : 0)));
+                const fc2 = calculateUserPutbackChance({
+                  offEff: eUO,
+                  defEff: eAD,
+                  teamAvgStamina: userAvg,
+                  momentumBonus,
+                  playerStaminaMod: stm2,
+                  formRating: newFormRating[sc2.id],
+                  decisionWeightMod,
+                  glassTouchActive: !!glassTouch,
+                  glassStrikeBoost: glassStrikeTriggered ? getGlassStrikePutbackBoost(userReboundLevel) : 0
+                });
                 if (Math.random() < fc2) {
                   const p2 = Math.random() < 0.24 ? 3 : 2;
                   trackShotStamina(sc2.id, p2 === 3 ? 'catchAndShoot' : 'putBack', p2 === 3, 'make', 'oreb');
                   pointsScored = p2;
                   newPlayerStats[sc2.id].PTS += p2;
-                  // Shot tracking — OREB second chance
                   newPlayerStats[sc2.id].FGM = (newPlayerStats[sc2.id].FGM ?? 0) + 1;
                   newPlayerStats[sc2.id].FGA = (newPlayerStats[sc2.id].FGA ?? 0) + 1;
                   if (p2 === 3) { newPlayerStats[sc2.id].TPM = (newPlayerStats[sc2.id].TPM ?? 0) + 1; newPlayerStats[sc2.id].TPA = (newPlayerStats[sc2.id].TPA ?? 0) + 1; }
@@ -2252,7 +2217,6 @@ export function simulateTick(
     if (state.aiOffStrategy === "Isolation (ISO)") {
       scorer = [...aiLineup].sort((a, b) => b.ovr - a.ovr)[0];
     } else if (state.aiOffStrategy === "Post Isolation") {
-      // Auto-pick highest OVR big (C or PF)
       const bigs = aiLineup
         .filter(p => p.position === 'C' || p.position === 'PF')
         .sort((a, b) => b.ovr - a.ovr);
@@ -2284,7 +2248,6 @@ export function simulateTick(
     const is3PT = shotInfo.is3PT;
     const shotType = shotInfo.type;
 
-    // Identify primary defender (user player in same slot for matchup bonus)
     const SLOT_POS = ['PG','SG','SF','PF','C'] as const;
     const scorerSlotIdx = SLOT_POS.indexOf(scorer.position as typeof SLOT_POS[number]);
     const primaryDefender = scorerSlotIdx >= 0 ? userLineup[scorerSlotIdx] : undefined;
@@ -2295,7 +2258,6 @@ export function simulateTick(
       ));
     }
 
-    // Blitz/Trap handling (0% general TOV — 15% steal only, Step 3 fix, DO NOT CHANGE)
     let aiSkillShotBonus = 0;
     if (state.aiOffStrategy !== "Isolation (ISO)" && state.aiOffStrategy !== "Post Isolation") {
       const pbSummary = resolveLineupArchetypes(aiLineup);
@@ -2461,7 +2423,6 @@ export function simulateTick(
       const roll = Math.random();
 
       if (roll < stealChance) {
-        // Weighted random steal selection — Blitz/Trap path
         const bStlW = userLineup.map(p => getStealRating(p));
         const bStlTW = bStlW.reduce((s, w) => s + w, 0);
         let bStlR = Math.random() * bStlTW;
@@ -2477,11 +2438,9 @@ export function simulateTick(
         nextPossessionTeam = 'user';
         nextLastPlayCategory = 'steal';
       } else {
-        // No general TOV — steal IS the turnover mechanic
         if (roll < stealChance + easyBasketChance) {
           pointsScored = 2;
           newPlayerStats[scorer.id].PTS += 2;
-          // Shot tracking — Blitz easy basket
           newPlayerStats[scorer.id].FGM = (newPlayerStats[scorer.id].FGM ?? 0) + 1;
           newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
           newEvents.push(makeEvent(newQuarter, newClock, trapNarrative(scorer.name, true), false, 2, scorer.id));
@@ -2503,14 +2462,11 @@ export function simulateTick(
         } else {
           finalChance -= 0.08;
           ensureForm(scorer.id);
-          // Block before Roll F in Blitz/Trap contested path
-      tryBlock(userLineup, scorer, true, shotType, is3PT);
-      if (blockOccurred) {
-        trackShotStamina(scorer.id, shotType, is3PT, 'block');
-        trackDefensiveStamina(primaryDefender, shotType, is3PT, 'block');
-        nextPossessionTeam = 'user';
-        nextLastPlayCategory = 'block';
-      }
+          tryBlock(userLineup, scorer, true, shotType, is3PT);
+          if (blockOccurred) {
+            nextPossessionTeam = 'user';
+            nextLastPlayCategory = 'block';
+          }
           if (!blockOccurred) {
             const aiBlitzClutchFoulBoost = clutchSituation.active ? getClutchRating(scorer) * 0.5 : 0;
             const sfChance = (is3PT ? 0.044 : 0.086) * getFoulStamMod(avgStamina(userLineup, newStamina)) + aiBlitzClutchFoulBoost;
@@ -2529,18 +2485,15 @@ export function simulateTick(
               newEvents.push(makeEvent(newQuarter, newClock, `Shooting foul on ${committer.name} (${newPlayerStats[committer.id].FOL}/5): ${scorer.name} to the line for ${ftCount}`, false));
               eventIndicator = { playerId: committer.id, type: 'FOL' };
               runFTSequence(scorer.id, scorer.name, ftCount, false, committer.name, newPlayerStats[committer.id].FOL, false);
-              // After FTs, ball goes to User (inbound)
               nextPossessionTeam = 'user';
               nextLastPlayCategory = 'foul_reset';
             }
           }
           if (!blockOccurred && !shootingFoulOccurred) {
             const aiBlitzClutchMod = getClutchMod(scorer, clutchSituation);
-            const aiBlitzAdjustedChance = finalChance * aiScorerStamMod * newFormRating[scorer.id] * aiBlitzClutchMod;
-            // Layer 3 (Step 8): AI home court adjustment (AI is home when !userIsHome)
             const aiBlitzHomeAdj = userIsHome
-              ? -getAwayPenalty(scorer)   // AI is away
-              : getHomeCourtBoost(scorer); // AI is home
+              ? -getAwayPenalty(scorer)
+              : getHomeCourtBoost(scorer);
             const aiBlitzShotValueDifficulty = is3PT ? -0.095 : 0;
             const aiRealEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
             
@@ -2550,9 +2503,21 @@ export function simulateTick(
               : aiBlitzAdditiveBonusSum;
 
             const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
-            const adjustedChanceWithIndividual3PT = aiBlitzAdjustedChance * individual3ptMod;
 
-            const aiBlitzFinalChance = Math.max(0.15, Math.min(0.80, adjustedChanceWithIndividual3PT + aiBlitzCappedAdditiveBonus + aiBlitzShotValueDifficulty));
+            const aiBlitzFinalChance = calculateFinalScoringChance({
+              finalChance,
+              staminaMod: aiScorerStamMod,
+              formRating: newFormRating[scorer.id],
+              clutchMod: aiBlitzClutchMod,
+              effectiveZoneMod: 1.0,
+              effectivePressMod: 1.0,
+              usageMod: 1.0,
+              individual3ptMod,
+              additiveBonus: aiBlitzCappedAdditiveBonus,
+              difficultyMod: aiBlitzShotValueDifficulty,
+              decisionWeightMod: 1.0,
+              maxCeilingLimit: 0.80
+            });
             const isSuccess = Math.random() < aiBlitzFinalChance;
             if (is3PT) {
               const baseHalfWidth = 2.0;
@@ -2592,7 +2557,6 @@ export function simulateTick(
             if (isSuccess) {
               pointsScored = is3PT ? 3 : 2;
               newPlayerStats[scorer.id].PTS += pointsScored;
-              // Shot tracking — Blitz contested make
               newPlayerStats[scorer.id].FGM = (newPlayerStats[scorer.id].FGM ?? 0) + 1;
               newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
               if (is3PT) { newPlayerStats[scorer.id].TPM = (newPlayerStats[scorer.id].TPM ?? 0) + 1; newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1; }
@@ -2617,7 +2581,6 @@ export function simulateTick(
             } else {
               const aiBlitzMissEvt = clutchSituation.active ? clutchMissText(scorer, clutchSituation) : `Strong trap forces ${scorer.name} to miss!`;
               newEvents.push(makeEvent(newQuarter, newClock, aiBlitzMissEvt, false, 0, scorer.id));
-              // Shot tracking — Blitz contested miss
               newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
               if (is3PT) newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1;
               if (clutchSituation.active) { const fp = clutchSituation.intensity === 'high' ? -0.04 : -0.02; newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + fp); }
@@ -2629,15 +2592,12 @@ export function simulateTick(
       }
     } else {
       // ═══ PILLAR 6: TURNOVER CHECK — AI possession (non-Blitz) ═══
-      // Same data-driven calibration: ~12% base, scaled by AI playmaking quality
       const aiAvgPly = aiLineup.reduce((s, p) => s + getHandleRating(p), 0) / 5;
       const aiBaseTOVRate = 0.085 * (80 / Math.max(55, aiAvgPly));
-      // Pillar 4 interaction: user defensive strategy increases AI turnover risk
       const userDefPressureMod = currentDef === 'Blitz/Trap' ? 1.35
         : currentDef === 'Full-Court Press' ? 1.25
         : currentDef === 'Switch Defense' ? 1.08
         : 1.0;
-      // Pillar 5 interaction — fatigued AI turns it over more
       const aiTovMod = getTovStamMod(aiAvg);
       const aiLateClockMod = pace === 'late_clock' ? 1.30 : 1.0;
       let userHandsActivePressure = 1.0;
@@ -2698,7 +2658,6 @@ export function simulateTick(
         newFormRating[committer.id] = clampForm(newFormRating[committer.id] - 0.035);
         const pfx = clutchSituation.active ? 'CRUCIAL TURNOVER — ' : '';
         if (Math.random() < 0.55) {
-          // Weighted random steal selection — AI TOV path
           const stlW2 = userLineup.map(p => getStealRating(p));
           const stlTW2 = stlW2.reduce((s, w) => s + w, 0);
           let stlR2 = Math.random() * stlTW2;
@@ -2755,7 +2714,6 @@ export function simulateTick(
 
         if (!nonShootingFoulToFT) {
           ensureForm(scorer.id);
-          // Block before Roll F and Roll 3
           tryBlock(userLineup, scorer, true, shotType, is3PT);
           if (blockOccurred) {
             nextPossessionTeam = 'user';
@@ -2841,86 +2799,79 @@ export function simulateTick(
               newEvents.push(makeEvent(newQuarter, newClock, `Shooting foul on ${committer.name} (${newPlayerStats[committer.id].FOL}/5): ${scorer.name} to the line for ${ftCount}`, false));
               eventIndicator = { playerId: committer.id, type: 'FOL' };
               runFTSequence(scorer.id, scorer.name, ftCount, false, committer.name, newPlayerStats[committer.id].FOL, false);
-              // After FTs, ball goes to User (inbound)
               nextPossessionTeam = 'user';
               nextLastPlayCategory = 'foul_reset';
             }
           }
 
-          // ═══ PILLAR 2+3+4: INTERACTION MATRIX — AI possession ═══
-          // Formula: Final_Shot_Prob = Base × Stamina × Defense × Usage [DESIGN PARAMETER]
           if (!blockOccurred && !shootingFoulOccurred) {
             const aiClutchMod = getClutchMod(scorer, clutchSituation);
-            const zoneMod = getShotZoneModifier(shotType, currentDef);
-          const pressMod = (currentDef === 'Full-Court Press') ? getShotZoneModifier(shotType, 'Full-Court Press') : 1.0;
-          // Pillar 3: Hero ball usage tax for AI (same rolling window logic)
-          const aiUsageMod = getUsageMod(scorer.id, 'ai');
-          // Fast break bypass: ignore defensive mod on open-court break (Pillar 1 interaction)
-          const effectiveAiZoneMod = pace === 'fastbreak' ? 1.0 : zoneMod;
-          const effectiveAiPressMod = pace === 'fastbreak' ? 1.0 : pressMod;
-          const aiAdjustedChance = finalChance * aiScorerStamMod * newFormRating[scorer.id] * aiClutchMod * effectiveAiZoneMod * effectiveAiPressMod * aiUsageMod;
-          const matchupAdj = matchupBonus;
-          // Layer 3 (Step 8): AI home court adjustment
-          const aiHomeAdj = userIsHome
-            ? -getAwayPenalty(scorer)    // AI is away
-            : getHomeCourtBoost(scorer); // AI is home
-          // Pillar 2: Hard probability guardrails — floor 15%, ceiling 85% [DESIGN PARAMETER]
-          const aiShotValueDifficulty = is3PT ? -0.095 : 0;
-          const aiRealEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
-          
-          const aiAdditiveBonusSum = aiHomeAdj + matchupAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
-          const aiCappedAdditiveBonus = (is3PT && aiAdditiveBonusSum > 0)
-            ? Math.min(aiAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
-            : aiAdditiveBonusSum;
-
-          const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
-          const adjustedChanceWithIndividual3PT = aiAdjustedChance * individual3ptMod;
-
-          const aiFinalChance = Math.max(0.15, Math.min(0.85, adjustedChanceWithIndividual3PT + aiCappedAdditiveBonus + aiShotValueDifficulty));
-          const isSuccess = Math.random() < aiFinalChance;
-          if (is3PT) {
-            const baseHalfWidth = 2.0;
-            const ratingBoost = Math.max(-1.5, ((scorer.shooting ?? 80) - 80) * 0.08);
-            const rarityBoost = scorer.rarity === 'Mythic' ? 1.2 : (scorer.rarity === 'Legendary' ? 0.7 : (scorer.rarity === 'Epic' ? 0.3 : 0));
-            const stratBoost = state.aiOffStrategy === 'Run & Gun' ? 0.8 : (state.aiOffStrategy === 'Pace & Space' ? 0.4 : 0);
-            const opponentDef = currentDef;
-            const defPenalty = (opponentDef === 'Half-Court Trap' || opponentDef === 'Full-Court Press') ? -0.5 : 0;
+            const aiHomeAdj = userIsHome
+              ? -getAwayPenalty(scorer)
+              : getHomeCourtBoost(scorer);
+            const aiShotValueDifficulty = is3PT ? -0.095 : 0;
+            const aiRealEfficiencyAdj = getShotIdentityEfficiencyAdjustment(scorer, is3PT, shotType);
             
-            const totalHalfWidth = baseHalfWidth + ratingBoost + rarityBoost + stratBoost + defPenalty;
-            const greenWindowStart = Math.max(80, 94 - totalHalfWidth);
-            const greenWindowEnd = Math.min(99, 94 + totalHalfWidth);
+            const aiAdditiveBonusSum = aiHomeAdj + aiSkillShotBonus + aiRealEfficiencyAdj;
+            const aiCappedAdditiveBonus = (is3PT && aiAdditiveBonusSum > 0)
+              ? Math.min(aiAdditiveBonusSum, MAX_3PT_POSITIVE_ADDITIVE_BONUS)
+              : aiAdditiveBonusSum;
 
-            const releaseProgress = isSuccess
-              ? Math.floor(Math.random() * (greenWindowEnd - greenWindowStart + 1)) + greenWindowStart
-              : (Math.random() < 0.5
-                  ? Math.floor(Math.random() * 8) + 75
-                  : Math.floor(Math.random() * 8) + Math.ceil(greenWindowEnd) + 1
-                );
-            const feedback = isSuccess
-              ? "Excellent Release!"
-              : (releaseProgress < greenWindowStart ? "Slightly Early" : "Slightly Late");
+            const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
 
-            newActiveShotMeter = {
-              playerId: scorer.id,
-              shooterName: scorer.name,
-              is3PT: true,
-              isSuccess,
-              shotType,
-              releaseProgress,
-              greenWindowStart,
-              greenWindowEnd,
-              feedback,
-              isAiTeam: true,
-            };
-          }
-          if (isSuccess) {
-            trackShotStamina(scorer.id, shotType, is3PT, 'make');
-            trackDefensiveStamina(primaryDefender, shotType, is3PT, 'make');
-            // Record to possession history for rolling usage window
-            newPossessionHistory.push({ team: 'ai', playerId: scorer.id, wasTOV: false });
+            const aiFinalChance = calculateFinalScoringChance({
+              finalChance,
+              staminaMod: aiScorerStamMod,
+              formRating: newFormRating[scorer.id],
+              clutchMod: aiClutchMod,
+              effectiveZoneMod: 1.0,
+              effectivePressMod: 1.0,
+              usageMod: 1.0,
+              individual3ptMod,
+              additiveBonus: aiCappedAdditiveBonus,
+              difficultyMod: aiShotValueDifficulty,
+              decisionWeightMod: 1.0,
+              maxCeilingLimit: 0.85
+            });
+            const isSuccess = Math.random() < aiFinalChance;
+            if (is3PT) {
+              const baseHalfWidth = 2.0;
+              const ratingBoost = Math.max(-1.5, ((scorer.shooting ?? 80) - 80) * 0.08);
+              const rarityBoost = scorer.rarity === 'Mythic' ? 1.2 : (scorer.rarity === 'Legendary' ? 0.7 : (scorer.rarity === 'Epic' ? 0.3 : 0));
+              const stratBoost = state.aiOffStrategy === 'Run & Gun' ? 0.8 : (state.aiOffStrategy === 'Pace & Space' ? 0.4 : 0);
+              const opponentDef = currentDef;
+              const defPenalty = (opponentDef === 'Half-Court Trap' || opponentDef === 'Full-Court Press') ? -0.5 : 0;
+              
+              const totalHalfWidth = baseHalfWidth + ratingBoost + rarityBoost + stratBoost + defPenalty;
+              const greenWindowStart = Math.max(80, 94 - totalHalfWidth);
+              const greenWindowEnd = Math.min(99, 94 + totalHalfWidth);
+
+              const releaseProgress = isSuccess
+                ? Math.floor(Math.random() * (greenWindowEnd - greenWindowStart + 1)) + greenWindowStart
+                : (Math.random() < 0.5
+                    ? Math.floor(Math.random() * 8) + 75
+                    : Math.floor(Math.random() * 8) + Math.ceil(greenWindowEnd) + 1
+                  );
+              const feedback = isSuccess
+                ? "Excellent Release!"
+                : (releaseProgress < greenWindowStart ? "Slightly Early" : "Slightly Late");
+
+              newActiveShotMeter = {
+                playerId: scorer.id,
+                shooterName: scorer.name,
+                is3PT: true,
+                isSuccess,
+                shotType,
+                releaseProgress,
+                greenWindowStart,
+                greenWindowEnd,
+                feedback,
+                isAiTeam: true,
+              };
+            }
+            if (isSuccess) {
               pointsScored = is3PT ? 3 : 2;
               newPlayerStats[scorer.id].PTS += pointsScored;
-              // Shot tracking — AI normal make
               newPlayerStats[scorer.id].FGM = (newPlayerStats[scorer.id].FGM ?? 0) + 1;
               newPlayerStats[scorer.id].FGA = (newPlayerStats[scorer.id].FGA ?? 0) + 1;
               if (is3PT) { newPlayerStats[scorer.id].TPM = (newPlayerStats[scorer.id].TPM ?? 0) + 1; newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1; }
@@ -2941,9 +2892,6 @@ export function simulateTick(
                 applyDebtCollector(aiLineup, userLineup, primaryDefender, false);
               }
               if (clutchSituation.active) { const fb = clutchSituation.intensity === 'high' ? 0.04 : 0.02; newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + fb); }
-              // After made shot, ball goes to User (inbound)
-              nextPossessionTeam = 'user';
-              nextLastPlayCategory = 'made_shot';
               const tm = aiLineup.filter(p => p.id !== scorer.id);
             if (tm.length > 0) {
               const ws = tm.map(p => getAssistRating(p) || 50);
@@ -2977,13 +2925,16 @@ export function simulateTick(
                  }
               }
             }
+              nextPossessionTeam = 'user';
+              nextLastPlayCategory = 'made_shot';
               // And-1
               if (!nonShootingFoulToFT) {
                 const finishingRating = scorer && !is3PT ? getFinishingRating(scorer) : 50;
-                const finishingAnd1Mod = 0.85 + (finishingRating / 100) * 0.30;
-                let and1Chance = (is3PT ? 0.01 : 0.03) * getFoulStamMod(avgStamina(userLineup, newStamina)) * finishingAnd1Mod; // Reduced And-1 rate
-                const MAX_AND1_CHANCE = 0.15;
-                and1Chance = Math.min(MAX_AND1_CHANCE, and1Chance);
+                const and1Chance = calculateAndOneChance(
+                  is3PT,
+                  avgStamina(userLineup, newStamina),
+                  finishingRating
+                );
                 if (Math.random() < and1Chance) {
                   const and1C = pickFoulCommitter(userLineup);
                   ensureStats(and1C.id);
@@ -3077,7 +3028,15 @@ export function simulateTick(
         }
         if (!orebFoulFired) {
           const stm2 = getPlayerStaminaMod(sc2, newStamina[sc2.id]);
-          const fc2 = Math.max(0.30, Math.min(0.80, eAO / ((eAO + eUD) || 1))) * getStaminaMod(avgStamina(aiLineup, newStamina)) * stm2 * newFormRating[sc2.id] + (glassTouch ? 0.035 : 0) + (glassStrikeTriggered ? getGlassStrikePutbackBoost(aiReboundLevel) : 0);
+          const fc2 = calculateAiPutbackChance({
+            offEff: eAO,
+            defEff: eUD,
+            teamAvgStamina: avgStamina(aiLineup, newStamina),
+            playerStaminaMod: stm2,
+            formRating: newFormRating[sc2.id],
+            glassTouchActive: !!glassTouch,
+            glassStrikeBoost: glassStrikeTriggered ? getGlassStrikePutbackBoost(aiReboundLevel) : 0
+          });
           if (Math.random() < fc2) {
             const p2 = Math.random() < 0.24 ? 3 : 2;
             trackShotStamina(sc2.id, p2 === 3 ? 'catchAndShoot' : 'putBack', p2 === 3, 'make', 'oreb');
