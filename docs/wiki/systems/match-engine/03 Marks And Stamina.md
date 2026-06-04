@@ -58,8 +58,8 @@ Stamina-drain skills (e.g., `Lung Burner X`, `Contact Tax X`) drain relative sta
 
 ### Core Drain Values
 * **Lung Burner X**: Drains `110` stamina (increases to `190` if target has a `Debt` mark).
-* **Debt Collector X**: Splash drain of `45` to 2 additional marked players.
-* **Five-Man Squeeze X**: Drains `40` stamina from all active opponents (`60` if 3+ are marked).
+* **Debt Collector X**: Splash drain of `45` to 2 additional opposing players.
+* **Five-Man Squeeze X**: Drains `25` stamina from all active opponents (`40` if 3+ are marked). Implements anti-snowball scaling (drain is reduced by 40% if target stamina is under 50%, and by 70% if under 30%).
 * **Pressure Coach X**: Drains `12` stamina from marked targets during triggers.
 * **LOCK_CHAIN (Native)**: Drains `Math.min(12, Math.round(9 * scale))` stamina (range `8–11`, capped at `12`) from the turnover committer or shooter under on-ball pressure.
 * **SKY_WALL (Native)**: Drains `Math.min(10, Math.round(7 * scale))` stamina (range `6–9`, capped at `10`) from the shooter only during close-range paint shot contests.
