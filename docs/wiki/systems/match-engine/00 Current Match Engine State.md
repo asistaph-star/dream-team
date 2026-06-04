@@ -27,22 +27,23 @@ Welcome to the Match Engine documentation directory. This is the single source o
 ### Extracted Match Modules (src/lib/match/)
 These were extracted from matchEngine.ts via Refactor-1A through 1F. They are pure helpers with no RNG and no state mutations.
 
-| File | Refactor Phase | Status | Contents |
+| File | Refactor/Phase | Status | Contents |
 |---|---|---|---|
-| [matchTypes.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchTypes.ts) *(re-export shim)* | 1B | ✅ Done | Types and pure helpers re-exported from `utils/matchTypes.ts` |
-| [staminaConfig.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaConfig.ts) | 1B | ✅ Done | `STAMINA_CONFIG` constant — all stamina tuning values |
-| [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts) | 1B | ✅ Done | Pure helpers: `getCounterModifier`, `getSubtleStrategyHint`, `getIndividualThreePointShotMod`, `getFlopFoulPressureBonus`, `getGlassStrikeOrebBoost`, `getGlassStrikePutbackBoost`, `getStaminaCostScale` |
-| [mockTeams.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/mockTeams.ts) | 1B | ✅ Done | `aiPlayer`, `withAssignedSkills`, `buildAiTeam`, `mockAiTeams` |
-| [injuryHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/injuryHelpers.ts) | 1C | ✅ Done | `generatePreMatchInjuries`, `calibrateLineupForInjuries` |
-| [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | ✅ Done (`1f68541`) | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
-| [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) | 1E | ⚠️ PARTIAL Done (`a4bae97`) | `REB_W`, `getPositionReboundWeight`, `calculateTeamReboundScore`, `calculateOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale`. **pickRebounder + awardReb + all OREB/DREB/putback branches stay in matchEngine.** |
-| [foulSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/foulSystem.ts) | 1F | ⚠️ PARTIAL Done (`809c862`) | `FOUL_W`, `getPositionFoulWeight`, `getFoulStaminaModifier`, `getClutchRatingByRarity`, `calculateCrowdNoisePenalty`, `calculateFreeThrowChance`, `calculateBaseShootingFoulChance`, `calculateFourPointBaitBoost`, and identity/scaler helpers. **pickFoulCommitter + runFTSequence + all RNG rolls stay in matchEngine.** |
-| `staminaSystem.ts` | Future | ❌ Not started | Full stamina action costs, skill drains, recovery, anti-snowball |
-| `markSystem.ts` | 1H | ❌ BLOCKED | Audit complete. Extraction blocked until mark lifecycle tests are built. |
-| `shotResolution.ts` | Future | ❌ Not started | Shot success, 2PT/3PT/paint resolution, block/contest |
-| `specialSkillSystem.ts` | 1I | ❌ BLOCKED | Audit complete. Extraction blocked to preserve RNG sequence and state mutation coupling. |
-| `archetypeEffects.ts` | Future | ❌ Not started | Archetype-gated skill access, gating logic |
-| `eventLogSystem.ts` | 1G | ❌ BLOCKED | Audit complete. Extraction blocked due to RNG/narrative coupling. |
+| [matchTypes.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchTypes.ts) *(re-export shim)* | 1B | Done | Types and pure helpers re-exported from `utils/matchTypes.ts` |
+| [staminaConfig.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaConfig.ts) | 1B | Done | `STAMINA_CONFIG` constant — all stamina tuning values |
+| [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts) | 1B | Done | Pure helpers: `getCounterModifier`, `getSubtleStrategyHint`, `getIndividualThreePointShotMod`, `getFlopFoulPressureBonus`, `getGlassStrikeOrebBoost`, `getGlassStrikePutbackBoost`, `getStaminaCostScale` |
+| [mockTeams.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/mockTeams.ts) | 1B | Done | `aiPlayer`, `withAssignedSkills`, `buildAiTeam`, `mockAiTeams` |
+| [injuryHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/injuryHelpers.ts) | 1C | Done | `generatePreMatchInjuries`, `calibrateLineupForInjuries` |
+| [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | Done | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
+| [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) | 1E | Partial | `REB_W`, `getPositionReboundWeight`, `calculateTeamReboundScore`, `calculateOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale` |
+| [foulSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/foulSystem.ts) | 1F | Partial | `FOUL_W`, `getPositionFoulWeight`, `getFoulStaminaModifier`, `getClutchRatingByRarity`, `calculateCrowdNoisePenalty`, `calculateFreeThrowChance`, `calculateBaseShootingFoulChance`, `calculateFourPointBaitBoost` |
+| [brokenPlayRescue.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/brokenPlayRescue.ts) | BrokenPlayRescue | Done | `getBrokenPlayRescueIdentity`, `calculateBrokenPlayRescueChanceScale`, `calculateBrokenPlayRescueStaminaCost`, `calculateBrokenPlayRescueShotPenalty` |
+| `staminaSystem.ts` | Future | Not started | Full stamina action costs, skill drains, recovery, anti-snowball |
+| `markSystem.ts` | 1H | Blocked | Audit complete. Extraction blocked until mark lifecycle tests are built. |
+| `shotResolution.ts` | Future | Not started | Shot success, 2PT/3PT/paint resolution, block/contest |
+| `specialSkillSystem.ts` | 1I | Blocked | Audit complete. Extraction blocked to preserve RNG sequence and state mutation coupling. |
+| `archetypeEffects.ts` | Future | Not started | Archetype-gated skill access, gating logic |
+| `eventLogSystem.ts` | 1G | Blocked | Audit complete. Extraction blocked due to RNG/narrative coupling. |
 
 ### Validation Scripts (src/scripts/validation/)
 All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run before any refactor commit.
@@ -75,9 +76,4 @@ These must never change without an explicit audit + full regression run:
 
 ## Blocked / Intentionally Not Implemented
 
-| Item | Status | Reason |
-|---|---|---|
-| `POSTER_SPARK` | ❌ BLOCKED | Contact Tax / Lung Burner already provide safe paint pressure |
-| `GAMEPLAN_JAMMER` | ❌ BLOCKED | Anti-Meta base skills + Dead Air X already strong |
-| Foul-Draw archetype scaling | ❌ BLOCKED | FTA baseline can already reach warning limits |
-| New family rolling pool | ❌ BLOCKED | All 15 mechanics + UI + rates + regression must be complete first |
+None. All 15 planned learned special skill families and mechanics are now fully implemented, integrated, and verified.

@@ -39,7 +39,7 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 > **The official learned skill system now uses Special Skill Family IDs. Legacy X skills are fully deprecated and retired from rolling, active slots, and normal UI display.**
 > Legacy X skill strings are processed only as compatibility inputs on load, migrating their slots and rarity/tier keys directly to the official family IDs.
 
-- **Active Rolling Pool:** Currently 13 active families (excludes `MOMENTUM_SWING` and `BROKEN_PLAY_RESCUE` as they are planned but lack gameplay mechanics).
+- **Active Rolling Pool:** All 15 active families are fully active, rollable, and integrated in the match engine.
 - **Saved Data:** Roster slots and `skillRarities`/`skillTiers` keys store family IDs (loaded old saves are migrated in-place during roster normalization).
 - **UI Display:** Badges, tooltips, and profile headers display clean family names (e.g., "Deep Strike", "Bench Captain", "Flop"). Legacy X names encountered from old data map to their target family names.
 - **Trigger Rate & Quality:** Rarity/quality values (Common to Legendary) and base trigger rates are fully preserved.
@@ -48,21 +48,22 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 ### Active Families & Mechanic Connections
 | Category | Family ID | Status | Connected Mechanics |
 |---|---|---|---|
-| **Offense** | `DEEP_STRIKE` | ✅ Active / Rollable | `DEEP_STRIKE_EXPOSE_SETUP`, `DEEP_STRIKE_FOUR_POINT_BAIT` |
-| | `COURT_VISION_ENGINE` | ✅ Active / Rollable | `COURT_VISION_RHYTHM` |
-| | `POSTER_SPARK` | ✅ Active / Rollable | `POSTER_SPARK_LUNG_BURNER`, `POSTER_SPARK_CONTACT_TAX` |
-| | `FLOP` | ✅ Active / Rollable | `FLOP_SELL_CONTACT` (Protected SGA modifier preserved) |
-| | `BROKEN_PLAY_RESCUE` | ⏳ Planned / Excluded | None (Excluded from rolling pool; no active mechanics) |
-| **Defense** | `SKY_WALL` | ✅ Active / Rollable | `SKY_WALL_RIM_PRESSURE` |
-| | `LOCK_CHAIN` | ✅ Active / Rollable | `LOCK_CHAIN_ON_BALL_PRESSURE`, `LOCK_CHAIN_CAGE_STEP` |
-| | `DEFENSIVE_ANCHOR` | ✅ Active / Rollable | `DEFENSIVE_ANCHOR_TEAM_PRESSURE`, `DEFENSIVE_ANCHOR_CORNER_TRAP`, `DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE` |
-| | `CLEAN_CHALLENGE` | ✅ Active / Rollable | `CLEAN_CHALLENGE_CONTEST` |
-| | `GLASS_STRIKE` | ✅ Active / Rollable | `GLASS_STRIKE_REBOUND` |
-| **Comprehensive** | `BENCH_CAPTAIN` | ✅ Active / Rollable | `BENCH_CAPTAIN_STABILIZE`, `GAMEPLAN_PRESSURE_COACH` |
-| | `MOMENTUM_SWING` | ⏳ Planned / Excluded | None (Excluded from rolling pool; no active mechanics) |
-| | `COMPOSURE_SHIELD` | ✅ Active / Rollable | `COMPOSURE_SHIELD_CANCEL` |
-| | `GAMEPLAN_JAMMER` | ✅ Active / Rollable | `GAMEPLAN_DEAD_AIR`, `GAMEPLAN_DEBT_COLLECTOR` |
-| | `TIMEOUT_RESET` | ✅ Active / Rollable | `TIMEOUT_RESET_CLEANSE` |
+| Offense | DEEP_STRIKE | Active / Rollable | DEEP_STRIKE_EXPOSE_SETUP, DEEP_STRIKE_FOUR_POINT_BAIT |
+| | COURT_VISION_ENGINE | Active / Rollable | COURT_VISION_RHYTHM, COURT_VISION_CHAIN_PASS |
+| | POSTER_SPARK | Active / Rollable | POSTER_SPARK_LUNG_BURNER, POSTER_SPARK_CONTACT_TAX |
+| | FLOP | Active / Rollable | FLOP_SELL_CONTACT (Protected SGA modifier preserved) |
+| | BROKEN_PLAY_RESCUE | Active / Rollable | BROKEN_PLAY_RESCUE_SAVE |
+| Defense | SKY_WALL | Active / Rollable | SKY_WALL_RIM_PRESSURE |
+| | LOCK_CHAIN | Active / Rollable | LOCK_CHAIN_ON_BALL_PRESSURE, LOCK_CHAIN_CAGE_STEP |
+| | DEFENSIVE_ANCHOR | Active / Rollable | DEFENSIVE_ANCHOR_TEAM_PRESSURE, DEFENSIVE_ANCHOR_CORNER_TRAP, DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE |
+| | CLEAN_CHALLENGE | Active / Rollable | CLEAN_CHALLENGE_CONTEST |
+| | GLASS_STRIKE | Active / Rollable | GLASS_STRIKE_REBOUND |
+| Comprehensive | BENCH_CAPTAIN | Active / Rollable | BENCH_CAPTAIN_STABILIZE, GAMEPLAN_PRESSURE_COACH |
+| | MOMENTUM_SWING | Active / Rollable | MOMENTUM_SWING_STABILIZE |
+| | COMPOSURE_SHIELD | Active / Rollable | COMPOSURE_SHIELD_CANCEL |
+| | GAMEPLAN_JAMMER | Active / Rollable | GAMEPLAN_DEAD_AIR, GAMEPLAN_DEBT_COLLECTOR |
+| | TIMEOUT_RESET | Active / Rollable | TIMEOUT_RESET_CLEANSE |
+
 
 ### Legacy Migration Mapping (On Load)
 * `Red Dot X` & `Four-Point Bait X` ➔ `DEEP_STRIKE`
@@ -117,5 +118,5 @@ Final balance audit: **not done** — blocked until skill audit lock and refacto
 ---
 
 ## Hard Stops — Do Not Cross Without Approval
-- ❌ Do not start new balance buffs until Phase SkillAudit-Final-1 is complete.
-- ❌ Do not declare the skill system "complete" yet.
+- Do not start new balance buffs until Phase SkillAudit-Final-1 is complete.
+- Do not declare the skill system "complete" yet.

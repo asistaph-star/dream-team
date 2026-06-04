@@ -176,9 +176,13 @@ None. All 15 planned learned special skill families and mechanics are now fully 
 
 ## Section 9: Recommended Safe Implementation Order
 
-To continue upgrading the project safely, work should be executed in this order:
+All core special skill family implementations are complete:
+- Phase AuditRepair: Completed and verified.
+- Phase TendencyWiring: Completed and verified.
+- Phase MomentumSwing: Completed and verified.
+- Phase BrokenPlayRescue: Completed and verified.
 
-1. **Phase AuditRepair**: Fix the out-of-sync assertions in [test_bench_captain_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_bench_captain_gating.ts), [test_gated_defensive_anchor.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_gated_defensive_anchor.ts), and [test_glass_strike_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_glass_strike_gating.ts) so that the validation suite reports 33/33 passes.
-2. **Phase TendencyWiring**: Integrate the remaining player tendencies (driveTendency, pullUpTendency) into the playIntent.ts helper module.
-3. **Phase MomentumSwing**: DONE
-4. **Phase BrokenPlay**: Define the mechanics for BROKEN_PLAY_RESCUE and add it to the active rolling pool.
+Next phases:
+1. **Phase LearnedFamilyFinalLock**: Final verification lock for all 15 learned special skill families, ensuring they are active, rollable, mapped to mechanics, tested, displayed cleanly, and separated from the 22 base skills and legacy X migration.
+2. **Phase PlayerAttributeFinalAudit** / **BaseSkillRealDataLock**: Final verification of player attributes mapping, base skills, and real-data verification.
+

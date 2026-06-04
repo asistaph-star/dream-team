@@ -9,8 +9,8 @@ Learned skills are rolled using Skill Tape via the reroll system. The learned sk
 
 ---
 
-## Active Rolling Pool (13 Active Families)
-The official learned skill rolling pool contains **13 active Special Skill Families**:
+## Active Rolling Pool (15 Active Families)
+The official learned skill rolling pool contains **15 active Special Skill Families**:
 
 | Family ID | Category | Display Name | Core Mechanics Map |
 |---|---|---|---|
@@ -18,22 +18,20 @@ The official learned skill rolling pool contains **13 active Special Skill Famil
 | `COURT_VISION_ENGINE` | Offense | Court Vision Engine | Rhythm assist passing bonuses, Debt mark setups. |
 | `POSTER_SPARK` | Offense | Poster Spark | Power interior finishing, defender stamina drain, and Tilted mark setups. |
 | `FLOP` | Offense | Flop | Contact foul drawing. SGA-specific modifier preserved. |
+| `BROKEN_PLAY_RESCUE` | Offense | Broken Play Rescue | Intercepts turnovers and forces a penalized 2PT rescue shot. |
 | `SKY_WALL` | Defense | Sky Wall | Vertical rim block pressure, shot quality reduction. |
 | `LOCK_CHAIN` | Defense | Lock Chain | perimeter steal pressure, Hooked mark setups, handler stamina drain. |
 | `DEFENSIVE_ANCHOR` | Defense | Defensive Anchor | Team half-court defensive pressure, Pinned mark setups. |
 | `CLEAN_CHALLENGE` | Defense | Clean Challenge | Contest discipline, foul baiting counters. |
 | `GLASS_STRIKE` | Defense | Glass Strike | Rebound crashed putback conversion. |
 | `BENCH_CAPTAIN` | Comprehensive | Bench Captain | Rotation stamina recovery support, marked opponent acting drain. |
+| `MOMENTUM_SWING` | Comprehensive | Momentum Swing | Team stamina/form recovery and momentum bump after defensive events. |
 | `COMPOSURE_SHIELD` | Comprehensive | Composure Shield | Forced foul pressure cancels, mental pressure counter. |
 | `GAMEPLAN_JAMMER` | Comprehensive | Gameplan Jammer | Mid-air skill interruption, Static mark setups, Debt-spreading drain. |
 | `TIMEOUT_RESET` | Comprehensive | Timeout Reset | Team mark cleansing, clutch recovery. |
 
-### Planned / Excluded Families (Not Rollable)
-The following families are registered in the family catalog but are **excluded from the active rolling pool** because they do not have gameplay mechanics wired in `matchEngine.ts` yet:
-* **Momentum Swing** (`MOMENTUM_SWING`)
-* **Broken Play Rescue** (`BROKEN_PLAY_RESCUE`)
-
 ---
+
 
 ## Reroll System
 - **Consumption:** Skill Tape is consumed when the reroll is generated (not when accepted).
