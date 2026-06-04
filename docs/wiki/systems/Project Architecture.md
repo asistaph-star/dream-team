@@ -492,16 +492,17 @@ The following systems remain inside `matchEngine.ts` and have not been extracted
 * Foul-out logic
 **Risk:** HIGH — deeply coupled to scoring, stats, form, possession flow, and event logs. Do not touch without dedicated audit.
 
-### 15. reboundSystem.ts — IN AUDIT (Refactor-1E)
-**Status:** audit complete. Pure formula extraction approved pending implementation.
-**Safe to extract (Option A):**
-* `REB_W` constant, `getPositionReboundWeight`, `calculateTeamReboundScore`, `getOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale`
-**Must stay in matchEngine:**
+### 15. reboundSystem.ts — PARTIAL DONE (Refactor-1E)
+**Status:** Option A extracted and committed (`a4bae97`). Pure formula helpers are in `reboundSystem.ts`.
+**Extracted (done):**
+* `REB_W` constant, `getPositionReboundWeight`, `calculateTeamReboundScore`, `getOffensiveReboundChance` (as `calculateOffensiveReboundChance`), `calculateGlassScale`, `calculateBarrierScale`
+**Still in matchEngine (must stay):**
 * `pickRebounder` (contains Math.random())
 * `awardReb` (mutates stats, form, actionWorkload)
 * Full OREB/DREB/putback resolution branches
 * fc2 putback formula and all RNG rolls
-**Future safe first step:** implement Refactor-1E Option A only after approval.
+* User/AI fc2 asymmetry — intentionally preserved, must not be "fixed"
+**Future safe next step:** Option B (rebounder selector helpers) only if a dedicated audit phase confirms no RNG order change. Do not attempt without approval.
 
 ### 16. shotResolution.ts — NOT EXTRACTED
 **Status:** not started.

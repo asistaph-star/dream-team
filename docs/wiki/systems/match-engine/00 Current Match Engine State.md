@@ -33,8 +33,8 @@ These were extracted from matchEngine.ts via Refactor-1A through 1D. They are pu
 | [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts) | 1B | ✅ Done | Pure helpers: `getCounterModifier`, `getSubtleStrategyHint`, `getIndividualThreePointShotMod`, `getFlopFoulPressureBonus`, `getGlassStrikeOrebBoost`, `getGlassStrikePutbackBoost`, `getStaminaCostScale` |
 | [mockTeams.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/mockTeams.ts) | 1B | ✅ Done | `aiPlayer`, `withAssignedSkills`, `buildAiTeam`, `mockAiTeams` |
 | [injuryHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/injuryHelpers.ts) | 1C | ✅ Done | `generatePreMatchInjuries`, `calibrateLineupForInjuries` |
-| [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | ✅ Done | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
-| `reboundSystem.ts` | 1E | 🔍 IN AUDIT | Not created yet. Audit complete, pending approval. |
+| [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | ✅ Done (`1f68541`) | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
+| [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) | 1E | ⚠️ PARTIAL Done (`a4bae97`) | `REB_W`, `getPositionReboundWeight`, `calculateTeamReboundScore`, `calculateOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale`. **pickRebounder + awardReb + all OREB/DREB/putback branches stay in matchEngine.** |
 | `staminaSystem.ts` | Future | ❌ Not started | Full stamina action costs, skill drains, recovery, anti-snowball |
 | `markSystem.ts` | Future | ❌ Not started | Mark application, decay, cleanse lifecycle |
 | `foulSystem.ts` | Future | ❌ Not started | Shooting fouls, free throw sequence, foul committer selection |

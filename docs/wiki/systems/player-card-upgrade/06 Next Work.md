@@ -1,120 +1,129 @@
 # Next Work
 
-## Current Status
+> **Project Checkpoint — Read this before starting any new work.**
+>
+> The skill system is NOT fully finished. The first big balance pass is complete.
+> Do not add new buffs, enable new rolling families, or implement blocked mechanics
+> until Phase SkillAudit-Final-1 is done and the refactor safety work reaches a stable point.
 
-### Gameplay Systems — Locked Stable
-- **Base Skills**: ✅ Locked stable (22 base skills)
-- **Upgrade System**: ✅ Locked stable
-- **Skill Tape Economy**: ✅ Locked stable
-- **Learned Skill Identity Scaling**: ✅ Locked stable
-- **MatchEngine Mechanic Migration**: ✅ Locked stable
-- **New Family Rolling Pool**: ❌ Not active yet — activation prerequisites not met
+---
 
-### Lineup Archetypes — Gameplay Status
-| Archetype | Status | Notes |
-|---|---|---|
-| Stamina Drain | ✅ Connected and stable | — |
-| Foul-Draw / Flop | ⚠️ PARTIAL | Baseline active, counters active. **Archetype scaling blocked** |
-| Glass Bully / Rebound | ✅ Connected | `GLASS_STRIKE` active |
-| Light Bulb / Playmaking | ✅ Connected | `COURT_VISION` + `BENCH_CAPTAIN` gating |
-| Deep Strike / Shooting | ✅ Connected | `Red Dot` + `Four-Point Bait` hybrid gating, shooting foul symmetry |
-| Paint Bully | ✅ Baseline tested | `Contact Tax X` / `Lung Burner X` rebalanced. `POSTER_SPARK` blocked |
-| Anti-Meta / Gameplan | ✅ Baseline active | `Dead Air X` / `GAMEPLAN_DEAD_AIR` active. `GAMEPLAN_JAMMER` blocked |
+## Overall Project Truth
+
+| Area | Status |
+|---|---|
+| Lineup archetype system | ✅ Built and gameplay-connected |
+| Archetype detection UI | ✅ Built |
+| Regression test suite | ✅ Strong and active |
+| First big balance pass | ✅ Complete |
+| 22 Base Skills final-lock | ❌ NOT DONE — active but not audited one-by-one |
+| 15 Legacy Skills final-lock | ❌ NOT DONE — not broken, but no official lock declared |
+| New family rolling pool | ❌ BLOCKED — activation prerequisites not met |
+| matchEngine architecture cleanup | 🔄 IN PROGRESS (Refactor-1B through 1E done) |
+| Final skill audit (SkillAudit-Final-1) | ❌ NOT STARTED |
 
 ---
 
 ## matchEngine Refactor — Phase Status
 
-> **Rule**: Do not commit refactor phases without running `npx tsc --noEmit` and the full regression suite.
+> **Rule**: Always run `npx tsc --noEmit` + full regression suite before committing any refactor phase.
 
-| Phase | Status | What was done |
-|---|---|---|
-| Refactor-1A | ✅ DONE | matchEngine audit/planning complete |
-| Refactor-1B | ✅ DONE | Pure types, constants, helpers, mock teams extracted |
-| Refactor-1C | ✅ DONE | Injury + roster calibration helpers extracted |
-| Refactor-1D | ✅ DONE | Stamina decay pure formulas extracted to `staminaDecay.ts` |
-| Refactor-1E | 🔍 IN AUDIT | Rebound & putback extraction audit (code only, not yet extracted) |
+| Phase | Status | Commit | What was done |
+|---|---|---|---|
+| Refactor-1A | ✅ DONE | — | matchEngine audit/planning complete |
+| Refactor-1B | ✅ DONE | — | Pure types, constants, helpers, mock teams extracted |
+| Refactor-1C | ✅ DONE | — | Injury + roster calibration helpers extracted |
+| Refactor-1D | ✅ DONE | `1f68541` | Stamina decay pure formulas → `staminaDecay.ts` |
+| Refactor-1E | ✅ DONE | `a4bae97` | Rebound pure formula helpers → `reboundSystem.ts` (Option A only) |
 
-### Refactor — What is NOT done yet
-
-#### 1. Stamina System — PARTIAL
-**Done:**
-- `staminaConfig.ts` — constants only
-- `staminaDecay.ts` — `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay`
-
-**Not done (still in `matchEngine.ts`):**
-- Action stamina costs processor
-- Skill stamina drain helpers (Contact Tax, Lung Burner runtime)
-- Recovery skill interactions (Bench Captain, Enforcer Lift, Timeout Reset)
-- Anti-snowball helpers
-- Full `staminaSystem.ts` module
-
-#### 2. Mark System — NOT EXTRACTED
-**Not done:**
-- `markSystem.ts` does not exist
-- Mark application logic (Exposed, Tilted, Debt, Hooked, Pinned, Static)
-- Mark duration decay
-- Mark cleanse (Timeout Reset cleanse, Composure/Clean resistance)
-- Mark lifecycle snapshot tests
-
-#### 3. Foul System — NOT EXTRACTED
-**Not done:**
-- `foulSystem.ts` does not exist
-- Shooting foul logic
-- Flop X / SGA special foul behavior
-- Four-Point Bait hybrid foul boost
-- Foul Magnet / Clean Challenge / Composure / Discipline Wall counters
-- And-one logic, foul caps, foul committer selection
-- Free throw sequence
-- Foul-out logic
-
-#### 4. Rebound System — NOT EXTRACTED
-**Not done:**
-- `reboundSystem.ts` does not exist
-- OREB/DREB resolution logic
-- Rebounder selection (`pickRebounder` — contains RNG, must stay until safe)
-- Team rebound score, offensive rebound chance formulas
-- Paint Barrier suppression, GLASS_STRIKE boost
-- Putback branch, second-chance points
-- Non-recursive missed putback handling
-
-**Safe to extract next (Refactor-1E pure formulas only):**
+### What Refactor-1E Extracted (pure formulas only)
 - `REB_W` constant
-- `getOffensiveReboundChance`
-- `calculateGlassScale` / `calculateBarrierScale`
-- `calculateTeamReboundScore`
 - `getPositionReboundWeight`
+- `calculateTeamReboundScore` (staminaMap as param, no closure capture)
+- `calculateOffensiveReboundChance` (OREB floor 0.10 / cap 0.36 preserved)
+- `calculateGlassScale`
+- `calculateBarrierScale`
 
-#### 5. Shot Resolution — NOT EXTRACTED
-**Not done:**
-- `shotResolution.ts` does not exist
-- Shot success calculation, 2PT/3PT/paint resolution
-- Block interaction, defender contest
-- Stamina/form effect on shots
-- Arc Pressure, Court Vision rhythm, SKY_WALL contest
-- Scoring update logic
+### What Refactor-1E Did NOT Move (stays in matchEngine)
+- `pickRebounder` — contains `Math.random()`
+- `awardReb` — mutates stats/form/actionWorkload
+- OREB/DREB/putback resolution branches
+- fc2 putback formula and all RNG rolls
+- User/AI asymmetry — intentionally preserved
 
-#### 6. Special Skill System — NOT EXTRACTED
-**Not done:**
-- `specialSkillSystem.ts` does not exist
-- `rollSpecialMechanic` integration hooks
-- Dead Air X, Defensive Anchor, Lock Chain, Sky Wall, Glass Strike
-- Court Vision, Bench Captain, Contact Tax, Lung Burner, Flop, Four-Point Bait
-- Composure / Clean Challenge hooks
-- All User/AI mirrored skill trigger hooks
+---
 
-#### 7. Archetype Effects — NOT EXTRACTED
-**Not done:**
-- `archetypeEffects.ts` does not exist
-- Archetype-gated skill access still inline in `matchEngine.ts`
-- Foul-Draw scaling blocked
-- Anti-Meta / GAMEPLAN_JAMMER blocked
-- POSTER_SPARK blocked
+## Unfinished Refactor Modules (all still inside matchEngine.ts)
 
-#### 8. Event Log System — NOT EXTRACTED
-**Not done:**
-- `eventLogSystem.ts` does not exist
-- `skillLog`, match events, play-by-play messages still in `matchEngine.ts`
+### 1. Stamina System — PARTIAL
+**Done:** `staminaConfig.ts`, `staminaDecay.ts` (pure formula helpers only)
+**Not done:** Action stamina costs, skill drain interactions, recovery skills, anti-snowball, `staminaSystem.ts`
+
+### 2. Mark System — NOT STARTED
+`markSystem.ts` does not exist. All mark logic (Exposed, Tilted, Debt, Hooked, Pinned, Static), mark decay, cleanse, and resistance remain in `matchEngine.ts`.
+
+### 3. Foul System — NOT STARTED
+`foulSystem.ts` does not exist. Shooting fouls, Flop pressure, Four-Point Bait boost, foul committer selection, and-one, foul-out, free throw sequence all remain in `matchEngine.ts`.
+
+### 4. Rebound System — PARTIAL (Option A done)
+`reboundSystem.ts` created with 6 pure helpers.
+**Still in matchEngine:** `pickRebounder`, `awardReb`, all OREB/DREB/putback branches, fc2 formula.
+
+### 5. Shot Resolution — NOT STARTED
+`shotResolution.ts` does not exist. Shot success, 2PT/3PT/paint resolution, block/contest, Arc Pressure, SKY_WALL all remain in `matchEngine.ts`.
+
+### 6. Special Skill System — NOT STARTED
+`specialSkillSystem.ts` does not exist. All `rollSpecialMechanic` hooks for all 15 families remain in `matchEngine.ts`.
+
+### 7. Archetype Effects — NOT STARTED
+`archetypeEffects.ts` does not exist. All archetype-gated skill access remains inline in `matchEngine.ts`.
+
+### 8. Event Log System — NOT STARTED
+`eventLogSystem.ts` does not exist. `skillLog`, `makeEvent`, and all message strings remain in `matchEngine.ts`.
+
+---
+
+## Gameplay Systems — Status
+
+### Lineup Archetypes
+| Archetype | Status | Notes |
+|---|---|---|
+| Stamina Drain | ✅ Connected and stable | — |
+| Foul-Draw / Flop | ⚠️ PARTIAL | Baseline active, counters active. **Archetype scaling blocked** |
+| Glass Bully / Rebound | ✅ Connected | GLASS_STRIKE active |
+| Light Bulb / Playmaking | ✅ Connected | COURT_VISION + BENCH_CAPTAIN gating |
+| Deep Strike / Shooting | ✅ Connected | Red Dot + Four-Point Bait hybrid gating |
+| Paint Bully | ✅ Baseline tested | Contact Tax / Lung Burner rebalanced. POSTER_SPARK blocked |
+| Anti-Meta / Gameplan | ✅ Baseline active | Dead Air X active. GAMEPLAN_JAMMER blocked |
+
+### Base Skills (22 total)
+**Active and tested through archetype audits:**
+Arc Pressure, Shadow Guard, Focus Lock, Discipline Wall, Hands Active, Tempo Switch,
+Enforcer Lift, Future Core, Power Driver, Paint Magnet, Mismatch Caller, Glass Touch,
+Rim Warden, Iron Motor, Share Rhythm, Position Flex.
+
+> ⚠️ Not officially final-locked. Phase SkillAudit-Final-1 required.
+
+### Legacy Special Skills (15 total)
+| Skill | Status |
+|---|---|
+| Red Dot X | ✅ Active, Shooting gated |
+| Four-Point Bait X | ✅ Active, hybrid gated |
+| Contact Tax X | ✅ Active, safely rebalanced |
+| Lung Burner X | ✅ Active, safely rebalanced |
+| Flop X | ⚠️ Baseline only, counters active, scaling blocked |
+| Composure X | ✅ Active as counter |
+| Clean Contest X | ✅ Active as counter |
+| Dead Air X | ✅ Active and strong |
+| Cage Step X | 📦 Legacy preserved |
+| Corner Trap X | 📦 Legacy preserved |
+| Five-Man Squeeze X | 📦 Legacy preserved |
+| Pressure Coach X | 📦 Legacy preserved |
+| Chain Pass X | 📦 Legacy preserved |
+| Cold Timeout X / Timeout Reset | ✅ Active / preserved |
+| Debt Collector X | ⚠️ Needs final specific audit lock |
+
+> ⚠️ Not officially final-locked. Phase SkillAudit-Final-1 required.
 
 ---
 
@@ -122,58 +131,30 @@
 
 | System | Status | Reason |
 |---|---|---|
-| `POSTER_SPARK` | ❌ BLOCKED | Contact Tax / Lung Burner already cover safe paint pressure. Audited and intentionally not implemented. |
-| `GAMEPLAN_JAMMER` | ❌ BLOCKED | Anti-Meta base + Dead Air X already strong. More suppression risks scoring collapse. |
-| Foul-Draw archetype scaling | ❌ BLOCKED | FTA baseline can already reach warning levels. |
-| New family rolling pool | ❌ BLOCKED | All 15 mechanics must exist, be described, rated, UI-ready, and pass regression before activation. |
-
----
-
-## Skill Audit Still Needed
-
-### 1. Full 22 Base Skills Final Lock — NOT DONE
-Need a final audit table for every base skill:
-- Skill name, category, description, real matchEngine effect
-- Identity helper, trigger condition, balance risk
-- Test coverage, documentation accuracy
-- Status: DONE / PARTIAL / NEEDS CLEANUP / BLOCKED
-
-### 2. Full 15 Legacy Special Skills Final Lock — NOT DONE
-Need a final status for each legacy skill:
-
-| Skill | Known Status |
-|---|---|
-| Red Dot X | Active, Shooting gated |
-| Four-Point Bait X | Active, hybrid gated |
-| Contact Tax X | Active, safely rebalanced |
-| Lung Burner X | Active, safely rebalanced |
-| Flop X | Active baseline, counters active, archetype scaling blocked |
-| Composure X | Active as counter |
-| Clean Contest X | Active as counter |
-| Dead Air X | Active and strong |
-| Cage Step X | Legacy preserved |
-| Corner Trap X | Legacy preserved |
-| Five-Man Squeeze X | Legacy preserved |
-| Pressure Coach X | Legacy preserved |
-| Chain Pass X | Legacy preserved |
-| Cold Timeout X / Timeout Reset | Active / preserved |
-| Debt Collector X | Needs final specific audit lock |
+| POSTER_SPARK | ❌ BLOCKED | Contact Tax / Lung Burner already provide safe paint pressure |
+| GAMEPLAN_JAMMER | ❌ BLOCKED | Anti-Meta base skills + Dead Air X already strong |
+| Foul-Draw archetype scaling | ❌ BLOCKED | FTA baseline can already reach warning limits |
+| New family rolling pool | ❌ BLOCKED | All 15 mechanics + UI + rates + regression must pass first |
 
 ---
 
 ## Next Immediate Work
 
-1. **Refactor-1E — Rebound & Putback Pure Formula Extraction**
-   - Audit complete. Awaiting approval.
-   - Extract 6 pure helpers into `reboundSystem.ts` (Option A only).
-   - Do NOT move `pickRebounder` or `awardReb` yet.
+### Priority 1 — Continue safe matchEngine refactor phases
+Continue Refactor-1F and beyond. Audit first, extract only pure formulas, run full regression before committing.
 
-2. **Phase SkillAudit-Final-1 — Full 22 Base Skills + 15 Special Skills Status Lock**
-   - After refactor audit phases complete.
-   - Create the final truth table.
-   - Clearly mark each skill: DONE / PARTIAL / BLOCKED / FUTURE.
+### Priority 2 — Phase SkillAudit-Final-1
+When refactor work reaches a stable point, run the full 22 Base Skills + 15 Special Skills audit lock.
+This creates the final truth table with a status per skill:
+- ✅ Finished and locked
+- ⚠️ Active but needs doc cleanup
+- 📦 Legacy preserved
+- ❌ Blocked intentionally
+- 🔍 Needs regression
+- 🔮 Needs future redesign
 
-3. **Do not start new buffs or archetype mechanics yet.**
+### Priority 3 — No new buffs until audit complete
+Do not start new skill mechanics, new archetype buffs, or new family rolling until SkillAudit-Final-1 is signed off.
 
 ---
 
@@ -189,7 +170,7 @@ The new 15-family rolling pool will **not** be activated until:
 ---
 
 ## Workflow Rules
-- **Batch safe/non-risky work together** (documentation, naming, type helpers, UI copy, icon mapping audits).
-- **Isolate risky work** (matchEngine changes, stamina/foul/mark logic, rolling pool activation, save data migration, OVR/star-up changes).
-- Stop before risky gameplay/balance changes and wait for approval.
+- Audit first. Extract one safe piece. Run TypeScript. Run regression. Commit. Update docs.
+- Batch safe/non-risky work together. Isolate risky work.
+- Stop before any risky gameplay/balance change and wait for approval.
 - Always run `npx tsc --noEmit` and regression suite before committing refactor phases.
