@@ -454,3 +454,80 @@ From now on, whenever we postpone a risky item, add it to this Deferred / Do Not
   * Use "active copy rule," not "delete duplicate rule."
   * Owned duplicates are allowed and required.
   * Active lineup/bench only controls who is currently assigned to play.
+
+---
+
+## matchEngine Refactor Deferred Items
+
+The following systems remain inside `matchEngine.ts` and have not been extracted. Each is a future refactor target. Do not touch without an explicit audit phase and approval.
+
+### 12. staminaSystem.ts — NOT EXTRACTED
+**Status:** partial. `staminaConfig.ts` and `staminaDecay.ts` extracted (Refactor-1B/1D). Core system still in matchEngine.
+**What remains inside matchEngine:**
+* Action stamina cost processor
+* Skill stamina drain interactions (Contact Tax, Lung Burner runtime)
+* Bench Captain / Enforcer Lift / Timeout Reset recovery interactions
+* Anti-snowball resistance scaling
+* `trackShotStamina` and stamina mutation dispatch
+**Future safe first step:** audit only. Identify which stamina helpers are pure formula vs mutation-coupled.
+
+### 13. markSystem.ts — NOT EXTRACTED
+**Status:** not started.
+**What remains inside matchEngine:**
+* Mark application (Exposed, Tilted, Debt, Hooked, Pinned, Static)
+* Mark duration decay per possession
+* Mark cleanse (Timeout Reset, Composure/Clean resistance)
+* Same-mark immunity enforcement
+**Future safe first step:** audit which mark helpers are pure (apply rules) vs mutation-coupled (write to `newSkillMarks`).
+
+### 14. foulSystem.ts — NOT EXTRACTED
+**Status:** not started.
+**What remains inside matchEngine:**
+* Shooting foul detection and resolution
+* Flop X foul pressure / SGA special foul behavior
+* Four-Point Bait hybrid foul boost
+* Foul Magnet, Clean Challenge, Composure, Discipline Wall foul counters
+* And-one logic, foul caps, foul committer selection
+* Free throw sequence (`runFTSequence`)
+* Foul-out logic
+**Risk:** HIGH — deeply coupled to scoring, stats, form, possession flow, and event logs. Do not touch without dedicated audit.
+
+### 15. reboundSystem.ts — IN AUDIT (Refactor-1E)
+**Status:** audit complete. Pure formula extraction approved pending implementation.
+**Safe to extract (Option A):**
+* `REB_W` constant, `getPositionReboundWeight`, `calculateTeamReboundScore`, `getOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale`
+**Must stay in matchEngine:**
+* `pickRebounder` (contains Math.random())
+* `awardReb` (mutates stats, form, actionWorkload)
+* Full OREB/DREB/putback resolution branches
+* fc2 putback formula and all RNG rolls
+**Future safe first step:** implement Refactor-1E Option A only after approval.
+
+### 16. shotResolution.ts — NOT EXTRACTED
+**Status:** not started.
+**What remains inside matchEngine:**
+* Shot success calculation (fc / fc2)
+* 2PT / 3PT / paint shot resolution branches
+* Block interaction and defender contest logic
+* Stamina and form multipliers on shots
+* Arc Pressure, Court Vision rhythm boost, SKY_WALL contest
+* Scoring update, FGM/FGA/TPM/TPA tracking
+**Risk:** HIGH — all RNG rolls and scoring mutations are tightly coupled. Do not touch without dedicated audit phase.
+
+### 17. specialSkillSystem.ts — NOT EXTRACTED
+**Status:** not started.
+**What remains inside matchEngine:**
+* All `rollSpecialMechanic()` trigger call sites
+* Dead Air X, Defensive Anchor, Lock Chain, Sky Wall, Glass Strike
+* Court Vision, Bench Captain, Contact Tax, Lung Burner, Flop, Four-Point Bait
+* Composure / Clean Challenge
+* All User/AI mirrored skill trigger hooks
+**Risk:** HIGH — mirrored User/AI branches, RNG order, and skill interaction order are critical.
+
+### 18. eventLogSystem.ts — NOT EXTRACTED
+**Status:** not started.
+**What remains inside matchEngine:**
+* `skillLog` closure and all call sites
+* Match event creation (`makeEvent`)
+* Play-by-play, trigger, foul, rebound, stamina, and mark messages
+**Risk:** LOW-MEDIUM for pure helpers, but extracting `skillLog` requires touching nearly every skill block. Do not extract until other systems are stable.
