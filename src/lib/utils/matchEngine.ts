@@ -23,6 +23,7 @@ import {
 } from "../match/matchHelpers";
 import { generatePreMatchInjuries, calibrateLineupForInjuries } from "../match/injuryHelpers";
 import { calculateBenchRecoveryAmount, driftFormTowardNeutral, calculateBaseStaminaDecay } from "../match/staminaDecay";
+import { REB_W, calculateTeamReboundScore, calculateOffensiveReboundChance, calculateGlassScale, calculateBarrierScale } from "../match/reboundSystem";
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
@@ -1262,14 +1263,9 @@ export function simulateTick(
   };
 
   // ═══ REBOUND HELPER ═══
-  const REB_W: Record<string, number> = { C: 2.0, PF: 1.6, SF: 1.0, SG: 0.6, PG: 0.4 };
-  const teamRebScore = (lineup: Player[]): number =>
-    lineup.reduce((s, p) => s + getReboundRating(p) * (REB_W[p.position] || 1.0) * getPlayerStaminaMod(p, newStamina[p.id]), 0);
-  const getOffensiveReboundChance = (attReb: number, defReb: number, glassScale: number, barrierScale: number, glassStrikeBoost = 0): number => {
-    const share = attReb / Math.max(1, attReb + defReb);
-    const matchupSwing = (share - 0.5) * 0.34;
-    return Math.min(Math.max(0.23 + matchupSwing + (glassScale > 0 ? 0.055 * glassScale : 0) - (barrierScale > 0 ? 0.06 * barrierScale : 0) + glassStrikeBoost, 0.10), 0.36);
-  };
+  // REB_W, calculateTeamReboundScore, calculateOffensiveReboundChance,
+  // calculateGlassScale, calculateBarrierScale imported from ../match/reboundSystem
+  // pickRebounder and awardReb remain here (RNG / state mutations)
   const pickRebounder = (lineup: Player[]): Player => {
     const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
     const tw = ws.reduce((s, w) => s + w, 0);
@@ -2147,22 +2143,16 @@ export function simulateTick(
               newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + formPenalty);
             }
             // ═══ REBOUND RESOLUTION (user missed, AI defending) ═══
-            const attReb = teamRebScore(userLineup);
-            const defReb = teamRebScore(aiLineup);
+            const attReb = calculateTeamReboundScore(userLineup, newStamina);
+            const defReb = calculateTeamReboundScore(aiLineup, newStamina);
             const glassTouch = rollBaseSkill(userLineup, "Glass Touch", newStamina);
             const paintBarrier = rollBaseSkill(aiLineup, "Paint Barrier", newStamina);
-            let glassScale = 0;
-            if (glassTouch) {
-              const holders = userLineup.filter(p => hasBaseSkill(p, "Glass Touch"));
-              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
-              glassScale = 0.85 + (maxRating / 100) * 0.30;
-            }
-            let barrierScale = 0;
-            if (paintBarrier) {
-              const holders = aiLineup.filter(p => hasBaseSkill(p, "Paint Barrier"));
-              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
-              barrierScale = 0.85 + (maxRating / 100) * 0.30;
-            }
+            const glassScale = glassTouch
+              ? calculateGlassScale(userLineup.filter(p => hasBaseSkill(p, "Glass Touch")))
+              : 0;
+            const barrierScale = paintBarrier
+              ? calculateBarrierScale(aiLineup.filter(p => hasBaseSkill(p, "Paint Barrier")))
+              : 0;
 
             const attackerArchetypeSummary = resolveLineupArchetypes(userLineup);
             const userReboundResult = attackerArchetypeSummary.allResults.find(r => r.id === "rebound");
@@ -2177,7 +2167,7 @@ export function simulateTick(
               }
             }
 
-            const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
+            const orebChance = calculateOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
             if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, false);
             if (Math.random() < orebChance) {
               const reb = pickRebounder(userLineup);
@@ -3078,22 +3068,16 @@ export function simulateTick(
 
     // Rebound on AI miss (skip if steal, turnover, block, or foul occurred)
     if (pointsScored === 0 && !stealPlayerId && !turnoverOccurred && !blockOccurred && !shootingFoulOccurred && !nonShootingFoulToFT) {
-      const attReb = teamRebScore(aiLineup);
-      const defReb = teamRebScore(userLineup);
+      const attReb = calculateTeamReboundScore(aiLineup, newStamina);
+      const defReb = calculateTeamReboundScore(userLineup, newStamina);
       const glassTouch = rollBaseSkill(aiLineup, "Glass Touch", newStamina);
       const paintBarrier = rollBaseSkill(userLineup, "Paint Barrier", newStamina);
-      let glassScale = 0;
-      if (glassTouch) {
-        const holders = aiLineup.filter(p => hasBaseSkill(p, "Glass Touch"));
-        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
-        glassScale = 0.85 + (maxRating / 100) * 0.30;
-      }
-      let barrierScale = 0;
-      if (paintBarrier) {
-        const holders = userLineup.filter(p => hasBaseSkill(p, "Paint Barrier"));
-        const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getReboundRating(p))) : 50;
-        barrierScale = 0.85 + (maxRating / 100) * 0.30;
-      }
+      const glassScale = glassTouch
+        ? calculateGlassScale(aiLineup.filter(p => hasBaseSkill(p, "Glass Touch")))
+        : 0;
+      const barrierScale = paintBarrier
+        ? calculateBarrierScale(userLineup.filter(p => hasBaseSkill(p, "Paint Barrier")))
+        : 0;
 
       const attackerArchetypeSummary = resolveLineupArchetypes(aiLineup);
       const aiReboundResult = attackerArchetypeSummary.allResults.find(r => r.id === "rebound");
@@ -3108,7 +3092,7 @@ export function simulateTick(
         }
       }
 
-      const orebChance = getOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
+      const orebChance = calculateOffensiveReboundChance(attReb, defReb, glassScale, barrierScale, glassStrikeBoost);
       if (paintBarrier) skillLog(`Paint Barrier fights off the second-chance lane`, true);
       if (Math.random() < orebChance) {
         const reb = pickRebounder(aiLineup);
