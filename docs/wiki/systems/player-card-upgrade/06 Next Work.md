@@ -35,6 +35,10 @@
 | Refactor-1C | ✅ DONE | — | Injury + roster calibration helpers extracted |
 | Refactor-1D | ✅ DONE | `1f68541` | Stamina decay pure formulas → `staminaDecay.ts` |
 | Refactor-1E | ✅ DONE | `a4bae97` | Rebound pure formula helpers → `reboundSystem.ts` (Option A only) |
+| Refactor-1F | ✅ DONE | `809c862` | Foul/free throw pure formula helpers → `foulSystem.ts` (Option A only) |
+| Refactor-1G | ✅ DONE | — | Event log audit complete. Extraction blocked due to RNG coupling. |
+| Refactor-1H | ✅ DONE | — | Mark system audit complete. Extraction blocked until mark tests built. |
+| Refactor-1I | ✅ DONE | `29145fa` | Special skill hook audit complete. Extraction blocked to preserve RNG. |
 
 ### What Refactor-1E Extracted (pure formulas only)
 - `REB_W` constant
@@ -59,27 +63,26 @@
 **Done:** `staminaConfig.ts`, `staminaDecay.ts` (pure formula helpers only)
 **Not done:** Action stamina costs, skill drain interactions, recovery skills, anti-snowball, `staminaSystem.ts`
 
-### 2. Mark System — NOT STARTED
-`markSystem.ts` does not exist. All mark logic (Exposed, Tilted, Debt, Hooked, Pinned, Static), mark decay, cleanse, and resistance remain in `matchEngine.ts`.
+### 2. Mark System — AUDIT COMPLETE (Blocked)
+`markSystem.ts` does not exist. All mark logic remains in `matchEngine.ts`. Extraction is blocked until mark lifecycle tests are built.
 
-### 3. Foul System — NOT STARTED
-`foulSystem.ts` does not exist. Shooting fouls, Flop pressure, Four-Point Bait boost, foul committer selection, and-one, foul-out, free throw sequence all remain in `matchEngine.ts`.
+### 3. Foul System — PARTIAL
+`foulSystem.ts` contains pure formulas, clutch ratings, crowd penalties, and hybrid synergy boosts. `pickFoulCommitter`, `runFTSequence`, and all shooting/FT RNG rolls remain in `matchEngine.ts`.
 
-### 4. Rebound System — PARTIAL (Option A done)
-`reboundSystem.ts` created with 6 pure helpers.
-**Still in matchEngine:** `pickRebounder`, `awardReb`, all OREB/DREB/putback branches, fc2 formula.
+### 4. Rebound System — PARTIAL
+`reboundSystem.ts` contains pure formulas only. `pickRebounder`, `awardReb`, all OREB/DREB/putback branches, and fc2 formula remain in `matchEngine.ts`.
 
 ### 5. Shot Resolution — NOT STARTED
 `shotResolution.ts` does not exist. Shot success, 2PT/3PT/paint resolution, block/contest, Arc Pressure, SKY_WALL all remain in `matchEngine.ts`.
 
-### 6. Special Skill System — NOT STARTED
-`specialSkillSystem.ts` does not exist. All `rollSpecialMechanic` hooks for all 15 families remain in `matchEngine.ts`.
+### 6. Special Skill System — AUDIT COMPLETE (Blocked)
+`specialSkillSystem.ts` does not exist. All `rollSpecialMechanic` hooks remain in `matchEngine.ts` to preserve RNG sequence and state mutation coupling.
 
 ### 7. Archetype Effects — NOT STARTED
 `archetypeEffects.ts` does not exist. All archetype-gated skill access remains inline in `matchEngine.ts`.
 
-### 8. Event Log System — NOT STARTED
-`eventLogSystem.ts` does not exist. `skillLog`, `makeEvent`, and all message strings remain in `matchEngine.ts`.
+### 8. Event Log System — AUDIT COMPLETE (Blocked)
+`eventLogSystem.ts` does not exist. All event log generation remains in `matchEngine.ts` / `matchNarrative.ts` due to RNG and narrative string dependencies.
 
 ---
 

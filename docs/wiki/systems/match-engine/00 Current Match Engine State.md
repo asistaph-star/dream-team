@@ -24,7 +24,7 @@ Welcome to the Match Engine documentation directory. This is the single source o
 * [playerIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerIdentity.ts) — Attribute scaling fallbacks and tendency wrappers.
 
 ### Extracted Match Modules (src/lib/match/)
-These were extracted from matchEngine.ts via Refactor-1A through 1D. They are pure helpers with no RNG and no state mutations.
+These were extracted from matchEngine.ts via Refactor-1A through 1F. They are pure helpers with no RNG and no state mutations.
 
 | File | Refactor Phase | Status | Contents |
 |---|---|---|---|
@@ -35,13 +35,13 @@ These were extracted from matchEngine.ts via Refactor-1A through 1D. They are pu
 | [injuryHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/injuryHelpers.ts) | 1C | ✅ Done | `generatePreMatchInjuries`, `calibrateLineupForInjuries` |
 | [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | ✅ Done (`1f68541`) | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
 | [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) | 1E | ⚠️ PARTIAL Done (`a4bae97`) | `REB_W`, `getPositionReboundWeight`, `calculateTeamReboundScore`, `calculateOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale`. **pickRebounder + awardReb + all OREB/DREB/putback branches stay in matchEngine.** |
+| [foulSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/foulSystem.ts) | 1F | ⚠️ PARTIAL Done (`809c862`) | `FOUL_W`, `getPositionFoulWeight`, `getFoulStaminaModifier`, `getClutchRatingByRarity`, `calculateCrowdNoisePenalty`, `calculateFreeThrowChance`, `calculateBaseShootingFoulChance`, `calculateFourPointBaitBoost`, and identity/scaler helpers. **pickFoulCommitter + runFTSequence + all RNG rolls stay in matchEngine.** |
 | `staminaSystem.ts` | Future | ❌ Not started | Full stamina action costs, skill drains, recovery, anti-snowball |
-| `markSystem.ts` | Future | ❌ Not started | Mark application, decay, cleanse lifecycle |
-| `foulSystem.ts` | Future | ❌ Not started | Shooting fouls, free throw sequence, foul committer selection |
+| `markSystem.ts` | 1H | ❌ BLOCKED | Audit complete. Extraction blocked until mark lifecycle tests are built. |
 | `shotResolution.ts` | Future | ❌ Not started | Shot success, 2PT/3PT/paint resolution, block/contest |
-| `specialSkillSystem.ts` | Future | ❌ Not started | rollSpecialMechanic integration hooks for all 15 families |
+| `specialSkillSystem.ts` | 1I | ❌ BLOCKED | Audit complete. Extraction blocked to preserve RNG sequence and state mutation coupling. |
 | `archetypeEffects.ts` | Future | ❌ Not started | Archetype-gated skill access, gating logic |
-| `eventLogSystem.ts` | Future | ❌ Not started | skillLog, match events, play-by-play messages |
+| `eventLogSystem.ts` | 1G | ❌ BLOCKED | Audit complete. Extraction blocked due to RNG/narrative coupling. |
 
 ### Validation Scripts (src/scripts/validation/)
 All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run before any refactor commit.
