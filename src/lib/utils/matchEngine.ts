@@ -22,6 +22,7 @@ import {
   getSubtleStrategyHint
 } from "../match/matchHelpers";
 import { generatePreMatchInjuries, calibrateLineupForInjuries } from "../match/injuryHelpers";
+import { calculateBenchRecoveryAmount, driftFormTowardNeutral, calculateBaseStaminaDecay } from "../match/staminaDecay";
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
@@ -647,12 +648,10 @@ export function simulateTick(
   allUserRoster.forEach(p => {
     if (!activeIds.has(p.id)) {
       const benchRecovery = state.isHomeGame ? STAMINA_CONFIG.recovery.benchHomePerTick : STAMINA_CONFIG.recovery.benchAwayPerTick;
-      newStamina[p.id] = recoverToMax(p, benchRecovery, newStamina);
+      newStamina[p.id] = calculateBenchRecoveryAmount(p, benchRecovery, newStamina[p.id]);
       // Bench form normalization: drift toward 1.0
       ensureForm(p.id);
-      const f = newFormRating[p.id];
-      if (f > 1.0) newFormRating[p.id] = clampForm(f - 0.003);
-      else if (f < 1.0) newFormRating[p.id] = clampForm(f + 0.003);
+      newFormRating[p.id] = driftFormTowardNeutral(newFormRating[p.id], 0.003);
     }
   });
 
@@ -660,11 +659,9 @@ export function simulateTick(
   aiTeamObj.roster.forEach(p => {
     if (!activeIds.has(p.id)) {
       const benchRecovery = !state.isHomeGame ? STAMINA_CONFIG.recovery.benchHomePerTick : STAMINA_CONFIG.recovery.benchAwayPerTick;
-      newStamina[p.id] = recoverToMax(p, benchRecovery, newStamina);
+      newStamina[p.id] = calculateBenchRecoveryAmount(p, benchRecovery, newStamina[p.id]);
       ensureForm(p.id);
-      const f = newFormRating[p.id];
-      if (f > 1.0) newFormRating[p.id] = clampForm(f - 0.003);
-      else if (f < 1.0) newFormRating[p.id] = clampForm(f + 0.003);
+      newFormRating[p.id] = driftFormTowardNeutral(newFormRating[p.id], 0.003);
     }
   });
 
@@ -680,23 +677,18 @@ export function simulateTick(
 
   // ═══ STEP 2: BASE STAMINA DECAY (REBALANCED FOR REAL NBA FATIGUE) ═══
   const decayPlayer = (p: Player) => {
-    let c = newStamina[p.id] ?? 100;
-    
-    // 1. Time decay: scales dynamically with play clock elapsed (calibrated for high tactical rotation needs)
-    // A standard 15-second compressed play burns roughly ~0.33 base stamina.
-    let baseLoss = timeElapsed * (STAMINA_CONFIG.movement.normalPerSecond + Math.random() * STAMINA_CONFIG.movement.randomPerSecond);
-    
-    // 2. Pace fatigue multiplier (high sprint transition play drains extra energy)
-    if (pace === 'fastbreak') baseLoss *= STAMINA_CONFIG.movement.fastbreak;       // Fastbreak sprint tax
-    else if (pace === 'early_offense') baseLoss *= STAMINA_CONFIG.movement.earlyOffense; // Early transition tax
-    if (state.quarter >= 5) baseLoss *= STAMINA_CONFIG.movement.overtime;
-    
-    // 3. Muscle exhaustion curve: tired players tire out faster
-    if (c < 68) baseLoss *= 1.15; // Mild fatigue acceleration
-    if (c < 45) baseLoss *= 1.30; // Severe fatigue acceleration
-    
-    c -= baseLoss;
-    newStamina[p.id] = Math.max(0, Math.min(getPlayerMaxStamina(p), c));
+    const c = newStamina[p.id] ?? 100;
+    const rngJitter = Math.random(); // RNG stays in matchEngine per Option A
+    const isOvertime = state.quarter >= 5;
+    // calculateBaseStaminaDecay: pure formula helper (no RNG, no mutations inside)
+    newStamina[p.id] = calculateBaseStaminaDecay(
+      c,
+      timeElapsed,
+      pace,
+      isOvertime,
+      rngJitter,
+      getPlayerMaxStamina(p)
+    );
   };
   userLineup.forEach(decayPlayer);
   aiLineup.forEach(decayPlayer);

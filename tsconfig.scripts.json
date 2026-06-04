@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "outDir": ".ts-node-cjs-out"
+  },
+  "ts-node": {
+    "transpileOnly": true
+  }
+}
