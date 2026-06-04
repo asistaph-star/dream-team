@@ -10,6 +10,7 @@ Welcome to the Match Engine documentation directory. This is the single source o
 * **[[02 Match Simulation Balance]]**: Smart Fatigue (stamina reweighting), possession timing calibration, crowd energy/rally rebalances, 3PT additive bonus caps, and the frontend-equivalent balance harness (`sim_accurate_mock.ts`).
 * **[[03 Marks And Stamina]]**: Marks definition (Exposed, Debt, Hooked, Pinned, Static, Tilted), same-mark immunity, mark decay, stamina drain scaling, and action stamina costs.
 * **[[04 Skill Trigger Pipeline]]**: Complete Engine trigger rate boosts, `rollBaseSkill()`, and mechanic-aware `rollSpecialMechanic()` pipelines.
+* **[[../player-card-upgrade/SkillAudit-Final-1 Base And Legacy Skill Status Lock]]**: Complete audit and status lock mapping of all 22 Base Skills and 15 legacy Special Skills.
 
 ---
 

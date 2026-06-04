@@ -16,11 +16,11 @@
 | Archetype detection UI | ✅ Built |
 | Regression test suite | ✅ Strong and active |
 | First big balance pass | ✅ Complete |
-| 22 Base Skills final-lock | ❌ NOT DONE — active but not audited one-by-one |
-| 15 Legacy Skills final-lock | ❌ NOT DONE — not broken, but no official lock declared |
+| 22 Base Skills final-lock | ✅ DONE |
+| 15 Legacy Skills final-lock | ✅ DONE |
 | New family rolling pool | ❌ BLOCKED — activation prerequisites not met |
-| matchEngine architecture cleanup | 🔄 IN PROGRESS (Refactor-1B through 1E done) |
-| Final skill audit (SkillAudit-Final-1) | ❌ NOT STARTED |
+| matchEngine architecture cleanup | 🔄 IN PROGRESS (Refactor-1B through 1F done, 1G-1I audits complete) |
+| Final skill audit (SkillAudit-Final-1) | ✅ DONE |
 
 ---
 

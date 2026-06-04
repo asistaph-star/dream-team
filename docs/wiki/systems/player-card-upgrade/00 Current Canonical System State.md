@@ -19,32 +19,25 @@ This is the single source of truth for the Player Card, Upgrade, and Skill syste
 
 ---
 
-## Base Skills — ACTIVE, NOT FINAL-LOCKED
+## Base Skills — LOCKED STABLE (Phase SkillAudit-Final-1)
 
-> **22 base skills exist and are mostly active and tested. They are NOT officially final-locked yet.**
-> A dedicated Phase SkillAudit-Final-1 is required to declare each skill complete.
+> **22 base skills exist, are fully active, and are officially locked stable as of Phase SkillAudit-Final-1.**
+> See [[SkillAudit-Final-1 Base And Legacy Skill Status Lock]] for the full truth table mapping execution logic.
 
 - 22 base skills, each scaled through Player Identity helpers.
 - 3 base skill slots per player (slot 3 locked until OVR ≥ 85).
 - Assignment uses real NBA data via `assignBaseSkillsFromStats`.
 - Base skill effects are behaviour-only; they never touch OVR, salary, or rarity.
 
-### Known Active and Tested Base Skills (partial list — NOT exhaustive final lock)
-The following have been exercised through archetype audits and regression runs:
-Arc Pressure, Shadow Guard, Focus Lock, Discipline Wall, Hands Active, Tempo Switch,
-Enforcer Lift, Future Core, Power Driver, Paint Magnet, Mismatch Caller, Glass Touch,
-Rim Warden, Iron Motor, Share Rhythm, Position Flex.
-
-### ⚠️ What is NOT done yet
-- No final "all 22 skills checked one by one" audit table exists.
-- No official DONE / PARTIAL / BLOCKED status per skill.
-- Phase SkillAudit-Final-1 is the future task for this.
+### Active Base Skills (All 22 Locked Stable)
+Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Magnet, Tempo Surgeon, Rim Warden, Hands Active, Screen Breaker, Shadow Guard, Discipline Wall, Paint Barrier, Focus Lock, Complete Engine, Iron Motor, Connector Hub, Tempo Switch, Position Flex, Future Core, Share Rhythm, Enforcer Lift.
 
 ---
 
-## Learned Special Skills — ACTIVE, NOT FINAL-LOCKED
+## Learned Special Skills — LOCKED STABLE (Phase SkillAudit-Final-1)
 
-> **15 legacy learned skills are active in the rolling pool. They are NOT officially final-locked yet.**
+> **15 legacy learned skills are active and officially locked stable as of Phase SkillAudit-Final-1.**
+> See [[SkillAudit-Final-1 Base And Legacy Skill Status Lock]] for the full truth table.
 
 - Rolling pool still returns legacy strings (e.g. `Red Dot X`, `Flop X`).
 - Saved `specialSkillSlots` still store legacy strings.
@@ -54,28 +47,28 @@ Rim Warden, Iron Motor, Share Rhythm, Position Flex.
 - Family-aware duplicate prevention is working.
 - Flop is **protected** and must not be removed.
 
-### Legacy Skill Status Table (known status — not final-locked)
-| Skill | Known Status |
+### Legacy Skill Status Table
+| Skill | Status |
 |---|---|
-| Red Dot X | ✅ Active, Shooting archetype gated |
-| Four-Point Bait X | ✅ Active, hybrid gated |
-| Contact Tax X | ✅ Active, safely rebalanced |
-| Lung Burner X | ✅ Active, safely rebalanced |
-| Flop X | ⚠️ Baseline active, counters added, archetype scaling blocked |
-| Composure X | ✅ Active as counter |
-| Clean Contest X | ✅ Active as counter |
-| Dead Air X | ✅ Active and strong |
-| Cage Step X | 📦 Legacy preserved |
-| Corner Trap X | 📦 Legacy preserved |
-| Five-Man Squeeze X | 📦 Legacy preserved |
-| Pressure Coach X | 📦 Legacy preserved |
-| Chain Pass X | 📦 Legacy preserved |
-| Cold Timeout X / Timeout Reset | ✅ Active / preserved |
-| Debt Collector X | ⚠️ Needs final specific audit lock |
+| Red Dot X | ✅ Active / Gated, Shooting archetype gated |
+| Four-Point Bait X | ✅ Active / Gated, hybrid gated |
+| Contact Tax X | ✅ Active / Gated, safely rebalanced |
+| Lung Burner X | ✅ Active / Gated, safely rebalanced |
+| Flop X | ⚠️ Active, counters added, archetype scaling blocked |
+| Composure X | ✅ Active, counter only |
+| Clean Contest X | ✅ Active, counter only |
+| Dead Air X | ✅ Active / Preserved |
+| Cage Step X | 📦 Active / Preserved |
+| Corner Trap X | 📦 Active / Preserved, with bench-cleansing mismatch |
+| Five-Man Squeeze X | 📦 Active / Preserved |
+| Pressure Coach X | 📦 Active / Preserved |
+| Chain Pass X | 📦 Active / Preserved |
+| Cold Timeout X / Timeout Reset | ✅ Active / Preserved |
+| Debt Collector X | ✅ Active / Preserved |
 
 ### ⚠️ What is NOT done yet
-- No official "all 15 completed and locked" declaration has been made.
-- Phase SkillAudit-Final-1 is the future task for this.
+- No native 15-family rolling pool is active. The 15 families are connection-ready but blocked.
+- UI changes for families (no icons or texts in standard menus yet).
 
 ### Final 15 Skill Family Targets (architecture-ready only)
 | Category | Families |
