@@ -36,6 +36,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: MEDIUM
 * **Recommended Next Step**: Continue monitoring team fatigue in Q4.
 
+### 4. Momentum Swing Learned Special Skill Family
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [momentumSwing.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/momentumSwing.ts) (getMomentumSwingIdentity, calculateMomentumSwingRecovery, shouldMomentumSwingTrigger)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (applyMomentumSwing, momentumSwingBump)
+  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Registered in SPECIAL_SKILL_NAMES)
+* **What Code Does**: Triggers after defensive momentum events to recover stamina for the lowest-stamina teammate, restore form, and apply a +3 momentum bump.
+* **Tests**: [test_momentum_swing.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_momentum_swing.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
@@ -98,16 +109,7 @@ This document provides a comprehensive verification log and completion tracker f
 
 ## Section 4: Not Implemented Systems
 
-### 1. Momentum Swing Special Skill Family
-* **Status**: NOT IMPLEMENTED
-* **Evidence File Paths**:
-  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts#L77) (comment states it is an official family but lacks matchEngine wiring)
-  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts#L101-L115) (explicitly excluded from SPECIAL_SKILL_NAMES rolling pool)
-* **What is Missing**: No code exists in matchEngine.ts or skillResolver.ts to execute the possession swing or momentum recovery mechanics.
-* **Risk Level**: HIGH
-* **Recommended Next Step**: Map MOMENTUM_SWING to a new mechanic ID (e.g. MOMENTUM_SWING_RECOVERY) and wire it into steal/turnover blocks.
-
-### 2. Broken Play Rescue Special Skill Family
+### 1. Broken Play Rescue Special Skill Family
 * **Status**: NOT IMPLEMENTED
 * **Evidence File Paths**:
   * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts#L70) (comment states it is not yet mechanic-wired)
@@ -174,5 +176,5 @@ To continue upgrading the project safely, work should be executed in this order:
 
 1. **Phase AuditRepair**: Fix the out-of-sync assertions in [test_bench_captain_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_bench_captain_gating.ts), [test_gated_defensive_anchor.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_gated_defensive_anchor.ts), and [test_glass_strike_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_glass_strike_gating.ts) so that the validation suite reports 33/33 passes.
 2. **Phase TendencyWiring**: Integrate the remaining player tendencies (driveTendency, pullUpTendency) into the playIntent.ts helper module.
-3. **Phase MomentumSwing**: Define the mechanics for MOMENTUM_SWING and add it to the active rolling pool.
+3. **Phase MomentumSwing**: DONE
 4. **Phase BrokenPlay**: Define the mechanics for BROKEN_PLAY_RESCUE and add it to the active rolling pool.
