@@ -43,6 +43,14 @@ import {
 import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyDegradeText, strategyRevertText, aiStrategyChangeText, trapNarrative, clutchScoreText, clutchMissText } from "./matchNarrative";
 import { generateShot, ShotType } from "./shotEngine";
 import { evaluateAICoach } from "./matchAI";
+import {
+  getShotBaseCost as extGetShotBaseCost,
+  getDefensiveCost as extGetDefensiveCost,
+  getDefensiveEffortCost as extGetDefensiveEffortCost,
+  getContextMultiplier as extGetContextMultiplier,
+  ShotStaminaOutcome,
+  DefensiveEffortType
+} from "../match/actionStaminaCosts";
 import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating } from "./playerIdentity";
 import {
   addMark,
@@ -1170,8 +1178,6 @@ export function simulateTick(
   let pointsScored = 0;
   let activePlayerId = "";
   let scoringTeamIsUser = isUserPoss;
-  type ShotStaminaOutcome = 'make' | 'miss' | 'block' | 'foul';
-  type DefensiveEffortType = 'failedBlock' | 'failedSteal' | 'pressChase' | 'trapRotation';
   const shotStaminaAttempts: Array<{ playerId: string; shotType: ShotType; is3PT: boolean; outcome: ShotStaminaOutcome; context?: 'normal' | 'oreb' }> = [];
   const defensiveStaminaAttempts: Array<{ playerId: string; shotType: ShotType; outcome: ShotStaminaOutcome; is3PT: boolean }> = [];
   const defensiveEffortAttempts: Array<{ playerId: string; type: DefensiveEffortType }> = [];
@@ -3144,65 +3150,34 @@ export function simulateTick(
     const activePlayer = allActivePlayers.find(p => p.id === playerId);
     newStamina[playerId] = Math.max(0, (newStamina[playerId] ?? 100) - Math.round(cost * STAMINA_CONFIG.modifiers.globalWorkloadScale * getStaminaCostScale(activePlayer)));
   };
-  const isRimShot = (shotType: ShotType) => (
-    shotType === 'euroStep' || shotType === 'floater' || shotType === 'fingerRoll' ||
-    shotType === 'drivingLayup' || shotType === 'dunk' || shotType === 'powerLayup' ||
-    shotType === 'hookShot' || shotType === 'putBack'
-  );
-  const isHeavyShot = (shotType: ShotType) => (
-    shotType === 'stepBackMid' || shotType === 'stepBackThree' || shotType === 'fadeaway'
-  );
-  const isPullUpShot = (shotType: ShotType) => (
-    shotType === 'pullUpMid' || shotType === 'pullUpThree'
-  );
   const getShotBaseCost = (attempt: typeof shotStaminaAttempts[number]): number => {
-    if (isRimShot(attempt.shotType)) {
-      if (attempt.outcome === 'block') return attempt.shotType === 'dunk' ? STAMINA_CONFIG.rim.blockedDunk : STAMINA_CONFIG.rim.blockedLayup;
-      if (attempt.shotType === 'dunk') return STAMINA_CONFIG.rim.dunk;
-      if (attempt.shotType === 'putBack') return STAMINA_CONFIG.rebounding.putbackAttempt;
-      if (attempt.shotType === 'powerLayup' || attempt.shotType === 'hookShot') return STAMINA_CONFIG.rim.contactFinish;
-      return STAMINA_CONFIG.rim.layup;
-    }
-    if (attempt.outcome === 'block') return STAMINA_CONFIG.shooting.blockedJumper;
-    if (attempt.shotType === 'catchAndShoot' || attempt.shotType === 'cornerThree') return STAMINA_CONFIG.shooting.openCatchShoot;
-    if (isHeavyShot(attempt.shotType)) return STAMINA_CONFIG.shooting.stepBackOrFadeaway;
-    if (isPullUpShot(attempt.shotType)) return STAMINA_CONFIG.shooting.pullUp;
-    return STAMINA_CONFIG.shooting.normalJumper;
+    return extGetShotBaseCost(attempt.shotType, attempt.outcome);
   };
   const getContextMultiplier = (player: Player | undefined, playerId: string, outcome: ShotStaminaOutcome, context?: 'normal' | 'oreb'): number => {
-    let mult = 1;
     const pct = player ? getStaminaPercent(player, newStamina[playerId]) : 100;
-    if (outcome === 'make') mult *= STAMINA_CONFIG.modifiers.make;
-    if (outcome === 'miss') mult *= STAMINA_CONFIG.modifiers.miss;
-    if (outcome === 'foul') mult *= STAMINA_CONFIG.modifiers.foul;
-    if (outcome === 'block') mult *= STAMINA_CONFIG.modifiers.block;
-    if (clutchSituation.active) mult *= STAMINA_CONFIG.modifiers.clutchTime;
-    if (state.quarter >= 5) mult *= STAMINA_CONFIG.modifiers.overtime;
-    if (pace === 'fastbreak' || pace === 'early_offense') mult *= STAMINA_CONFIG.modifiers.transition;
-    if (pace === 'late_clock') mult *= STAMINA_CONFIG.modifiers.lateClock;
-    if (context === 'oreb') mult *= STAMINA_CONFIG.modifiers.orebSecondChance;
-    if (pct < 45) mult *= STAMINA_CONFIG.modifiers.alreadyTired;
-    if (pct < 30) mult *= STAMINA_CONFIG.modifiers.exhausted;
     const isUserPlayer = userLineup.some(p => p.id === playerId);
     const team = isUserPlayer ? 'user' : 'ai';
-    if (getUsageMod(playerId, team) < 0.95) mult *= STAMINA_CONFIG.modifiers.highUsage;
     const lastPoss = newPossessionHistory[newPossessionHistory.length - 1];
-    if (lastPoss?.playerId === playerId && lastPoss.team === team) mult *= STAMINA_CONFIG.modifiers.backToBackPossession;
+    const isBackToBack = lastPoss?.playerId === playerId && lastPoss.team === team;
     const facedDefense = isUserPlayer ? state.aiDefStrategy : state.userDefStrategy;
-    if (facedDefense === 'Full-Court Press' || facedDefense === 'Full-court press') mult *= STAMINA_CONFIG.modifiers.fullCourtPress;
-    return Math.max(0.75, Math.min(1.95, mult));
+    const usageMod = getUsageMod(playerId, team);
+    return extGetContextMultiplier({
+      staminaPct: pct,
+      outcome,
+      isClutch: clutchSituation.active,
+      quarter: state.quarter,
+      pace: pace,
+      context,
+      usageMod,
+      isBackToBack,
+      facedDefense
+    });
   };
   const getDefensiveCost = (attempt: typeof defensiveStaminaAttempts[number]): number => {
-    if (attempt.outcome === 'block') return STAMINA_CONFIG.defense.successfulBlock;
-    if (attempt.outcome === 'foul') return STAMINA_CONFIG.defense.jumpContest + STAMINA_CONFIG.defense.foul;
-    if (attempt.outcome === 'miss') return attempt.is3PT ? STAMINA_CONFIG.defense.hardCloseout : STAMINA_CONFIG.defense.jumpContest;
-    return attempt.is3PT ? STAMINA_CONFIG.defense.hardCloseout : STAMINA_CONFIG.defense.lightContest;
+    return extGetDefensiveCost(attempt.outcome, attempt.is3PT);
   };
   const getDefensiveEffortCost = (attempt: typeof defensiveEffortAttempts[number]): number => {
-    if (attempt.type === 'failedBlock') return STAMINA_CONFIG.defense.failedBlock;
-    if (attempt.type === 'failedSteal') return STAMINA_CONFIG.defense.failedSteal;
-    if (attempt.type === 'trapRotation') return STAMINA_CONFIG.defense.trapRotation;
-    return STAMINA_CONFIG.defense.pressChase;
+    return extGetDefensiveEffortCost(attempt.type);
   };
   const defenseStrategyForWorkload = actionWorkload.defensiveStrategy;
   const defendingLineupForWorkload = actionWorkload.possessionTeam === 'user' ? aiLineup : userLineup;
