@@ -34,63 +34,48 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 
 ---
 
-## Learned Special Skills — LOCKED STABLE (Phase SkillAudit-Final-1)
+## Learned Special Skills — LIVE FAMILY ID SYSTEM (Phase SkillArchitecture-Removal-1B)
 
-> **15 legacy learned skills are active and officially locked stable as of Phase SkillAudit-Final-1.**
-> See [[SkillAudit-Final-1 Base And Legacy Skill Status Lock]] for the full truth table.
+> **The official learned skill system now uses Special Skill Family IDs. Legacy X skills are fully deprecated and retired from rolling, active slots, and normal UI display.**
+> Legacy X skill strings are processed only as compatibility inputs on load, migrating their slots and rarity/tier keys directly to the official family IDs.
 
-- Rolling pool still returns legacy strings (e.g. `Red Dot X`, `Flop X`).
-- Saved `specialSkillSlots` still store legacy strings.
-- Rarity keys still use exact raw skill strings (e.g. `skillRarities["Red Dot X"]`).
-- matchEngine now routes all legacy skills through mechanic adapters (`rollSpecialMechanic`, `hasSpecialSkillMechanic`).
-- **New 15 family IDs are shadow-mode / architecture-ready only. They are NOT active in rolling.**
-- Family-aware duplicate prevention is working.
-- Flop is **protected** and must not be removed.
+- **Active Rolling Pool:** Currently 13 active families (excludes `MOMENTUM_SWING` and `BROKEN_PLAY_RESCUE` as they are planned but lack gameplay mechanics).
+- **Saved Data:** Roster slots and `skillRarities`/`skillTiers` keys store family IDs (loaded old saves are migrated in-place during roster normalization).
+- **UI Display:** Badges, tooltips, and profile headers display clean family names (e.g., "Deep Strike", "Bench Captain", "Flop"). Legacy X names encountered from old data map to their target family names.
+- **Trigger Rate & Quality:** Rarity/quality values (Common to Legendary) and base trigger rates are fully preserved.
+- **OVR and star-up:** Completely untouched and separate.
 
-### Legacy Skill Status Table
-| Skill | Status |
-|---|---|
-| Red Dot X | ✅ Active / Gated, Shooting archetype gated |
-| Four-Point Bait X | ✅ Active / Gated, hybrid gated |
-| Contact Tax X | ✅ Active / Gated, safely rebalanced |
-| Lung Burner X | ✅ Active / Gated, safely rebalanced |
-| Flop X | ⚠️ Active, counters added, archetype scaling blocked |
-| Composure X | ✅ Active, counter only |
-| Clean Contest X | ✅ Active, counter only |
-| Dead Air X | ✅ Active / Preserved |
-| Cage Step X | 📦 Active / Preserved |
-| Corner Trap X | 📦 Active / Preserved |
-| Five-Man Squeeze X | 📦 Active / Preserved |
-| Pressure Coach X | 📦 Active / Preserved |
-| Chain Pass X | 📦 Active / Preserved |
-| Cold Timeout X / Timeout Reset | ✅ Active / Preserved |
-| Debt Collector X | ✅ Active / Preserved |
+### Active Families & Mechanic Connections
+| Category | Family ID | Status | Connected Mechanics |
+|---|---|---|---|
+| **Offense** | `DEEP_STRIKE` | ✅ Active / Rollable | `DEEP_STRIKE_EXPOSE_SETUP`, `DEEP_STRIKE_FOUR_POINT_BAIT` |
+| | `COURT_VISION_ENGINE` | ✅ Active / Rollable | `COURT_VISION_RHYTHM` |
+| | `POSTER_SPARK` | ✅ Active / Rollable | `POSTER_SPARK_LUNG_BURNER`, `POSTER_SPARK_CONTACT_TAX` |
+| | `FLOP` | ✅ Active / Rollable | `FLOP_SELL_CONTACT` (Protected SGA modifier preserved) |
+| | `BROKEN_PLAY_RESCUE` | ⏳ Planned / Excluded | None (Excluded from rolling pool; no active mechanics) |
+| **Defense** | `SKY_WALL` | ✅ Active / Rollable | `SKY_WALL_RIM_PRESSURE` |
+| | `LOCK_CHAIN` | ✅ Active / Rollable | `LOCK_CHAIN_ON_BALL_PRESSURE`, `LOCK_CHAIN_CAGE_STEP` |
+| | `DEFENSIVE_ANCHOR` | ✅ Active / Rollable | `DEFENSIVE_ANCHOR_TEAM_PRESSURE`, `DEFENSIVE_ANCHOR_CORNER_TRAP`, `DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE` |
+| | `CLEAN_CHALLENGE` | ✅ Active / Rollable | `CLEAN_CHALLENGE_CONTEST` |
+| | `GLASS_STRIKE` | ✅ Active / Rollable | `GLASS_STRIKE_REBOUND` |
+| **Comprehensive** | `BENCH_CAPTAIN` | ✅ Active / Rollable | `BENCH_CAPTAIN_STABILIZE`, `GAMEPLAN_PRESSURE_COACH` |
+| | `MOMENTUM_SWING` | ⏳ Planned / Excluded | None (Excluded from rolling pool; no active mechanics) |
+| | `COMPOSURE_SHIELD` | ✅ Active / Rollable | `COMPOSURE_SHIELD_CANCEL` |
+| | `GAMEPLAN_JAMMER` | ✅ Active / Rollable | `GAMEPLAN_DEAD_AIR`, `GAMEPLAN_DEBT_COLLECTOR` |
+| | `TIMEOUT_RESET` | ✅ Active / Rollable | `TIMEOUT_RESET_CLEANSE` |
 
-### ⚠️ What is NOT done yet
-- No native 15-family rolling pool is active. The 15 families are connection-ready but blocked.
-- UI changes for families (no icons or texts in standard menus yet).
-
-### Final 15 Skill Family Targets (architecture-ready only)
-| Category | Families |
-|---|---|
-| **Offense** | DEEP_STRIKE, COURT_VISION_ENGINE, POSTER_SPARK, FLOP, BROKEN_PLAY_RESCUE |
-| **Defense** | SKY_WALL, LOCK_CHAIN, DEFENSIVE_ANCHOR, CLEAN_CHALLENGE, GLASS_STRIKE |
-| **Comprehensive** | BENCH_CAPTAIN, MOMENTUM_SWING, COMPOSURE_SHIELD, GAMEPLAN_JAMMER, TIMEOUT_RESET |
-
-This replaces the old 15 legacy skill pool. It is **not** adding 15 extra permanent skills.
-
-### New Family Skills — Connection Status
-| Family | Status |
-|---|---|
-| DEFENSIVE_ANCHOR | ✅ Connected |
-| COURT_VISION_ENGINE | ✅ Connected |
-| BENCH_CAPTAIN | ✅ Connected |
-| LOCK_CHAIN | ✅ Connected |
-| SKY_WALL | ✅ Connected |
-| GLASS_STRIKE | ✅ Connected |
-| POSTER_SPARK | ❌ BLOCKED — audited, intentionally not implemented |
-| GAMEPLAN_JAMMER | ❌ BLOCKED — audited/regressed, intentionally not implemented |
-| Others | ⏳ Not yet connected |
+### Legacy Migration Mapping (On Load)
+* `Red Dot X` & `Four-Point Bait X` ➔ `DEEP_STRIKE`
+* `Chain Pass X` ➔ `COURT_VISION_ENGINE`
+* `Contact Tax X` & `Lung Burner X` ➔ `POSTER_SPARK`
+* `Flop X` ➔ `FLOP`
+* `Cage Step X` ➔ `LOCK_CHAIN`
+* `Corner Trap X` & `Five-Man Squeeze X` ➔ `DEFENSIVE_ANCHOR`
+* `Clean Contest X` ➔ `CLEAN_CHALLENGE`
+* `Composure X` ➔ `COMPOSURE_SHIELD`
+* `Cold Timeout X` ➔ `TIMEOUT_RESET`
+* `Dead Air X` & `Debt Collector X` ➔ `GAMEPLAN_JAMMER`
+* `Pressure Coach X` ➔ `BENCH_CAPTAIN`
 
 ---
 
@@ -102,8 +87,8 @@ This replaces the old 15 legacy skill pool. It is **not** adding 15 extra perman
 | Glass Bully / Rebound | ✅ Connected with GLASS_STRIKE |
 | Light Bulb / Playmaking | ✅ Connected with COURT_VISION + BENCH_CAPTAIN gating |
 | Deep Strike / Shooting | ✅ Connected with Red Dot + Four-Point Bait hybrid gating |
-| Paint Bully | ✅ Baseline tested; Contact Tax / Lung Burner rebalanced; POSTER_SPARK blocked |
-| Anti-Meta / Gameplan | ✅ Baseline active; Dead Air X active; GAMEPLAN_JAMMER blocked |
+| Paint Bully | ✅ Connected with POSTER_SPARK |
+| Anti-Meta / Gameplan | ✅ Connected with GAMEPLAN_JAMMER |
 
 First balance pass: **complete**.
 Final balance audit: **not done** — blocked until skill audit lock and refactor safety work are done.
@@ -132,8 +117,5 @@ Final balance audit: **not done** — blocked until skill audit lock and refacto
 ---
 
 ## Hard Stops — Do Not Cross Without Approval
-- ❌ Do not enable new family rolling pool yet.
-- ❌ Do not implement POSTER_SPARK.
-- ❌ Do not implement GAMEPLAN_JAMMER.
 - ❌ Do not start new balance buffs until Phase SkillAudit-Final-1 is complete.
 - ❌ Do not declare the skill system "complete" yet.

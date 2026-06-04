@@ -5,87 +5,66 @@ Each player has 2 special learned skill slots:
 - Slot 1 unlocks at Star 1.
 - Slot 2 unlocks at Star 5.
 
-Learned skills are rolled using Skill Tape via the reroll system. The current rolling pool contains 15 legacy skill strings. A family-based replacement system is being built but is **not active in rolling yet**.
+Learned skills are rolled using Skill Tape via the reroll system. The learned skill system uses the **Special Skill Families** as the official rolling pool. Legacy `" X"` skills are deprecated and no longer rollable.
+
+---
+
+## Active Rolling Pool (13 Active Families)
+The official learned skill rolling pool contains **13 active Special Skill Families**:
+
+| Family ID | Category | Display Name | Core Mechanics Map |
+|---|---|---|---|
+| `DEEP_STRIKE` | Offense | Deep Strike | 3PT pressure moment, Exposed mark, and hybrid foul baiting. |
+| `COURT_VISION_ENGINE` | Offense | Court Vision Engine | Rhythm assist passing bonuses, Debt mark setups. |
+| `POSTER_SPARK` | Offense | Poster Spark | Power interior finishing, defender stamina drain, and Tilted mark setups. |
+| `FLOP` | Offense | Flop | Contact foul drawing. SGA-specific modifier preserved. |
+| `SKY_WALL` | Defense | Sky Wall | Vertical rim block pressure, shot quality reduction. |
+| `LOCK_CHAIN` | Defense | Lock Chain | perimeter steal pressure, Hooked mark setups, handler stamina drain. |
+| `DEFENSIVE_ANCHOR` | Defense | Defensive Anchor | Team half-court defensive pressure, Pinned mark setups. |
+| `CLEAN_CHALLENGE` | Defense | Clean Challenge | Contest discipline, foul baiting counters. |
+| `GLASS_STRIKE` | Defense | Glass Strike | Rebound crashed putback conversion. |
+| `BENCH_CAPTAIN` | Comprehensive | Bench Captain | Rotation stamina recovery support, marked opponent acting drain. |
+| `COMPOSURE_SHIELD` | Comprehensive | Composure Shield | Forced foul pressure cancels, mental pressure counter. |
+| `GAMEPLAN_JAMMER` | Comprehensive | Gameplan Jammer | Mid-air skill interruption, Static mark setups, Debt-spreading drain. |
+| `TIMEOUT_RESET` | Comprehensive | Timeout Reset | Team mark cleansing, clutch recovery. |
+
+### Planned / Excluded Families (Not Rollable)
+The following families are registered in the family catalog but are **excluded from the active rolling pool** because they do not have gameplay mechanics wired in `matchEngine.ts` yet:
+* **Momentum Swing** (`MOMENTUM_SWING`)
+* **Broken Play Rescue** (`BROKEN_PLAY_RESCUE`)
+
+---
 
 ## Reroll System
-- Skill Tape is consumed when the reroll is generated (not on accept).
-- The player sees the new result and chooses: **Accept New** or **Keep Current**.
-- Keep Current does not refund Skill Tape.
-- Duplicate protection: a player cannot roll the same exact skill they already have, and cannot roll a skill from the same family as an equipped skill.
+- **Consumption:** Skill Tape is consumed when the reroll is generated (not when accepted).
+- **Player Choices:** **Accept New** or **Keep Current**. Keep Current does not refund Skill Tape.
+- **Duplicate Prevention:** A player cannot roll the same exact skill they already have, and cannot roll a skill from the same family as an equipped skill (e.g. if a player has a `DEEP_STRIKE` skill, they cannot roll another `DEEP_STRIKE` skill slot).
 
-## Legacy Rolling Pool (Currently Active)
-| # | Skill Name | Category |
+---
+
+## Legacy Saved Data Migration
+To preserve legacy compatibility, any legacy `" X"` skill encountered in player saved data is translated upon load (during roster normalization) into its target official family ID:
+
+| Legacy Skill | Target Family ID | Display Name |
 |---|---|---|
-| 1 | Red Dot X | Mark Setup |
-| 2 | Four-Point Bait X | Foul Pressure |
-| 3 | Lung Burner X | Stamina Punisher |
-| 4 | Chain Pass X | Mark Setup |
-| 5 | Debt Collector X | Stamina Punisher |
-| 6 | Five-Man Squeeze X | Stamina Punisher |
-| 7 | Cold Timeout X | Safe Counter |
-| 8 | Dead Air X | Mark Setup |
-| 9 | Clean Contest X | Safe Counter |
-| 10 | Contact Tax X | Mark Setup |
-| 11 | Cage Step X | Mark Setup |
-| 12 | Corner Trap X | Mark Setup |
-| 13 | Pressure Coach X | Stamina Punisher |
-| 14 | Flop X | Foul Pressure |
-| 15 | Composure X | Safe Counter |
+| Red Dot X | `DEEP_STRIKE` | Deep Strike |
+| Four-Point Bait X | `DEEP_STRIKE` | Deep Strike |
+| Chain Pass X | `COURT_VISION_ENGINE` | Court Vision Engine |
+| Contact Tax X | `POSTER_SPARK` | Poster Spark |
+| Lung Burner X | `POSTER_SPARK` | Poster Spark |
+| Flop X | `FLOP` | Flop |
+| Cage Step X | `LOCK_CHAIN` | Lock Chain |
+| Corner Trap X | `DEFENSIVE_ANCHOR` | Defensive Anchor |
+| Five-Man Squeeze X | `DEFENSIVE_ANCHOR` | Defensive Anchor |
+| Clean Contest X | `CLEAN_CHALLENGE` | Clean Challenge |
+| Composure X | `COMPOSURE_SHIELD` | Composure Shield |
+| Cold Timeout X | `TIMEOUT_RESET` | Timeout Reset |
+| Dead Air X | `GAMEPLAN_JAMMER` | Gameplan Jammer |
+| Debt Collector X | `GAMEPLAN_JAMMER` | Gameplan Jammer |
+| Pressure Coach X | `BENCH_CAPTAIN` | Bench Captain |
 
-## Identity Scaling by Category
+---
 
-### Safe Counters / Utility (Phase LearnedSkill-1E)
-- Cold Timeout X, Composure X, Clean Contest X
-- Scaled through: `getCalmRating`, `getOnBallDefenseRating`
-
-### Mark Setup (Phase LearnedSkill-1F)
-- Red Dot X, Chain Pass X, Cage Step X, Contact Tax X, Corner Trap X, Dead Air X
-- Marks: Exposed, Debt, Hooked, Tilted, Pinned, Static
-- Same-mark immunity, 2-mark cap, natural expiry
-
-### Foul Pressure (Phase LearnedSkill-1H)
-- Flop X, Four-Point Bait X
-- Flop X: SGA-specific modifier (+8.0% vs normal +4.0%)
-- Four-Point Bait X: requires Exposed mark on defender
-- Counter chain: Composure → Clean Contest → Discipline Wall
-
-### Stamina Punishers (Phase LearnedSkill-1I)
-- Lung Burner X, Five-Man Squeeze X, Debt Collector X, Pressure Coach X
-- Bounded drain amounts, debt interaction rules
-
-## Stability Lock (Phase LearnedSkill-1J)
-- Full 30-match regression passed.
-- FTA stayed stable. No 3PT foul anomalies.
-- No stamina collapse. No permanent mark loops.
-- All 15 learned skills trigger at identity-appropriate rates.
-- Rarity still matters for trigger chance scaling.
-
-## Final 15 Family Targets (Shadow Mode)
-These are the replacement families being designed. They are **not active in rolling yet**.
-
-| Category | Family ID | Role |
-|---|---|---|
-| **Offense** | DEEP_STRIKE | 3PT pressure / 3+1 |
-| | COURT_VISION_ENGINE | Team offense rhythm |
-| | POSTER_SPARK | Poster finish / interior pressure |
-| | FLOP | Foul draw / sell contact |
-| | BROKEN_PLAY_RESCUE | Near-turnover rescue |
-| **Defense** | SKY_WALL | Rim protection |
-| | LOCK_CHAIN | Steal / handler disruption |
-| | DEFENSIVE_ANCHOR | Team defense structure |
-| | CLEAN_CHALLENGE | Foul-bait counter |
-| | GLASS_STRIKE | Putback / second chance |
-| **Comprehensive** | BENCH_CAPTAIN | Bench leadership / recovery |
-| | MOMENTUM_SWING | Run stopper / possession swing |
-| | COMPOSURE_SHIELD | Mental pressure counter |
-| | GAMEPLAN_JAMMER | Skill disruption |
-| | TIMEOUT_RESET | Cleanse / reset pressure |
-
-**This replaces the old 15 legacy skill pool later. It is not adding 15 extra permanent skills.**
-
-## Core Rules
-- Flop is protected and must not be removed.
-- Legacy skills remain for compatibility until migration is complete.
-- New family IDs are NOT active in rolling.
-- Saved `specialSkillSlots` still store legacy strings.
-- Rarity keys still use exact raw skill strings.
+## Identity & Rarity Gating
+* **Trigger Rates:** Rolled skill slots use standard quality rates (`Common` to `Legendary`) mapped from the family's base rate.
+* **Separation:** Learned special skills are purely behavioral and never impact a player's OVR, base salary, or star-up ascension ranks.

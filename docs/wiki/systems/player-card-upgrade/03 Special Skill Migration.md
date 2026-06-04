@@ -1,9 +1,9 @@
 # Special Skill Migration
 
 ## Overview
-The special skill system is being migrated from 15 legacy hardcoded skill strings to 15 architecture-aware family IDs. The migration is behavior-preserving: old skills still work exactly as before, but the engine now uses mechanic adapters instead of raw string checks.
+The special skill system has been migrated from 15 legacy hardcoded skill strings to the 15 Special Skill Families from `skillFamilies.ts`. Legacy `" X"` skills are deprecated and retired from rolling, active slots, and UI displays.
 
-**Current status:** Legacy rolling pool is still active. New family IDs are shadow-mode only. No saved data has been mutated.
+**Current status:** Active family rolling is live. Saved roster data is migrated in-place upon loading. Engine mechanics trigger via family IDs.
 
 ---
 
