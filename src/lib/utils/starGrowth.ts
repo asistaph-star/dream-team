@@ -3,7 +3,7 @@ import { deriveAttributesFromNbaStats } from "@/lib/utils/nbaAttributeMapper";
 
 export type DetailedAttributes = Required<Pick<
   Player,
-  "threePt" | "twoPt" | "freeThrow" | "handle" | "assist" | "steal" | "block" | "rebound" | "onBall" | "calm"
+  "threePt" | "twoPt" | "freeThrow" | "finishing" | "handle" | "assist" | "steal" | "block" | "rebound" | "onBall" | "calm"
 >>;
 
 type StarTier = "None" | "Silver" | "Blue" | "Violet" | "Orange" | "Red";
@@ -31,6 +31,7 @@ export const getDetailedAttributes = (player: Player): DetailedAttributes => {
     threePt: capDetailed(player.threePt ?? nbaBaseline.threePt ?? scaled(shooting)),
     twoPt: capDetailed(player.twoPt ?? nbaBaseline.twoPt ?? ((scaled(offense) * 0.55) + (scaled(shooting) * 0.25) + (scaled(strength) * 0.20))),
     freeThrow: capDetailed(player.freeThrow ?? nbaBaseline.freeThrow ?? ((scaled(shooting) * 0.72) + (scaled(playmaking) * 0.18) + (scaled(player.ovr) * 0.10))),
+    finishing: capDetailed(player.finishing ?? nbaBaseline.finishing ?? ((scaled(offense) + scaled(strength) + scaled(speed)) / 3)),
     handle: capDetailed(player.handle ?? nbaBaseline.handle ?? ((scaled(playmaking) * 0.58) + (scaled(speed) * 0.32) + (scaled(shooting) * 0.10))),
     assist: capDetailed(player.assist ?? nbaBaseline.assist ?? scaled(playmaking)),
     steal: capDetailed(player.steal ?? nbaBaseline.steal ?? ((scaled(defense) * 0.58) + (scaled(speed) * 0.42))),
@@ -128,6 +129,7 @@ export const applyStarGrowth = (player: Player, targetStarLevel: number): Player
     threePt: capDetailed(current.threePt + attributeGain),
     twoPt: capDetailed(current.twoPt + attributeGain),
     freeThrow: capDetailed(current.freeThrow + attributeGain),
+    finishing: capDetailed(current.finishing + attributeGain),
     handle: capDetailed(current.handle + attributeGain),
     assist: capDetailed(current.assist + attributeGain),
     steal: capDetailed(current.steal + attributeGain),
@@ -176,6 +178,7 @@ export const repairStarGrowth = (player: Player, baseline?: Player): Player => {
         threePt: baseline.threePt,
         twoPt: baseline.twoPt,
         freeThrow: baseline.freeThrow,
+        finishing: baseline.finishing,
         handle: baseline.handle,
         assist: baseline.assist,
         steal: baseline.steal,

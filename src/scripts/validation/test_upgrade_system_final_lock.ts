@@ -136,6 +136,7 @@ function run() {
 
   // Verify that only approved gameplay attributes and sub-attributes are modified (boosted by 1 at Silver star 1)
   assert((upgradedPlayer.threePt ?? 0) === (testPlayer.threePt ?? 0) + 1, "Detailed gameplay attribute ThreePt is boosted by exactly 1");
+  assert((upgradedPlayer.finishing ?? 0) === (testPlayer.finishing ?? 0) + 1, "Detailed gameplay attribute Finishing is boosted by exactly 1");
   assert((upgradedPlayer.stamina ?? 0) === (testPlayer.stamina ?? 0) + 2, "Stamina is boosted by exactly +2 per star level");
   assert(JSON.stringify(upgradedPlayer.baseSkills) === JSON.stringify(testPlayer.baseSkills), "Base skills are completely unchanged during star upgrades");
 
@@ -146,10 +147,12 @@ function run() {
   const doubleBoostedPlayer = {
     ...upgradedPlayer,
     threePt: (upgradedPlayer.threePt ?? 0) + 5, // Simulating a double boost leak
+    finishing: (upgradedPlayer.finishing ?? 0) + 5,
     stamina: (upgradedPlayer.stamina ?? 0) + 10
   };
   const repairedPlayer = repairStarGrowth(doubleBoostedPlayer, baselinePlayerCopy);
-  assert(repairedPlayer.threePt === upgradedPlayer.threePt, "repairStarGrowth resets double boosted attributes back to baseline + correct star growth");
+  assert(repairedPlayer.threePt === upgradedPlayer.threePt, "repairStarGrowth resets double boosted threePt back to baseline + correct star growth");
+  assert(repairedPlayer.finishing === upgradedPlayer.finishing, "repairStarGrowth resets double boosted finishing back to baseline + correct star growth");
   assert(repairedPlayer.stamina === upgradedPlayer.stamina, "repairStarGrowth resets double boosted stamina back to correct star growth expectation");
   assert(repairedPlayer.ovr === testPlayer.ovr, "repairStarGrowth does not mutate OVR");
 

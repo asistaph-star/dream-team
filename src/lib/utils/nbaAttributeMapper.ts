@@ -23,6 +23,7 @@ export type NbaDerivedAttributes = {
   threePt: number;
   twoPt: number;
   freeThrow: number;
+  finishing: number;
   handle: number;
   assist: number;
   steal: number;
@@ -123,6 +124,7 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
     threePt: clamp(blend([threeVolume, 0.45], [threeEfficiency, 0.45], [rating(tsPct, 67, 40, 170), 0.10])),
     twoPt: clamp(blend([twoVolume, 0.38], [rimPressure, 0.32], [rating(twoPct, 68, 40, 185), 0.22], [rating(fgPct, 62, 40, 170), 0.08])),
     freeThrow: clamp(blend([rating(ftPct, 92, 45, 185), 0.80], [rating(usagePct, 34, 40, 170), 0.20])),
+    finishing: clamp(blend([rimPressure, 0.65], [rating(twoPct, 68, 40, 185), 0.20], [rating(fastBreak, 6, 40, 170), 0.15])),
     handle: clamp(blend([rating(apg, 10, 45, 180), 0.30], [playSecurity, 0.45], [rating(fastBreak, 6, 40, 170), 0.25])),
     assist: clamp(blend([rating(apg, 10, 45, 190), 0.72], [playSecurity, 0.28])),
     steal: activityDefense,

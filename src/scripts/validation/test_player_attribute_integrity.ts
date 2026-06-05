@@ -40,7 +40,7 @@ async function run() {
     // Verify star-up boosts only allowed gameplay attributes
     const upgraded = applyStarGrowth(testPlayer, 5);
     const allowedKeys = new Set([
-      "threePt", "twoPt", "freeThrow", "handle", "assist", "steal",
+      "threePt", "twoPt", "freeThrow", "finishing", "handle", "assist", "steal",
       "block", "rebound", "onBall", "calm", "offense", "defense",
       "shooting", "playmaking", "speed", "strength", "stamina",
       "starLevel", "starGrowthAppliedLevel"
