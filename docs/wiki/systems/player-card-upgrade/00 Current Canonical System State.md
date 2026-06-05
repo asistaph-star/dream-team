@@ -36,14 +36,19 @@ This is the single source of truth for the Player Card, Upgrade, and Skill syste
 
 ---
 
-## Base Skills — LOCKED STABLE (Phase SkillAudit-Final-1)
+## Base Skills — LOCKED STABLE (Phase BaseSkillRealDataLock)
 
-> **22 base skills exist, are fully active, and are officially locked stable as of Phase SkillAudit-Final-1.**
-> See [[SkillAudit-Final-1 Base And Legacy Skill Status Lock]] for the full truth table mapping execution logic.
+> **22 base skills exist, are fully active, and are officially locked stable as of Phase BaseSkillRealDataLock.**
+> All base skills have been verified through tests for deterministic assignment, real NBA stat utilization, and star-up safety.
 
-- 22 base skills, each scaled through Player Identity helpers.
+- **Exactly 22 Base Skills**: Checked and verified in the catalog (`BASE_SKILL_TEXT` and `BASE_SKILL_RATES`). No legacy "X" suffix skills or special learned family IDs are allowed.
+- **Deterministic Assignment**: `assignBaseSkillsFromStats` assigns Red, Blue, and Green base skills using real-data seasonal statistics (`currentSeasonStats`) when available.
+- **Deterministic Fallbacks**: If `currentSeasonStats` is missing, the player is assigned base skills using safe fallbacks based on their highest baseline attributes (e.g. `threePt`, `finishing`, `rebound`, etc.), ensuring stable and predictable card generation.
+- **Star-Up Safe**: Upgraded stats from star levels do not leak into base skill reassignment. `repairStarGrowth` resets player stats to baseline templates before applying star growth, preventing any change in base skills and guaranteeing that previously assigned base skills are preserved.
+- **Active Match Effects**: Every base skill is wired into the match engine:
+  - *Rolled skills*: Tempo Surgeon, Paint Magnet, Arc Pressure, Mismatch Caller, Glass Touch, Foul Magnet, Power Driver, Rim Warden, Screen Breaker, Hands Active, Paint Barrier, Focus Lock, Connector Hub, Tempo Switch, Share Rhythm, Enforcer Lift, Shadow Guard, Discipline Wall.
+  - *Passive/Static skills*: Complete Engine (trigger rate boost), Iron Motor (stamina drain shield/recovery), Position Flex (matchup bonus), Future Core (form recovery).
 - 3 base skill slots per player (slot 3 locked until OVR ≥ 85).
-- Assignment uses real NBA data via `assignBaseSkillsFromStats`.
 - Base skill effects are behaviour-only; they never touch OVR, salary, or rarity.
 
 ### Active Base Skills (All 22 Locked Stable)

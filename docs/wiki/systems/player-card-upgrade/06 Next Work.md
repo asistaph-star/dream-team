@@ -12,9 +12,11 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 |---|---|
 | Lineup archetype system | Built and gameplay-connected |
 | Archetype detection UI | Built |
-| Regression test suite | Strong and active (38/38 passing) |
+| Regression test suite | Strong and active (39/39 passing) |
 | First big balance pass | Complete |
-| 22 Base Skills final-lock | Done |
+| 22 Base Skills final-lock | Done (22/22 verified) |
+| Base Skill real-data assignment | Done (deterministic & tested) |
+| Base Skill star-up safety | Done (repaired on load) |
 | 15 Learned Special Skill Families | Done, 15/15 active and rollable |
 | Legacy X Skills | Migration-only and non-rollable |
 | Player Attribute final-audit | Done |
@@ -89,10 +91,10 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Phase BaseSkillRealDataLock** - Final verification of Base Skill mapping templates, validation of sync:players pipeline, and verification of real rosters season transition.
+**Phase UpgradeSystemFinalLock** - Final verification of card upgrade success rates, failure metrics, duplicate requirement matrices, and safety under save/load constraints.
 
 ### Goal
-Validate dynamic statistical templates, ensure base skill assignment logic matches the newly calculated dynamic attributes, and verify season transitions.
+Ensure that the duplicate consumption matrix is balanced, that upgrade failure consumes only materials while keeping duplicates safe, that correct duplicate prioritization is enforced, and that the upgrade pipeline handles save/load states cleanly.
 
 ### Future Phase
-**Phase UpgradeSystemCompletion** - If any upgrades or modifications to duplicate requirements or failure metrics are needed.
+**Phase NBADataPipelineFinalLock** - Syncing/source stability checks and verification of real rosters season transition.
