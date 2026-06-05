@@ -10,7 +10,7 @@ import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEX
 import { SpecialSkillName, BaseSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
-import { getPlayerDuplicateKey } from "@/lib/utils/playerIdentity";
+import { getPlayerDuplicateKey, getAscensionCandidates } from "@/lib/utils/playerCardIdentity";
 import { formatSkillName, getSkillDisplayName } from "../../lib/skills/skillDisplay";
 import { getDefaultSkillTier } from "../../lib/players/playerEra";
 
@@ -32,7 +32,7 @@ const getQualityColor = (q: string) => {
 };
 
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
-  const { inventory, roster, activeLineup, pendingAscendSacrificeWarning, cancelAscendSacrifice, trainSpecialSkill, acceptSkillTraining, rejectSkillTraining, pendingSkillTraining } = useGameState();
+  const { inventory, roster, activeLineup, activeReserves, pendingAscendSacrificeWarning, cancelAscendSacrifice, trainSpecialSkill, acceptSkillTraining, rejectSkillTraining, pendingSkillTraining } = useGameState();
   
   // Ensure the modal always reads the absolute latest player state from the roster,
   // fixing the issue where the modal wouldn't update after a successful Star Up.
@@ -487,11 +487,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
               const requiredDuplicates = getRequiredDuplicateCount(targetInfo.tier, targetInfo.level);
 
-              const dupCandidates = roster.filter(
-                p => p.name === player.name && 
-                p.id !== player.id && 
-                !activeLineup.some(al => al.id === p.id)
-              );
+              const dupCandidates = getAscensionCandidates(player, roster, activeLineup, activeReserves);
               const hasEnoughDuplicates = dupCandidates.length >= requiredDuplicates;
               const canAscend = hasEnoughMats && hasEnoughDuplicates;
 

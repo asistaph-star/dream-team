@@ -30,7 +30,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | matchEngine architecture cleanup | Done |
 | Match Realism Calibration | Done (realism verified) |
 | SkillSystemHardReset-FinalLock | Done (15-family hard reset complete) |
-| Validation Suite Status | Done (all 44 tests passing) |
+| Storage duplicate final audit | Done (helpers + context execution path verified) |
+| Validation Suite Status | Done (all 45 tests passing) |
 
 ---
 

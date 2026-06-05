@@ -6,7 +6,7 @@ import { mockPlayers } from "@/lib/data/mockPlayers";
 import { Equipment, EquipmentSlot, Inventory, MaterialId } from "@/lib/types/item";
 import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
-import { getPlayerDuplicateKey } from "@/lib/utils/playerIdentity";
+import { getPlayerDuplicateKey, getAscensionCandidates, sortAscensionCandidates } from "@/lib/utils/playerCardIdentity";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
 import { wouldCreateDuplicateFamily, migratePlayerSpecialSkills } from "@/lib/skills/skillMigration";
@@ -991,13 +991,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
     let duplicatesToSacrifice: Player[] = [];
     if (requiredDuplicates > 0) {
-      const targetKey = getPlayerDuplicateKey(player);
-      const dupCandidates = roster.filter(
-        p => getPlayerDuplicateKey(p) === targetKey && 
-        p.id !== player.id && 
-        !activeLineup.some(al => al.id === p.id) &&
-        !activeReserves.some(ar => ar.id === p.id)
-      );
+      const dupCandidates = getAscensionCandidates(player, roster, activeLineup, activeReserves);
 
       if (dupCandidates.length < requiredDuplicates) {
         return { 
@@ -1006,11 +1000,7 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
         };
       }
       
-      const sortedDupCandidates = [...dupCandidates].sort((a, b) => {
-        const aHasSkills = hasLearnedSkills(a) ? 1 : 0;
-        const bHasSkills = hasLearnedSkills(b) ? 1 : 0;
-        return aHasSkills - bHasSkills;
-      });
+      const sortedDupCandidates = sortAscensionCandidates(dupCandidates);
       
       duplicatesToSacrifice = sortedDupCandidates.slice(0, requiredDuplicates);
       

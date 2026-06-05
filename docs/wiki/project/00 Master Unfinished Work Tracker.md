@@ -209,6 +209,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 19. Storage Duplicate Instance Final Audit
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [playerCardIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerCardIdentity.ts) (getPlayerDuplicateKey, isCardInstanceActive, getAscensionCandidates, sortAscensionCandidates, hasLearnedSpecialSkills)
+  * [GameStateContext.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/context/GameStateContext.tsx) (centralized getAscensionCandidates and sortAscensionCandidates calls)
+  * [PlayerHexProfileModal.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/player/PlayerHexProfileModal.tsx) (integrated getAscensionCandidates for exact candidate preview)
+* **What Code Does**: Centralizes player card duplication checks and filters. Restricts card consumption during upgrades to exact owned instance IDs. Protects starting 5 active lineup and reserves bench cards from accidental sacrifice. Corrects the UI preview to reflect identical logic as the state upgrade execution, preventing display/execution candidates mismatch. Supports robust active checks across sets, arrays, maps, and slot configurations.
+* **Tests**: [test_storage_duplicate_instance_final_audit.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_storage_duplicate_instance_final_audit.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
