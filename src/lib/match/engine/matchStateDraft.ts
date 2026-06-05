@@ -97,7 +97,7 @@ export function createDraft(state: MatchState): MatchStateDraft {
       user: { offIQ: 0, defIQ: 0, revertBlocked: false, revertThresholdBonus: 0 },
       ai:   { offIQ: 0, defIQ: 0, revertBlocked: false, revertThresholdBonus: 0 }
     },
-    activeShotMeter: state.activeShotMeter ? { ...state.activeShotMeter } : null,
+    activeShotMeter: null,
     isFinished: state.isFinished,
     possessionTeam: state.possessionTeam,
     possessionClock: state.possessionClock,
