@@ -77,3 +77,31 @@ These must never change without an explicit audit + full regression run:
 ## Blocked / Intentionally Not Implemented
 
 None. All 15 planned learned special skill families and mechanics are now fully implemented, integrated, and verified.
+
+---
+
+## Decomposition Verification & Results
+
+* **Old Line Count (matchEngine.ts)**: ~3,682 lines
+* **New Line Count**:
+  * `matchEngine.ts` wrapper: 73 lines
+  * `matchTick.ts` orchestrator: 1,655 lines
+* **Final Module List**:
+  * `matchTick.ts` (orchestration)
+  * `possessionContext.ts` (shared structures)
+  * `possessionHelpers.ts` (possession logic helpers)
+  * `userPossessionResolver.ts` (User offense resolution)
+  * `aiPossessionResolver.ts` (AI offense resolution)
+  * `shotPossessionResolver.ts` (shot attempts/contests)
+  * `foulResolver.ts` (free throws and fouls)
+  * `reboundResolver.ts` (rebounds and putbacks)
+  * `skillHooks.ts` (special skill rolls)
+  * `eventLogBuilder.ts` (event logging)
+  * `markLifecycle.ts` (mark decay)
+  * `staminaMutations.ts` (stamina changes)
+  * `playerStatMutations.ts` (stats updates)
+  * `momentumFormResolver.ts` (momentum form adjustments)
+* **Snapshot Parity**: 100% exact match verified via `test_match_engine_snapshot_baseline.ts --verify`.
+* **Match Realism**: Passed successfully via `test_match_realism_calibration.ts`.
+* **TypeScript Compilation**: Clean compilation (`npx tsc --noEmit` runs with zero errors).
+* **Validation Suite**: All 45 validation tests pass successfully.

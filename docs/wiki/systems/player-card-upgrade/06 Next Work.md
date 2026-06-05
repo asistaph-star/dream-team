@@ -98,7 +98,11 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Phase UI** - Update frontend components to display the new detailed attributes (`basketballIQ` and `hustle`).
+**Skill UI / Storage UI Cleanup**
 
-### Goal
-Implement visual elements in the hex chart, player detail panels, card compare overlay, and roster screens to correctly display and represent these gameplay attributes.
+### Focus
+* Update skill descriptions to match the new 15-family effects.
+* Remove old X wording from visible UI.
+* Verify skill icons, names, and categories.
+* Clean storage badges if needed.
+* Verify duplicate card visuals in storage, bench, and lineup.

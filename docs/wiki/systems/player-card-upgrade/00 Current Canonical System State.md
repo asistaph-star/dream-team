@@ -149,6 +149,10 @@ Final balance audit: **complete** via Match Realism Calibration phase.
 - **Clean duplicates prioritized**: Roster sacrifice selection automatically prioritizes clean copies before skilled copies.
 - **Sacrifice warning**: If duplicate cards with learned special skills are selected for sacrifice, a confirmation warning modal blocks progression until approved.
 - **Star growth repair**: `repairStarGrowth` resets player stats to templates and applies correct star growth stats on roster load, preventing double-boosting or base skill reassignments.
+- **Centralized Duplicate & Active Helpers (`playerCardIdentity.ts`)**: 
+  - Duplicate keys are mapped deterministically: `nbaPlayerId` > `playerId` > `sourcePlayerId` > normalized name.
+  - Active card instances (both in starting 5 lineup and reserves bench) are dynamically resolved and protected from accidental sacrifice.
+  - Both UI preview checks (`PlayerHexProfileModal.tsx`) and state engine upgrades (`GameStateContext.tsx` `ascendPlayer`) share this unified helper library to prevent display/execution mismatches.
 - **Cancel**: Canceling the upgrade consumes nothing.
 
 ## Skill Tape Economy — LOCKED STABLE
