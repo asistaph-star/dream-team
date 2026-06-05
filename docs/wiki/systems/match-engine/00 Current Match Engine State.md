@@ -16,34 +16,33 @@ Welcome to the Match Engine documentation directory. This is the single source o
 
 ## Core Code Files
 
-### Primary Engine (monolithic — under modularization)
-* [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) — Main possession simulator, state loops, fouls, clock, substitutions, and skill triggers. **~3,870 lines. Active refactor target.**
+### Primary Entry Wrapper & Orchestrator
+* [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) — Compatibility entry point delegation wrapper. **~73 lines.**
+* [matchTick.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/matchTick.ts) — Main possession simulator, state loops, fouls, clock, substitutions, and skill triggers orchestrator. **~1,650 lines.**
 * [shotEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/shotEngine.ts) — Shot zone modifiers, shot clock calculations, and the Smart Fatigue reweighting algorithm.
 * [matchTypes.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchTypes.ts) — Global match state interface, event definitions, and effective attribute calculations.
 * [matchNarrative.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchNarrative.ts) — Play-by-play commentary generators.
 * [matchAI.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchAI.ts) — AI coach decision evaluator.
 * [playerIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerIdentity.ts) — Attribute scaling fallbacks and tendency wrappers.
 
-### Extracted Match Modules (src/lib/match/)
-These were extracted from matchEngine.ts via Refactor-1A through 1F. They are pure helpers with no RNG and no state mutations.
+### Extracted Match Modules (src/lib/match/engine/ and src/lib/match/)
+The monolithic `matchEngine.ts` has been fully decomposed into dedicated files:
 
 | File | Refactor/Phase | Status | Contents |
 |---|---|---|---|
-| [matchTypes.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchTypes.ts) *(re-export shim)* | 1B | Done | Types and pure helpers re-exported from `utils/matchTypes.ts` |
-| [staminaConfig.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaConfig.ts) | 1B | Done | `STAMINA_CONFIG` constant — all stamina tuning values |
-| [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts) | 1B | Done | Pure helpers: `getCounterModifier`, `getSubtleStrategyHint`, `getIndividualThreePointShotMod`, `getFlopFoulPressureBonus`, `getGlassStrikeOrebBoost`, `getGlassStrikePutbackBoost`, `getStaminaCostScale` |
-| [mockTeams.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/mockTeams.ts) | 1B | Done | `aiPlayer`, `withAssignedSkills`, `buildAiTeam`, `mockAiTeams` |
-| [injuryHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/injuryHelpers.ts) | 1C | Done | `generatePreMatchInjuries`, `calibrateLineupForInjuries` |
-| [staminaDecay.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaDecay.ts) | 1D | Done | `calculateBenchRecoveryAmount`, `driftFormTowardNeutral`, `calculateBaseStaminaDecay` |
-| [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) | 1E | Partial | `REB_W`, `getPositionReboundWeight`, `calculateTeamReboundScore`, `calculateOffensiveReboundChance`, `calculateGlassScale`, `calculateBarrierScale` |
-| [foulSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/foulSystem.ts) | 1F | Partial | `FOUL_W`, `getPositionFoulWeight`, `getFoulStaminaModifier`, `getClutchRatingByRarity`, `calculateCrowdNoisePenalty`, `calculateFreeThrowChance`, `calculateBaseShootingFoulChance`, `calculateFourPointBaitBoost` |
-| [brokenPlayRescue.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/brokenPlayRescue.ts) | BrokenPlayRescue | Done | `getBrokenPlayRescueIdentity`, `calculateBrokenPlayRescueChanceScale`, `calculateBrokenPlayRescueStaminaCost`, `calculateBrokenPlayRescueShotPenalty` |
-| `staminaSystem.ts` | Future | Not started | Full stamina action costs, skill drains, recovery, anti-snowball |
-| `markSystem.ts` | 1H | Blocked | Audit complete. Extraction blocked until mark lifecycle tests are built. |
-| `shotResolution.ts` | Future | Not started | Shot success, 2PT/3PT/paint resolution, block/contest |
-| `specialSkillSystem.ts` | 1I | Blocked | Audit complete. Extraction blocked to preserve RNG sequence and state mutation coupling. |
-| `archetypeEffects.ts` | Future | Not started | Archetype-gated skill access, gating logic |
-| `eventLogSystem.ts` | 1G | Blocked | Audit complete. Extraction blocked due to RNG/narrative coupling. |
+| [matchTick.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/matchTick.ts) | Batch E | Done | Main tick loop orchestrator |
+| [foulResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/foulResolver.ts) | Batch D | Done | Free throw execution and foul committer selectors |
+| [reboundResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/reboundResolver.ts) | Batch D | Done | Board awards, rebounder selection, and putback intent gating |
+| [shotPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/shotPossessionResolver.ts) | Batch D | Done | Shot selection, contest scales, and block/contest rolls |
+| [userPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/userPossessionResolver.ts) | Batch C | Done | User offensive team possession play resolver |
+| [aiPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/aiPossessionResolver.ts) | Batch C | Done | AI offensive team possession play resolver |
+| [skillHooks.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/skillHooks.ts) | Batch B | Done | Special skill execution rolls (Anchor, Bench Captain, Timeout, etc.) |
+| [eventLogBuilder.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/eventLogBuilder.ts) | Batch A | Done | Dynamic match event builder and skill logging |
+| [markLifecycle.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/markLifecycle.ts) | Batch A | Done | Mark decay and clear checks |
+| [staminaMutations.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/staminaMutations.ts) | Batch A | Done | Stamina consumption, recovery, and drain wrappers |
+| [playerStatMutations.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/playerStatMutations.ts) | Batch A | Done | Stats tracking updates (PTS, AST, STL, REB, OREB, etc.) |
+| [momentumFormResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/momentumFormResolver.ts) | Batch A | Done | Player momentum form adjustments and streak trackings |
+| [possessionContext.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/possessionContext.ts) | Batch C | Done | Shared structures for play resolvers |
 
 ### Validation Scripts (src/scripts/validation/)
 All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run before any refactor commit.

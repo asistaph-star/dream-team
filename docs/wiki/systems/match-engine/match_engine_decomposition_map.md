@@ -1,11 +1,14 @@
 # Match Engine Decomposition Map
 
-This document maps the decomposition of `matchEngine.ts` (~3,680 lines) into cleaner modular systems.
+This document maps the decomposition of `matchEngine.ts` (~3,680 lines originally) into clean modular systems.
 
 - **Original line count**: 3,682
-- **Batch A commit**: `0605221b6d0819ce299dfbf87c933c8b41ca0fa8`
-- **Batch B commit**: `58c271d2f048947d29a221aebbd7a69d5703997c`
-- **Current line count (matchEngine.ts)**: 3,527
+- **Batch A commit**: `0605221b6d0819ce299dfbf87c933c8b41ca0fa8` (Support Systems)
+- **Batch B commit**: `58c271d2f048947d29a221aebbd7a69d5703997c` (Skill Hooks)
+- **Batch C & D commit**: `refactor(match): extract shot foul rebound flows` (Possession + Resolvers)
+- **Batch E commit**: `refactor(match): shrink match engine wrapper` (Main Tick Orchestrator)
+- **Final line count (matchEngine.ts)**: 73
+- **Final line count (matchTick.ts)**: 1,655
 
 ---
 

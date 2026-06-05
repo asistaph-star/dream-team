@@ -1,0 +1,1768 @@
+import { Player } from "../../types/player";
+import {
+  Difficulty, MatchEvent, MatchState, PlayerMatchStats,
+  emptyStats, getStaminaMod, getPlayerStaminaMod, getStaminaPercent, computeTeamScore,
+  computeEffective, avgStamina, clampForm,
+  getPlayerMaxStamina
+} from "../../utils/matchTypes";
+import { STAMINA_CONFIG } from "../staminaConfig";
+import { mockAiTeams } from "../mockTeams";
+import {
+  getGlassStrikeOrebBoost,
+  getGlassStrikePutbackBoost,
+  getStaminaCostScale,
+  getCounterModifier,
+  getSubtleStrategyHint
+} from "../matchHelpers";
+import { calculateBenchRecoveryAmount, driftFormTowardNeutral, calculateBaseStaminaDecay } from "../staminaDecay";
+import { calculateTeamReboundScore, REB_W } from "../reboundSystem";
+import {
+  getFoulStaminaModifier,
+  calculateFreeThrowChance,
+  calculateBaseShootingFoulChance,
+  calculateFoulDrawModifier,
+  calculateFlopIdentityScale,
+  calculateFourPointBaitIdentityScale,
+  calculateComposureIdentityScale,
+  calculateCleanContestIdentityScale,
+  calculateFourPointBaitBoost,
+  FOUL_W,
+  getClutchRatingByRarity
+} from "../foulSystem";
+import { makeEvent, scoreText, missText, fatigueNarrative, runNarrative, dominantNarrative, hotNarrative, strategyRevertText, trapNarrative, clutchScoreText, clutchMissText } from "../../utils/matchNarrative";
+import { generateShot, ShotType } from "../../utils/shotEngine";
+import { evaluateAICoach } from "../../utils/matchAI";
+import {
+  getShotBaseCost as extGetShotBaseCost,
+  getDefensiveCost as extGetDefensiveCost,
+  getDefensiveEffortCost as extGetDefensiveEffortCost,
+  getContextMultiplier as extGetContextMultiplier,
+  ShotStaminaOutcome,
+  DefensiveEffortType
+} from "../actionStaminaCosts";
+import {
+  getHomeCourtBoost as extGetHomeCourtBoost,
+  getAwayPenalty as extGetAwayPenalty,
+  getClutchMod as extGetClutchMod,
+  getAssistChance as extGetAssistChance,
+  calculateAndOneChance,
+  calculateUserPutbackChance,
+  calculateAiPutbackChance,
+  calculateFinalScoringChance
+} from "../shotResolution";
+import {
+  calculateBlockChance,
+  getSkyWallIdentity,
+  calculateSkyWallScale
+} from "../blockSystem";
+import {
+  calculateOffensiveStrategyMultiplier,
+  calculateStrategyLevelMultiplier,
+  checkStrategyDegradation
+} from "../strategyEffects";
+import {
+  getBenchCaptainIdentity,
+  calculateBenchCaptainRecovery,
+  getDefensiveAnchorIdentity,
+  calculateDefensiveAnchorTriggerScale,
+  calculateDefensiveAnchorLeaderScale,
+  calculateDefensiveAnchorLeadershipReduction,
+  calculateDefensiveAnchorTargetResistance,
+  getPressureCoachIdentity,
+  calculatePressureCoachScale,
+  getEnforcerIdentity,
+  calculateEnforcerScale
+} from "../archetypeEffects";
+import {
+  getMomentumSwingIdentity,
+  calculateMomentumSwingRecovery,
+  shouldMomentumSwingTrigger
+} from "../momentumSwing";
+import {
+  getBrokenPlayRescueIdentity,
+  calculateBrokenPlayRescueChanceScale,
+  calculateBrokenPlayRescueStaminaCost,
+  calculateBrokenPlayRescueShotPenalty
+} from "../brokenPlayRescue";
+import {
+  calculateBasketballIQTurnoverModifier,
+  calculateBasketballIQShotQualityModifier,
+  calculateBasketballIQDisciplineScale,
+  calculateHustleContestModifier
+} from "../attributeGameplayEffects";
+import {
+  getTovStamMod as extGetTovStamMod,
+  getLowestStaminaPlayer as extGetLowestStaminaPlayer,
+  getUsageMod as extGetUsageMod,
+  isEnergyDrinkLocked as extIsEnergyDrinkLocked
+} from "../playerMatchModifiers";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getStrengthRating, getStaminaRating, getCalmRating, getBasketballIQRating, getHustleRating } from "../../utils/playerIdentity";
+import {
+  addMark,
+  hasAnyMark,
+  hasBaseSkill,
+  hasMark,
+  rollBaseSkill,
+  rollSpecialMechanic,
+  drainStamina,
+} from "../../skills/skillResolver";
+import { hasSpecialSkillMechanic } from "../../skills/skillResolver";
+import { resolveLineupArchetypes } from "../../lineup/lineupArchetypeResolver";
+import { createDraft } from "./matchStateDraft";
+import { logSkillTrigger } from "./eventLogBuilder";
+import { decayTickMarks, clearBenchedMarks } from "./markLifecycle";
+import { getSkyWallDrain, getLockChainDrain, applyAntiSnowballScaling } from "../staminaSkillEffects";
+import {
+  recoverSkillStamina as extRecoverSkillStamina,
+  tryColdTimeout as extTryColdTimeout,
+  applyBenchCaptain as extApplyBenchCaptain,
+  applyMomentumSwing as extApplyMomentumSwing,
+  applyDefensiveAnchor as extApplyDefensiveAnchor,
+  tryGameplanJammer as extTryGameplanJammer,
+  tryShadowGuard as extTryShadowGuard,
+  applyGreenSupport as extApplyGreenSupport
+} from "./skillHooks";
+import { PossessionContext } from "./possessionContext";
+import { resolveUserPossession } from "./userPossessionResolver";
+import { resolveAiPossession } from "./aiPossessionResolver";
+import { ensurePlayerStatsExists } from "./playerStatMutations";
+import { ensureFormExists, ensureFormFiredExists } from "./momentumFormResolver";
+
+const MAX_3PT_POSITIVE_ADDITIVE_BONUS = 0.08;
+
+export function simulateTick(
+  state: MatchState,
+  userOff: number, userDef: number,
+  aiTeamObj: typeof mockAiTeams[Difficulty],
+  userLineup: Player[],
+  allUserRoster: Player[]
+): MatchState {
+  if (state.isFinished) return state;
+
+  let newActiveShotMeter: MatchState['activeShotMeter'] = null;
+
+  // ═══ SKILL BUFF RESET (skills re-apply each tick) ═══
+  const newTeamSkillBuffs: MatchState['teamSkillBuffs'] = {
+    user: { offIQ: 0, defIQ: 0, revertBlocked: false, revertThresholdBonus: 0 },
+    ai:   { offIQ: 0, defIQ: 0, revertBlocked: false, revertThresholdBonus: 0 },
+  };
+  const newActiveSkillBuffs: MatchState['activeSkillBuffs'] = {};
+
+  let nextAiLineupIds = state.aiLineupIds && state.aiLineupIds.length === 5
+    ? [...state.aiLineupIds]
+    : aiTeamObj.roster.slice(0, 5).map(p => p.id);
+
+  let aiLineup = nextAiLineupIds.map(id => aiTeamObj.roster.find(p => p.id === id)!).filter(Boolean);
+  if (aiLineup.length !== 5) {
+    aiLineup = aiTeamObj.roster.slice(0, 5);
+    nextAiLineupIds = aiLineup.map(p => p.id);
+  }
+  const playerById = new Map([...allUserRoster, ...aiTeamObj.roster].map(p => [p.id, p]));
+  const recoverToMax = (player: Player, amount: number, staminaMap: Record<string, number> = state.playerStamina): number => {
+    return Math.min(getPlayerMaxStamina(player), (staminaMap[player.id] ?? getPlayerMaxStamina(player)) + amount);
+  };
+  const staminaPct = (player: Player): number => getStaminaPercent(player, newStamina[player.id]);
+  let currentPossession = state.possessionTeam;
+  if (!currentPossession) {
+    currentPossession = Math.random() < 0.5 ? 'user' : 'ai';
+  }
+
+  let timeElapsed = -1;
+  let pace: 'fastbreak' | 'early_offense' | 'oreb' | 'late_clock' | 'normal' = 'normal';
+
+  const activeOffStrategy = currentPossession === 'user' ? state.userOffStrategy : state.aiOffStrategy;
+  const offStam = avgStamina(currentPossession === 'user' ? userLineup : aiLineup, state.playerStamina);
+  const defStam = avgStamina(currentPossession === 'user' ? aiLineup : userLineup, state.playerStamina);
+  const staminaAdvantage = offStam - defStam;
+
+  switch (state.lastPlayCategory) {
+    case 'steal':
+      timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s
+      pace = 'fastbreak';
+      break;
+    case 'block':
+      timeElapsed = Math.floor(Math.random() * 5) + 5; // 5-9s
+      pace = 'fastbreak';
+      break;
+    case 'miss_oreb':
+      if (Math.random() < 0.10) {
+        timeElapsed = Math.floor(Math.random() * 4) + 3; // 3-6s quick putback
+      } else {
+        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s reset
+      }
+      pace = 'oreb';
+      break;
+    case 'miss_dreb':
+      if (staminaAdvantage >= 15 && Math.random() < 0.05) {
+        timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s outlet
+        pace = 'fastbreak';
+      } else {
+        timeElapsed = -1; // Fallback to strategy
+        pace = 'normal';
+      }
+      break;
+    case 'turnover':
+      if (Math.random() < 0.10) {
+        timeElapsed = Math.floor(Math.random() * 5) + 4; // 4-8s live-ball
+        pace = 'fastbreak';
+      } else {
+        timeElapsed = -1; // Fallback to strategy
+        pace = 'normal';
+      }
+      break;
+    case 'made_shot':
+      if (activeOffStrategy === '5-Out Spacing' && Math.random() < 0.05) {
+        timeElapsed = Math.floor(Math.random() * 5) + 8; // 8-12s
+        pace = 'early_offense';
+      } else {
+        timeElapsed = -1; // Fallback to strategy
+        pace = 'normal';
+      }
+      break;
+    case 'foul_reset':
+      if (Math.random() < 0.10) {
+        timeElapsed = Math.floor(Math.random() * 5) + 3; // 3-7s
+      } else {
+        timeElapsed = -1;
+      }
+      pace = 'normal';
+      break;
+    case 'start_quarter':
+    default:
+      timeElapsed = -1;
+      pace = 'normal';
+      break;
+  }
+
+  // If pace resolved to normal, apply strategy-based timing if no event forced a time
+  if (pace === 'normal') {
+    let strategyTime = 0;
+    if (activeOffStrategy === 'Isolation (ISO)' && state.clock <= 60) {
+      strategyTime = Math.floor(Math.random() * 5) + 20; // 20-24s
+      pace = 'late_clock';
+    } else if (activeOffStrategy === 'Isolation (ISO)' || activeOffStrategy === 'Post Isolation') {
+      strategyTime = Math.floor(Math.random() * 6) + 17; // 17-22s
+    } else if (activeOffStrategy === 'Pick & Roll') {
+      strategyTime = Math.floor(Math.random() * 6) + 13; // 13-18s
+    } else if (activeOffStrategy === '5-Out Spacing') {
+      strategyTime = Math.floor(Math.random() * 6) + 11; // 11-16s
+    } else {
+      strategyTime = Math.floor(Math.random() * 7) + 12; // 12-18s normal half-court
+    }
+
+    if (timeElapsed === -1) {
+      timeElapsed = strategyTime;
+    }
+  }
+
+  // Fix 4: LATE GAME CLOCK OVERRIDE (Urgency overrides strategy)
+  if ((state.quarter === 4 || state.quarter >= 5) && state.clock <= 24) {
+    const isUserPoss = currentPossession === 'user';
+    const activeTeamScore = isUserPoss ? state.userScore : state.aiScore;
+    const opponentTeamScore = isUserPoss ? state.aiScore : state.userScore;
+    
+    if (activeTeamScore >= opponentTeamScore) {
+      // Winning or tied team: hold for last shot / drain clock
+      timeElapsed = Math.floor(Math.random() * 5) + 20; // 20-24s
+      pace = 'late_clock';
+    } else {
+      // Losing team: extreme urgency to score
+      timeElapsed = Math.floor(Math.random() * 5) + 6; // 6-10s
+      pace = 'fastbreak';
+    }
+  }
+
+  let shotClockViolationFired = false;
+  // If remaining shot clock is less than or equal to the time elapsed for the play, a violation occurs!
+  if (state.possessionClock !== undefined && state.possessionClock > 0 && timeElapsed >= state.possessionClock) {
+    timeElapsed = Math.max(1, state.possessionClock); // burn exactly the remaining shot clock time
+    shotClockViolationFired = true;
+  }
+
+  let nextPossessionTeam: 'user' | 'ai' | null = currentPossession;
+  let nextLastPlayCategory = state.lastPlayCategory;
+
+  let newClock = state.clock - timeElapsed;
+  let newQuarter = state.quarter;
+  let finished = false;
+  let quarterEnded = false;
+
+  const newTeamFouls = { user: [...state.teamFouls.user], ai: [...state.teamFouls.ai] };
+  const newIsInBonus = { user: state.isInBonus.user, ai: state.isInBonus.ai };
+  const newOTScores = { user: [...(state.otScores?.user ?? [])], ai: [...(state.otScores?.ai ?? [])] };
+
+  if (newClock <= 0) {
+    if (newQuarter < 4) { 
+      newQuarter += 1; newClock = 720; quarterEnded = true; 
+      nextPossessionTeam = null;
+      nextLastPlayCategory = 'made_shot';
+    } else {
+      newClock = 0;
+      const tied = state.userScore === state.aiScore;
+      if (tied && (state.otPeriod ?? 0) < 3) {
+        // OVERTIME TRIGGERED
+        finished = false;
+        newQuarter += 1;
+        newClock = 300; // 5 minutes
+        
+        const newOTPeriod = (state.otPeriod ?? 0) + 1;
+        quarterEnded = true;
+        
+        newTeamFouls.user.push(0);
+        newTeamFouls.ai.push(0);
+        
+        newOTScores.user.push(0);
+        newOTScores.ai.push(0);
+        
+        const otText = newOTPeriod === 1 ? 'First' : newOTPeriod === 2 ? 'Double' : 'Triple';
+        const ev = makeEvent(newQuarter, newClock, `OVERTIME: Game tied at ${state.userScore}. ${otText} OT — 5 minutes remaining.`, true);
+        
+        const newEventsList = [ev, ...state.events].slice(0, 50);
+        
+        // Return OT state
+        return {
+          ...state,
+          isOT: true,
+          otPeriod: newOTPeriod,
+          otScores: newOTScores,
+          teamFouls: newTeamFouls,
+          isInBonus: { user: false, ai: false },
+          quarter: newQuarter,
+          clock: newClock,
+          isFinished: false,
+          events: newEventsList,
+          possessionTeam: null,
+          lastPlayCategory: 'made_shot',
+          playerStamina: Object.fromEntries(Object.entries(state.playerStamina).map(([k, v]) => {
+            const player = playerById.get(k);
+            const recovery = STAMINA_CONFIG.recovery.overtimeBreak;
+            return [k, player ? Math.min(getPlayerMaxStamina(player), v + recovery) : Math.min(100, v + recovery)];
+          })),
+        };
+      } else if (tied && (state.otPeriod ?? 0) >= 3) {
+        // TRIPLE OT LIMIT REACHED - SUDDEN DEATH
+        finished = true; // Set true for shootout to end game
+      } else {
+        finished = true; 
+      }
+    }
+  }
+
+  // Update gameTimeSec formula for OT
+  const gameTimeSec = newQuarter <= 4
+    ? (newQuarter - 1) * 720 + (720 - newClock)
+    : 2880 + (newQuarter - 5) * 300 + (300 - newClock);
+  const draft = createDraft(state);
+  draft.quarter = newQuarter;
+  draft.clock = newClock;
+  draft.teamSkillBuffs = newTeamSkillBuffs;
+  draft.activeSkillBuffs = newActiveSkillBuffs;
+  decayTickMarks(draft);
+  const onCourtIds = new Set([...userLineup, ...aiLineup].map(p => p.id));
+  clearBenchedMarks(draft, onCourtIds);
+
+  if (quarterEnded) {
+    newIsInBonus.user = newTeamFouls.user[newQuarter - 1] >= 5;
+    newIsInBonus.ai = newTeamFouls.ai[newQuarter - 1] >= 5;
+    draft.isInBonus = { ...newIsInBonus };
+    draft.skillMarks = {};
+    draft.markImmunity = {};
+  }
+
+  const newStamina = draft.playerStamina;
+  const newPlayerStats = draft.playerStats;
+  const newEvents = draft.events;
+  let newSkillMarks = draft.skillMarks;
+  let newMarkImmunity = draft.markImmunity;
+  const newSkillUsedThisGame = draft.skillUsedThisGame;
+  const newFormRating = draft.formRating;
+  const newFormFired = draft.formNarrativeFired;
+  const newHotFromForm = draft.hotFromForm;
+
+  const ensureStats = (id: string) => ensurePlayerStatsExists(draft, id);
+  const ensureForm = (id: string) => ensureFormExists(draft, id);
+  const ensureFormFired = (id: string) => ensureFormFiredExists(draft, id);
+  const skillLog = (text: string, isUserTeam: boolean) => logSkillTrigger(draft, text, isUserTeam);
+
+  const warnings: string[] = [];
+  const teamSkillKey = (isUserTeam: boolean): string => isUserTeam ? "user" : "ai";
+  const hasTeamSkillUsed = (isUserTeam: boolean, skillUse: string): boolean =>
+    (newSkillUsedThisGame[teamSkillKey(isUserTeam)] ?? []).includes(skillUse);
+  const markTeamSkillUsed = (isUserTeam: boolean, skillUse: string): void => {
+    const key = teamSkillKey(isUserTeam);
+    newSkillUsedThisGame[key] = [...(newSkillUsedThisGame[key] ?? []), skillUse];
+  };
+
+  let stealPlayerId = '';
+  let eventIndicator: { playerId: string; type: 'BLK' | 'STL' | 'TOV' | 'REB' | 'OREB' | 'AST' | 'FOL' } | undefined;
+  const getLowestStaminaPlayer = (lineup: Player[]): Player =>
+    extGetLowestStaminaPlayer(lineup, newStamina);
+  const tryColdTimeout = (team: Player[], isUserTeam: boolean) => {
+    extTryColdTimeout(draft, team, isUserTeam);
+    newSkillMarks = draft.skillMarks;
+    newMarkImmunity = draft.markImmunity;
+  };
+  const applyBenchCaptain = (team: Player[], isUserTeam: boolean) => {
+    extApplyBenchCaptain(draft, team, isUserTeam);
+  };
+  let momentumSwingBump: 'user' | 'ai' | null = null;
+  const applyMomentumSwing = (team: Player[], isUserTeam: boolean) => {
+    const bump = extApplyMomentumSwing(draft, team, isUserTeam, state.lastPlayCategory);
+    if (bump) momentumSwingBump = bump;
+  };
+  const applyDefensiveAnchor = (defendingTeam: Player[], attackingTeam: Player[], isDefendingUserTeam: boolean) => {
+    extApplyDefensiveAnchor(draft, defendingTeam, isDefendingUserTeam, userEffRaw.def, aiEffRaw.def, pace === 'fastbreak');
+  };
+  const tryGameplanJammer = (defendingTeam: Player[], target: Player, sourceText: string, isDisruptingUser: boolean): boolean => {
+    const success = extTryGameplanJammer(draft, defendingTeam, target, sourceText, isDisruptingUser);
+    if (success) {
+      newSkillMarks = draft.skillMarks;
+    }
+    return success;
+  };
+  const tryShadowGuard = (defendingTeam: Player[], isDefendingUser: boolean): boolean => {
+    return extTryShadowGuard(draft, defendingTeam, isDefendingUser);
+  };
+  const recoverSkillStamina = (player: Player, amount: number): boolean => {
+    return extRecoverSkillStamina(draft, player, amount);
+  };
+  const applyGreenSupport = (team: Player[], isUserTeam: boolean) => {
+    extApplyGreenSupport(draft, team, isUserTeam, newTeamFouls.user[newQuarter - 1], newTeamFouls.ai[newQuarter - 1]);
+  };
+
+  // ═══ ENERGY DRINK: Lock helpers ═══
+  const newEnergyDrinkLocked = { ...state.energyDrinkLocked };
+  const isEnergyDrinkLocked = (playerId: string): boolean => {
+    return extIsEnergyDrinkLocked(newEnergyDrinkLocked[playerId], gameTimeSec);
+  };
+  // ═══ ENERGY DRINK: PendingForm one-tick boost ═══
+  if (state.energyDrinkPendingForm) {
+    const pid = state.energyDrinkPendingForm;
+    ensureForm(pid);
+    // Clutch amplification: +0.06 in high clutch, +0.04 otherwise
+    const isHighClutch = newQuarter === 4 && newClock <= 60 && Math.abs(state.userScore - state.aiScore) <= 5;
+    newFormRating[pid] = clampForm(newFormRating[pid] + (isHighClutch ? 0.06 : 0.04));
+  }
+
+  // ═══ STEP 1: BENCH RECOVERY + BENCH FORM NORMALIZATION ═══
+  const activeIds = new Set([...userLineup.map(p => p.id), ...aiLineup.map(p => p.id)]);
+  allUserRoster.forEach(p => {
+    if (!activeIds.has(p.id)) {
+      const benchRecovery = state.isHomeGame ? STAMINA_CONFIG.recovery.benchHomePerTick : STAMINA_CONFIG.recovery.benchAwayPerTick;
+      newStamina[p.id] = calculateBenchRecoveryAmount(p, benchRecovery, newStamina[p.id]);
+      // Bench form normalization: drift toward 1.0
+      ensureForm(p.id);
+      newFormRating[p.id] = driftFormTowardNeutral(newFormRating[p.id], 0.003);
+    }
+  });
+
+  // Recover stamina for AI bench players as well!
+  aiTeamObj.roster.forEach(p => {
+    if (!activeIds.has(p.id)) {
+      const benchRecovery = !state.isHomeGame ? STAMINA_CONFIG.recovery.benchHomePerTick : STAMINA_CONFIG.recovery.benchAwayPerTick;
+      newStamina[p.id] = calculateBenchRecoveryAmount(p, benchRecovery, newStamina[p.id]);
+      ensureForm(p.id);
+      newFormRating[p.id] = driftFormTowardNeutral(newFormRating[p.id], 0.003);
+    }
+  });
+
+  // Quarter break form normalization (all active players drift 0.01 toward 1.0)
+  if (quarterEnded) {
+    [...userLineup, ...aiLineup].forEach(p => {
+      ensureForm(p.id);
+      const f = newFormRating[p.id];
+      if (f > 1.0) newFormRating[p.id] = clampForm(f - 0.01);
+      else if (f < 1.0) newFormRating[p.id] = clampForm(f + 0.01);
+    });
+  }
+
+  // ═══ STEP 2: BASE STAMINA DECAY (REBALANCED FOR REAL NBA FATIGUE) ═══
+  const decayPlayer = (p: Player) => {
+    const c = newStamina[p.id] ?? 100;
+    const rngJitter = Math.random(); // RNG stays in matchEngine per Option A
+    const isOvertime = state.quarter >= 5;
+    // calculateBaseStaminaDecay: pure formula helper (no RNG, no mutations inside)
+    newStamina[p.id] = calculateBaseStaminaDecay(
+      c,
+      timeElapsed,
+      pace,
+      isOvertime,
+      rngJitter,
+      getPlayerMaxStamina(p)
+    );
+  };
+  userLineup.forEach(decayPlayer);
+  aiLineup.forEach(decayPlayer);
+
+  // Road fatigue tax: Away team active players drain extra 0.08 stamina per play (travel fatigue)
+  if (!state.isHomeGame) {
+    userLineup.forEach(p => { newStamina[p.id] = Math.max(0, (newStamina[p.id] ?? 100) - STAMINA_CONFIG.movement.road); });
+  } else {
+    aiLineup.forEach(p => { newStamina[p.id] = Math.max(0, (newStamina[p.id] ?? 100) - STAMINA_CONFIG.movement.road); });
+  }
+  tryColdTimeout(userLineup, true);
+  tryColdTimeout(aiLineup, false);
+  applyGreenSupport(userLineup, true);
+  applyGreenSupport(aiLineup, false);
+  applyBenchCaptain(userLineup, true);
+  applyBenchCaptain(aiLineup, false);
+  applyMomentumSwing(userLineup, true);
+  applyMomentumSwing(aiLineup, false);
+
+  [...userLineup, ...aiLineup].forEach(p => {
+    const team = userLineup.some(u => u.id === p.id) ? userLineup : aiLineup;
+    const isUserTeam = team === userLineup;
+    const currentStaminaPct = staminaPct(p);
+    const ironMotorIdentity = getStaminaRating(p);
+    const ironMotorTriggerRate = Math.max(60, Math.min(95, 55 + ironMotorIdentity * 0.40));
+    if (hasBaseSkill(p, "Iron Motor") && currentStaminaPct <= 70 && Math.random() * 1000 < ironMotorTriggerRate) {
+      const ironMotorScale = 0.85 + (ironMotorIdentity / 100) * 0.30;
+      recoverSkillStamina(p, 12 * ironMotorScale);
+      if (currentStaminaPct <= 45) skillLog(`${p.name}'s Iron Motor restores stamina`, isUserTeam);
+    }
+  });
+
+  // 4. Quarter Break Recovery: applied cleanly to the entire team at quarter transition
+  if (quarterEnded) {
+    const isHalftime = state.quarter === 2;
+    const breakRecovery = isHalftime ? STAMINA_CONFIG.recovery.halftime : STAMINA_CONFIG.recovery.quarterBreak;
+    
+    allUserRoster.forEach(p => {
+      newStamina[p.id] = recoverToMax(p, breakRecovery, newStamina);
+    });
+    aiTeamObj.roster.forEach(p => {
+      newStamina[p.id] = recoverToMax(p, breakRecovery, newStamina);
+    });
+  }
+
+  // ═══ STEP 3: CHECK STRATEGY CONDITIONS (Layer 3) ═══
+  let currentOff = state.userOffStrategy;
+  let currentDef = state.userDefStrategy;
+  const userAvg = avgStamina(userLineup, newStamina);
+
+  // OOP detection + narrative (fires ~every 10 ticks when OOP active)
+  const SLOTS = ['PG', 'SG', 'SF', 'PF', 'C'];
+  const oopPlayers = userLineup.filter((p, i) => p.position !== SLOTS[i]);
+  if (oopPlayers.length > 0 && Math.random() < 0.1) {
+    const oop = oopPlayers[0];
+    const slot = SLOTS[userLineup.indexOf(oop)];
+    warnings.push(`ALERT: ${oop.name} (${oop.position}) playing out of position at ${slot}`);
+  }
+
+  const deg = checkStrategyDegradation(currentOff, currentDef, userLineup, newStamina);
+  currentOff = deg.newOffStrategy;
+  currentDef = deg.newDefStrategy;
+  warnings.push(...deg.warnings);
+  deg.reverts.forEach(r => {
+    newEvents.push(makeEvent(newQuarter, newClock, strategyRevertText(r.from, r.to, r.playerName || "Team"), true));
+  });
+
+  // ═══ STEP 4: RECALCULATE TEAM STATS (Layer 4) ═══
+  let offMult = calculateOffensiveStrategyMultiplier(currentOff, userLineup, newStamina);
+
+  const userOffLevel = state.strategyLevels?.[currentOff]?.level || 1;
+  const userDefLevel = state.strategyLevels?.[currentDef]?.level || 1;
+  const strategyOffMultiplier = calculateStrategyLevelMultiplier(userOffLevel);
+  const strategyDefMultiplier = calculateStrategyLevelMultiplier(userDefLevel);
+
+  // ─── TACTICAL COUNTER STRATEGY MODIFIERS ───
+  let userCounterMult = 1.0;
+  const userCounterObj = getCounterModifier(currentOff, state.aiDefStrategy);
+  if (userCounterObj.offMult !== 1.0) {
+    userCounterMult = userCounterObj.offMult;
+    if (Math.random() < 0.12) {
+      newEvents.push(makeEvent(newQuarter, newClock, `[COACH ADVANTAGE] ${userCounterObj.narrative}`, true));
+    }
+  }
+
+  let aiCounterMult = 1.0;
+  const aiCounterObj = getCounterModifier(state.aiOffStrategy, currentDef);
+  if (aiCounterObj.offMult !== 1.0) {
+    aiCounterMult = aiCounterObj.offMult;
+    if (Math.random() < 0.12) {
+      newEvents.push(makeEvent(newQuarter, newClock, `[COACH ADVANTAGE] ${aiCounterObj.narrative}`, true));
+    }
+  }
+
+  const userEffRaw = computeEffective(userLineup, newStamina, currentOff, currentDef, offMult * strategyOffMultiplier * userCounterMult, strategyDefMultiplier);
+  const aiEffRaw = computeEffective(aiLineup, newStamina, state.aiOffStrategy, state.aiDefStrategy, aiCounterMult);
+
+  if (currentPossession === "user") {
+    // AI is defending, User is attacking
+    applyDefensiveAnchor(aiLineup, userLineup, false);
+  } else {
+    // User is defending, AI is attacking
+    applyDefensiveAnchor(userLineup, aiLineup, true);
+  }
+
+  const userEff = {
+    off: userEffRaw.off + newTeamSkillBuffs.user.offIQ,
+    def: userEffRaw.def + newTeamSkillBuffs.user.defIQ,
+  };
+  const aiEff = {
+    off: aiEffRaw.off + newTeamSkillBuffs.ai.offIQ,
+    def: aiEffRaw.def + newTeamSkillBuffs.ai.defIQ,
+  };
+
+  // ═══ STEP 5: AI STRATEGY UPDATE (Layer 6) ═══
+  const aiCoach = state.disableAiCoach
+    ? {
+        aiOff: state.aiOffStrategy,
+        aiDef: state.aiDefStrategy,
+        events: [] as MatchEvent[],
+        lastAiStrategyChange: state.lastAiStrategyChange,
+        aiTimeoutsLeft: state.aiTimeoutsLeft,
+        hotPlayerFocusTarget: state.hotPlayerFocusTarget,
+        aiSub: null as { outId: string; inId: string } | null,
+        lastAiSubCheck: state.aiLastSubCheck,
+        aiStaminaBoosts: {} as Record<string, number>,
+      }
+    : evaluateAICoach(state, aiLineup, userLineup, aiTeamObj.roster, aiTeamObj.name, newQuarter, newClock, gameTimeSec, state.difficulty);
+  const aiOffStrat = aiCoach.aiOff;
+  const aiDefStrat = aiCoach.aiDef;
+  const lastAiChange = aiCoach.lastAiStrategyChange;
+  const aiTimeoutsLeft = aiCoach.aiTimeoutsLeft;
+  const hotFocusTarget = aiCoach.hotPlayerFocusTarget;
+  const lastAiSubCheck = aiCoach.lastAiSubCheck;
+  newEvents.push(...aiCoach.events);
+
+  if (aiCoach.aiStaminaBoosts) {
+    for (const [playerId, boost] of Object.entries(aiCoach.aiStaminaBoosts)) {
+      const player = playerById.get(playerId);
+      newStamina[playerId] = player ? recoverToMax(player, boost, newStamina) : Math.min(100, (newStamina[playerId] ?? 100) + boost);
+    }
+  }
+
+  if (aiCoach.aiSub) {
+    const idx = nextAiLineupIds.indexOf(aiCoach.aiSub.outId);
+    const incomingPlayer = aiTeamObj.roster.find(p => p.id === aiCoach.aiSub!.inId);
+    const outgoingPlayer = aiTeamObj.roster.find(p => p.id === aiCoach.aiSub!.outId);
+    // Validate: only apply sub if incoming player's position matches the slot's expected position
+    // The slot position is determined by the outgoing player's position (or the fixed slot order)
+    const slotPositions = ['PG', 'SG', 'SF', 'PF', 'C'] as const;
+    const slotPos = slotPositions[idx] ?? outgoingPlayer?.position;
+    const positionMatch = incomingPlayer && (incomingPlayer.position === slotPos || incomingPlayer.position === outgoingPlayer?.position);
+    if (idx !== -1 && incomingPlayer && positionMatch) {
+      nextAiLineupIds[idx] = aiCoach.aiSub.inId;
+      // Re-resolve aiLineup — do NOT filter(Boolean), keep exact slots
+      const resolved = nextAiLineupIds.map(id => aiTeamObj.roster.find(p => p.id === id));
+      if (resolved.every(p => p !== undefined)) {
+        aiLineup = resolved as Player[];
+      }
+      // else: sub failed validation silently — keep current lineup intact
+    }
+  }
+
+  // AI timeout stamina boost (if AI called a timeout this tick)
+  if (aiTimeoutsLeft < state.aiTimeoutsLeft) {
+    aiLineup.forEach(p => { newStamina[p.id] = recoverToMax(p, STAMINA_CONFIG.recovery.timeout, newStamina); });
+    nextLastPlayCategory = 'made_shot';
+  }
+
+  // Hot player defensive focus: +6% DEF vs hot player's pos, +10% vs ISO star
+  let aiIsoCounter = 1.0;
+  if (hotFocusTarget && state.hotPlayers[hotFocusTarget]) {
+    const isISO = currentOff === "Isolation (ISO)";
+    aiIsoCounter = isISO ? 1.10 : 1.06;
+  }
+
+  // ═══ STEP 6: DETERMINE POSSESSION ═══
+  const eUO = userEff.off;
+  const eAD = aiEff.def * aiIsoCounter;
+  const eAO = aiEff.off;
+  const eUD = userEff.def;
+  const isUserPoss = currentPossession === 'user';
+
+  // ═══ STEP 7: RESOLVE SCORING (Layer 2) ═══
+  let momentumActive = state.momentumActive;
+  const momentumEndTime = state.momentumEndTime;
+  if (momentumActive && Date.now() >= momentumEndTime) {
+    momentumActive = false;
+    newEvents.push(makeEvent(newQuarter, newClock, "Momentum fades... back to business.", true));
+  }
+  const momentumBonus = momentumActive ? 1.08 : 1.0;
+  const hasHotUser = userLineup.some(p => state.hotPlayers[p.id]);
+  const hasHotAi = aiLineup.some(p => state.hotPlayers[p.id]);
+
+  // ═══ STEP 8: HOME COURT ADVANTAGE (Layer 1 — Single Source of Truth) ═══
+  const userIsHome = state.isHomeGame;
+
+  // ═══ STEP 8 LAYER 2: HOME COURT STATE OBJECT ═══
+  const scoreDiff = Math.abs(state.userScore - state.aiScore);
+  const clutchSituation = {
+    active: (newQuarter === 4 && newClock <= 120 && scoreDiff <= 8) || newQuarter >= 5,
+    intensity: newQuarter >= 5 && newClock <= 60 && scoreDiff <= 5 ? 'high' as const
+      : newQuarter >= 5 ? 'medium' as const
+      : newQuarter === 4 && newClock <= 60 && scoreDiff <= 5 ? 'high' as const
+      : newQuarter === 4 && newClock <= 120 && scoreDiff <= 8 ? 'medium' as const
+      : 'none' as const,
+    scoreDiff,
+    isUserLeading: state.userScore > state.aiScore,
+  };
+
+  // crowdEnergy always forced to 1.0 in clutch (Layer 6 compound rule)
+  // Base crowd energy mirrors home team momentum, reacting dynamically to runs
+  const homeMomentum = userIsHome ? state.userMomentum : state.aiMomentum;
+  const baseCrowdEnergy = Math.max(0.20, homeMomentum / 100);
+  const effectiveCrowdEnergy = clutchSituation.active ? 1.0 : baseCrowdEnergy;
+
+  const homeCourt = {
+    userIsHome,
+    homeTeam: userIsHome ? 'user' : 'ai' as 'user' | 'ai',
+    crowdEnergy: newQuarter >= 5 ? 1.0 : effectiveCrowdEnergy,
+    // Rally mode: home crowd rallies when HOME team is losing by ≤10 or entire OT
+    rallyMode: newQuarter >= 5 ? true : (userIsHome
+      ? state.userScore < state.aiScore && scoreDiff <= 10
+      : state.aiScore < state.userScore && scoreDiff <= 10),
+  };
+
+  const getHomeCourtBoost = (player: Player): number => {
+    return extGetHomeCourtBoost(player.rarity, homeCourt.crowdEnergy, homeCourt.rallyMode);
+  };
+
+  const getAwayPenalty = (player: Player): number => {
+    return extGetAwayPenalty(player.rarity, homeCourt.crowdEnergy, homeCourt.rallyMode);
+  };
+
+  let pointsScored = 0;
+  let activePlayerId = "";
+  let scoringTeamIsUser = isUserPoss;
+  const shotStaminaAttempts: Array<{ playerId: string; shotType: ShotType; is3PT: boolean; outcome: ShotStaminaOutcome; context?: 'normal' | 'oreb' }> = [];
+  const defensiveStaminaAttempts: Array<{ playerId: string; shotType: ShotType; outcome: ShotStaminaOutcome; is3PT: boolean }> = [];
+  const defensiveEffortAttempts: Array<{ playerId: string; type: DefensiveEffortType }> = [];
+  const actionWorkload = {
+    possessionTeam: currentPossession,
+    possessionStyle: activeOffStrategy,
+    defensiveStrategy: currentPossession === 'user' ? state.aiDefStrategy : state.userDefStrategy,
+    isTransition: pace === 'fastbreak' || pace === 'early_offense',
+    isLateClock: pace === 'late_clock',
+    isOvertime: state.quarter >= 5,
+    shots: shotStaminaAttempts,
+    defensiveContests: defensiveStaminaAttempts,
+    defensiveEfforts: defensiveEffortAttempts,
+    rebounderId: undefined as string | undefined,
+  };
+  const trackShotStamina = (playerId: string, shotType: ShotType, is3PT: boolean, outcome: ShotStaminaOutcome, context: 'normal' | 'oreb' = 'normal') => {
+    shotStaminaAttempts.push({ playerId, shotType, is3PT, outcome, context });
+  };
+  const trackDefensiveStamina = (player: Player | undefined, shotType: ShotType, is3PT: boolean, outcome: ShotStaminaOutcome) => {
+    if (player) defensiveStaminaAttempts.push({ playerId: player.id, shotType, is3PT, outcome });
+  };
+  const trackDefensiveEffort = (player: Player | undefined, type: DefensiveEffortType) => {
+    if (player) defensiveEffortAttempts.push({ playerId: player.id, type });
+  };
+
+  // ═══ TURNOVER HELPERS ═══
+  const TOV_W: Record<string, number> = { PG: 1.4, SG: 1.2, SF: 1.0, PF: 0.7, C: 0.5 };
+  const pickCommitter = (lineup: Player[]): Player => {
+    const ws = lineup.map(p => {
+      const base = TOV_W[p.position] || 1.0;
+      const plyMod = 1.0 - ((getHandleRating(p) - 50) / 100);
+      return Math.max(0.1, base * plyMod);
+    });
+    const tw = ws.reduce((s, w) => s + w, 0);
+    let r = Math.random() * tw;
+    for (let i = 0; i < lineup.length; i++) { r -= ws[i]; if (r <= 0) return lineup[i]; }
+    return lineup[lineup.length - 1];
+  };
+  const getTovStamMod = (avg: number) => extGetTovStamMod(avg);
+  const unforcedTovMsg = (c: Player, team: string): string => {
+    const msgs = [
+      `${c.name} turns it over: bad pass`,
+      `${c.name} called for the travel`,
+      `Shot clock violation: ${team}`,
+      `${c.name} loses the handle`,
+    ];
+    return msgs[Math.floor(Math.random() * msgs.length)];
+  };
+  let turnoverOccurred = false;
+  let blockOccurred = false;
+
+  // ═══ PILLAR 3: ROLLING USAGE WINDOW (Hero Ball Tax) ═══
+  const USAGE_WINDOW = 20;
+  const newPossessionHistory = [...(state.possessionHistory || [])].slice(-USAGE_WINDOW);
+  const getUsageMod = (playerId: string, team: 'user' | 'ai'): number => {
+    return extGetUsageMod(playerId, team, newPossessionHistory);
+  };
+
+  // ═══ BLOCK HELPER ═══
+  const BLK_W: Record<string, number> = { C: 1.8, PF: 1.3, SF: 0.9, SG: 0.5, PG: 0.3 };
+  const pickBlocker = (lineup: Player[]): Player => {
+    const ws = lineup.map(p => BLK_W[p.position] || 0.9);
+    const tw = ws.reduce((s, w) => s + w, 0);
+    let r = Math.random() * tw;
+    for (let i = 0; i < lineup.length; i++) { r -= ws[i]; if (r <= 0) return lineup[i]; }
+    return lineup[lineup.length - 1];
+  };
+  const tryBlock = (defLineup: Player[], shooter: Player, isDefUser: boolean, shotType: ShotType = 'pullUpMid', is3PT = false): boolean => {
+    const candidate = pickBlocker(defLineup);
+    const rimWardenTriggered = rollBaseSkill(defLineup, "Rim Warden", newStamina);
+    const stamMod = getPlayerStaminaMod(candidate, newStamina[candidate.id]);
+    const blockChance = calculateBlockChance(getBlockRating(candidate), rimWardenTriggered, stamMod);
+    const blockRoll = Math.random();
+    if (blockRoll < blockChance) {
+      blockOccurred = true;
+      ensureStats(candidate.id);
+      newPlayerStats[candidate.id].BLK = (newPlayerStats[candidate.id].BLK ?? 0) + 1;
+      ensureForm(candidate.id);
+      newFormRating[candidate.id] = clampForm(newFormRating[candidate.id] + 0.04);
+      ensureForm(shooter.id);
+      newFormRating[shooter.id] = clampForm(newFormRating[shooter.id] - 0.03);
+      const clutch = newQuarter === 4 && Math.abs(state.userScore - state.aiScore) <= 5;
+      const isBigOnSmall = (candidate.position === 'C' || candidate.position === 'PF') && (shooter.position === 'PG' || shooter.position === 'SG');
+      const isISO = isDefUser ? currentDef === 'Isolation (ISO)' : currentOff === 'Isolation (ISO)';
+      let msg: string;
+      if (clutch) {
+        const teamName = isDefUser ? 'My Team' : aiTeamObj.name;
+        msg = `BLOCK: ${candidate.name} keeps ${teamName} alive!`;
+      } else if (isISO) {
+        msg = `BLK: ${candidate.name} rejects ${shooter.name}. ISO shut down`;
+      } else if (isBigOnSmall) {
+        msg = `BLK: ${candidate.name} sends it to the stands!`;
+      } else {
+        msg = `BLK: ${candidate.name} swats it away!`;
+      }
+      newEvents.push(makeEvent(newQuarter, newClock, msg, isDefUser));
+      if (rimWardenTriggered) {
+        skillLog(`${candidate.name}'s Rim Warden powers the block`, isDefUser);
+      }
+      if (rollSpecialMechanic(defLineup, "SKY_WALL_STAMINA_DRAIN", newStamina, (h) => calculateSkyWallScale(getSkyWallIdentity(h)).scale)) {
+        const holders = defLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_STAMINA_DRAIN"));
+        if (holders.length > 0) {
+          const leader = [...holders].sort((a, b) => {
+            const rA = a.skillRarities?.["SKY_WALL"] || 'Common';
+            const rB = b.skillRarities?.["SKY_WALL"] || 'Common';
+            const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+            return (val[rB] ?? 1) - (val[rA] ?? 1);
+          })[0];
+          const rarity = leader.skillRarities?.["SKY_WALL"] || 'Common';
+          const baseDrain = getSkyWallDrain(rarity);
+          const atkLineup = isDefUser ? aiLineup : userLineup;
+          let drainedCount = 0;
+          atkLineup.forEach(p => {
+            const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(p));
+            const drain = drainStamina(newStamina, p, defLineup, finalDrain);
+            if (drain > 0) drainedCount++;
+          });
+          if (drainedCount > 0) {
+             skillLog(`SKY_WALL: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
+          }
+        }
+      }
+      eventIndicator = { playerId: candidate.id, type: 'BLK' };
+      return true;
+    }
+    const failedJumpWindow = is3PT ? 0.10 : 0.18;
+    if (blockRoll < blockChance + failedJumpWindow) {
+      trackDefensiveEffort(candidate, 'failedBlock');
+    }
+    return false;
+  };
+
+  // ═══ REBOUND HELPER ═══
+  const pickRebounder = (lineup: Player[]): Player => {
+    const ws = lineup.map(p => (REB_W[p.position] || 1.0) * getReboundRating(p));
+    const tw = ws.reduce((s, w) => s + w, 0);
+    let r = Math.random() * tw;
+    for (let i = 0; i < lineup.length; i++) { r -= ws[i]; if (r <= 0) return lineup[i]; }
+    return lineup[lineup.length - 1];
+  };
+  const awardReb = (p: Player, type: 'OREB' | 'DREB') => {
+    ensureStats(p.id);
+    if (type === 'OREB') {
+      newPlayerStats[p.id].OREB = (newPlayerStats[p.id].OREB ?? 0) + 1;
+      ensureForm(p.id); newFormRating[p.id] = clampForm(newFormRating[p.id] + 0.015);
+    } else {
+      newPlayerStats[p.id].DREB = (newPlayerStats[p.id].DREB ?? 0) + 1;
+      ensureForm(p.id); newFormRating[p.id] = clampForm(newFormRating[p.id] + 0.01);
+    }
+    newPlayerStats[p.id].REB = (newPlayerStats[p.id].OREB ?? 0) + (newPlayerStats[p.id].DREB ?? 0);
+    actionWorkload.rebounderId = p.id;
+  };
+
+  // ═══ FOUL HELPERS ═══
+  const getFoulStamMod = (avg: number) => getFoulStaminaModifier(avg);
+  const pickFoulCommitter = (lineup: Player[]): Player => {
+    const eligible = lineup.filter(p => (newPlayerStats[p.id]?.FOL ?? 0) < 4);
+    const pool = eligible.length > 0 ? eligible : lineup;
+    const ws = pool.map(p => (FOUL_W[p.position] || 1.0) * (1.0 / (p.defense / 100)));
+    const tw = ws.reduce((s, w) => s + w, 0);
+    let r = Math.random() * tw;
+    for (let i = 0; i < pool.length; i++) { r -= ws[i]; if (r <= 0) return pool[i]; }
+    return pool[pool.length - 1];
+  };
+
+  const getAssistChance = (passer: Player): number => {
+    return extGetAssistChance(getAssistRating(passer) ?? 70);
+  };
+
+  // ═══ CLUTCH HELPERS ═══
+  const getClutchRating = (player: Player): number => {
+    return getClutchRatingByRarity(player.rarity);
+  };
+
+  const getClutchMod = (player: Player, situation: typeof clutchSituation): number => {
+    const clutchRating = getClutchRating(player);
+    const currentForm = newFormRating[player.id] ?? 1.0;
+    return extGetClutchMod(clutchRating, situation.active, situation.intensity, currentForm);
+  };
+
+  const newFouledOut = [...state.fouledOut];
+  let nonShootingFoulToFT = false;
+  let shootingFoulOccurred = false;
+  let ftSequenceResult: MatchState['ftSequence'] = null;
+  let pendingAutoSubResult: MatchState['pendingAutoSub'] = null;
+
+  const updateBonusState = () => {
+    newIsInBonus.user = newTeamFouls.user[newQuarter - 1] >= 5;
+    newIsInBonus.ai = newTeamFouls.ai[newQuarter - 1] >= 5;
+  };
+
+  // Reset bonus at quarter transition (new quarter slot starts at 0)
+  if (quarterEnded) {
+    updateBonusState();
+    newSkillMarks = {};
+    newMarkImmunity = {};
+  }
+
+  const getFTChance = (shooterId: string): number => {
+    const shooter = userLineup.find(p => p.id === shooterId) || aiLineup.find(p => p.id === shooterId);
+    const ftRating = shooter ? getFreeThrowRating(shooter) : 75;
+    const stm = shooter ? getPlayerStaminaMod(shooter, newStamina[shooterId]) : getStaminaMod(newStamina[shooterId] ?? 100);
+    const formRating = newFormRating[shooterId] ?? 1.0;
+    const shooterIsAway = userIsHome
+      ? aiLineup.some(p => p.id === shooterId)   // user is home → AI is away
+      : userLineup.some(p => p.id === shooterId); // AI is home → user is away
+
+    return calculateFreeThrowChance(
+      ftRating,
+      stm,
+      formRating,
+      clutchSituation.active,
+      clutchSituation.intensity,
+      shooterIsAway,
+      homeCourt.crowdEnergy,
+      shooter?.rarity
+    );
+  };
+
+  const runFTSequence = (shooterId: string, shooterName: string, totalShots: number, isAnd1: boolean,
+    committerName: string, committerFouls: number, isUserTeam: boolean) => {
+    const results: ('make' | 'miss')[] = [];
+    const ftChance = getFTChance(shooterId);
+    ensureStats(shooterId); ensureForm(shooterId);
+    for (let i = 0; i < totalShots; i++) {
+      if (Math.random() < ftChance) {
+        results.push('make');
+        newPlayerStats[shooterId].FTM += 1;
+        newPlayerStats[shooterId].PTS += 1;
+        newFormRating[shooterId] = clampForm(newFormRating[shooterId] + 0.02);
+      } else {
+        results.push('miss');
+        newFormRating[shooterId] = clampForm(newFormRating[shooterId] - 0.025);
+        // Clutch FT miss extra sting (Layer 5)
+        if (clutchSituation.active && i === totalShots - 1) {
+          newFormRating[shooterId] = clampForm(newFormRating[shooterId] - 0.04);
+        }
+      }
+      newPlayerStats[shooterId].FTA += 1;
+    }
+    const ftm = results.filter(r => r === 'make').length;
+    let summaryEvent;
+    if (ftm === totalShots) {
+      summaryEvent = makeEvent(newQuarter, newClock, `${shooterName} perfect from the line (${ftm}/${totalShots})`, isUserTeam);
+    } else if (ftm === 0 && totalShots >= 2) {
+      summaryEvent = makeEvent(newQuarter, newClock, `${shooterName} missed from the stripe (0/${totalShots})`, isUserTeam);
+    } else {
+      summaryEvent = makeEvent(newQuarter, newClock, `${shooterName} ${ftm}/${totalShots} from the line`, isUserTeam);
+    }
+    summaryEvent.isHiddenDuringFT = true;
+    newEvents.push(summaryEvent);
+
+    // Last FT missed & not And-1 → DREB
+    if (results[results.length - 1] === 'miss' && !isAnd1) {
+      const defLineup = isUserTeam ? aiLineup : userLineup;
+      const dreb = pickRebounder(defLineup);
+      awardReb(dreb, 'DREB');
+      eventIndicator = { playerId: dreb.id, type: 'REB' };
+      const rebEvent = makeEvent(newQuarter, newClock, `${dreb.name} grabs the board off the miss`, !isUserTeam);
+      rebEvent.isHiddenDuringFT = true;
+      newEvents.push(rebEvent);
+    }
+    ftSequenceResult = {
+      shooterId, shooterName, totalShots, isAnd1, results,
+      foulCommitterName: committerName, foulCommitterFouls: committerFouls, isUserTeam,
+    };
+    if (ftm > 0) { pointsScored += ftm; activePlayerId = shooterId; }
+  };
+  // ─── SUBTLE Broadcaster/Sideline strategy hint commentary (14% chance per possession resolution tick) ───
+  if (Math.random() < 0.14) {
+    const hintPrefixes = [
+      "Sideline Analyst:",
+      "Courtside Report:",
+      "Broadcast Booth:",
+      "Scouting Insight:",
+      "Coaching Staff:"
+    ];
+    const prefix = hintPrefixes[Math.floor(Math.random() * hintPrefixes.length)];
+    if (isUserPoss) {
+      // User is on offense, AI is on defense. Hint at AI's current Defense Strategy!
+      const hintMsg = getSubtleStrategyHint(state.aiDefStrategy, false);
+      if (hintMsg) {
+        newEvents.push(makeEvent(newQuarter, newClock, `${prefix} "${hintMsg}"`, true));
+      }
+    } else {
+      // AI is on offense, user is on defense. Hint at AI's current Offense Strategy!
+      const hintMsg = getSubtleStrategyHint(state.aiOffStrategy, true);
+      if (hintMsg) {
+        newEvents.push(makeEvent(newQuarter, newClock, `${prefix} "${hintMsg}"`, true));
+      }
+    }
+  }
+
+  const possessionContext: PossessionContext = {
+    draft,
+    state,
+    newQuarter,
+    newClock,
+    userLineup,
+    aiLineup,
+    allUserRoster,
+    aiTeamObj,
+    userIsHome,
+    clutchSituation,
+    homeCourt,
+    momentumBonus,
+    hasHotUser,
+    hasHotAi,
+    activeOffStrategy,
+    activeDefStrategy: currentPossession === 'user' ? state.aiDefStrategy : state.userDefStrategy,
+    userOffStrategy: state.userOffStrategy,
+    userDefStrategy: state.userDefStrategy,
+    aiOffStrategy: state.aiOffStrategy,
+    aiDefStrategy: state.aiDefStrategy,
+    userScore: state.userScore,
+    aiScore: state.aiScore,
+    gameTimeSec,
+    pace,
+    shotClockViolationFired,
+    currentOff,
+    currentDef,
+    eUO,
+    eAD,
+    eAO,
+    eUD,
+    goodSubRatio: state.subsMade > 0 ? state.goodSubsMade / state.subsMade : 0.5,
+    newPossessionHistory,
+    shotStaminaAttempts,
+    defensiveStaminaAttempts,
+    defensiveEffortAttempts,
+    timeElapsed,
+    stealPlayerId,
+    eventIndicator,
+    pointsScored,
+    activePlayerId,
+    scoringTeamIsUser,
+    nextPossessionTeam,
+    nextLastPlayCategory,
+    nonShootingFoulToFT,
+    shootingFoulOccurred,
+    ftSequenceResult,
+    pendingAutoSubResult,
+    turnoverOccurred,
+    blockOccurred
+  };
+
+  if (isUserPoss) {
+    resolveUserPossession(possessionContext);
+  } else {
+    resolveAiPossession(possessionContext);
+  }
+
+  // Sync mutated draft fields back to local variables
+  newTeamFouls.user = draft.teamFouls.user;
+  newTeamFouls.ai = draft.teamFouls.ai;
+  newIsInBonus.user = draft.isInBonus.user;
+  newIsInBonus.ai = draft.isInBonus.ai;
+
+  timeElapsed = possessionContext.timeElapsed;
+  stealPlayerId = possessionContext.stealPlayerId;
+  eventIndicator = possessionContext.eventIndicator;
+  pointsScored = possessionContext.pointsScored;
+  activePlayerId = possessionContext.activePlayerId;
+  scoringTeamIsUser = possessionContext.scoringTeamIsUser;
+  nextPossessionTeam = possessionContext.nextPossessionTeam;
+  nextLastPlayCategory = possessionContext.nextLastPlayCategory;
+  nonShootingFoulToFT = possessionContext.nonShootingFoulToFT;
+  shootingFoulOccurred = possessionContext.shootingFoulOccurred;
+  ftSequenceResult = possessionContext.ftSequenceResult;
+  pendingAutoSubResult = possessionContext.pendingAutoSubResult;
+  turnoverOccurred = possessionContext.turnoverOccurred;
+  blockOccurred = possessionContext.blockOccurred;
+
+  newSkillMarks = possessionContext.draft.skillMarks;
+  newMarkImmunity = possessionContext.draft.markImmunity;
+
+  if (possessionContext.actionWorkloadRebounderId) {
+    actionWorkload.rebounderId = possessionContext.actionWorkloadRebounderId;
+  }
+
+  if (possessionContext.draft.activeShotMeter) {
+    newActiveShotMeter = possessionContext.draft.activeShotMeter;
+  }
+
+  // ═══ STEP 8: UPDATE FORM RATINGS ═══
+  // Skip if turnover or block occurred — form deltas already applied inline
+  if (activePlayerId && !turnoverOccurred && !blockOccurred) {
+    ensureForm(activePlayerId);
+    if (pointsScored === 3) {
+      newFormRating[activePlayerId] = clampForm(newFormRating[activePlayerId] + 0.04);
+    } else if (pointsScored === 2) {
+      newFormRating[activePlayerId] = clampForm(newFormRating[activePlayerId] + 0.03);
+    } else if (!stealPlayerId) {
+      // Miss penalty (not applied when a Blitz/Trap steal occurred)
+      newFormRating[activePlayerId] = clampForm(newFormRating[activePlayerId] - 0.025);
+    }
+  }
+  // Defender form: top DEF player on defending team gets penalized when scored on
+  if (pointsScored > 0) {
+    const defenders = isUserPoss ? aiLineup : userLineup;
+    const topDef = [...defenders].sort((a, b) => b.defense - a.defense)[0];
+    if (topDef) { ensureForm(topDef.id); newFormRating[topDef.id] = clampForm(newFormRating[topDef.id] - 0.02); }
+  }
+  // Steal form boost
+  if (stealPlayerId) {
+    ensureForm(stealPlayerId);
+    newFormRating[stealPlayerId] = clampForm(newFormRating[stealPlayerId] + 0.04);
+  }
+
+  // ═══ STEP 9: ACTION STAMINA COST (PHYSICAL PLAYS, USAGE, DEFENSE CONTESTS) ═══
+  // High-impact involvement drains energy dynamically matching real NBA activity rates!
+  
+  const allActivePlayers = [...userLineup, ...aiLineup];
+  const applyActionStaminaCost = (playerId: string, cost: number) => {
+    const activePlayer = allActivePlayers.find(p => p.id === playerId);
+    newStamina[playerId] = Math.max(0, (newStamina[playerId] ?? 100) - Math.round(cost * STAMINA_CONFIG.modifiers.globalWorkloadScale * getStaminaCostScale(activePlayer)));
+  };
+  const getShotBaseCost = (attempt: typeof shotStaminaAttempts[number]): number => {
+    return extGetShotBaseCost(attempt.shotType, attempt.outcome);
+  };
+  const getContextMultiplier = (player: Player | undefined, playerId: string, outcome: ShotStaminaOutcome, context?: 'normal' | 'oreb'): number => {
+    const pct = player ? getStaminaPercent(player, newStamina[playerId]) : 100;
+    const isUserPlayer = userLineup.some(p => p.id === playerId);
+    const team = isUserPlayer ? 'user' : 'ai';
+    const lastPoss = newPossessionHistory[newPossessionHistory.length - 1];
+    const isBackToBack = lastPoss?.playerId === playerId && lastPoss.team === team;
+    const facedDefense = isUserPlayer ? state.aiDefStrategy : state.userDefStrategy;
+    const usageMod = getUsageMod(playerId, team);
+    return extGetContextMultiplier({
+      staminaPct: pct,
+      outcome,
+      isClutch: clutchSituation.active,
+      quarter: state.quarter,
+      pace: pace,
+      context,
+      usageMod,
+      isBackToBack,
+      facedDefense
+    });
+  };
+  const getDefensiveCost = (attempt: typeof defensiveStaminaAttempts[number]): number => {
+    return extGetDefensiveCost(attempt.outcome, attempt.is3PT);
+  };
+  const getDefensiveEffortCost = (attempt: typeof defensiveEffortAttempts[number]): number => {
+    return extGetDefensiveEffortCost(attempt.type);
+  };
+  const defenseStrategyForWorkload = actionWorkload.defensiveStrategy;
+  const defendingLineupForWorkload = actionWorkload.possessionTeam === 'user' ? aiLineup : userLineup;
+  if (defenseStrategyForWorkload === 'Full-Court Press' || defenseStrategyForWorkload === 'Full-court press') {
+    defendingLineupForWorkload.forEach(p => trackDefensiveEffort(p, 'pressChase'));
+  } else if (defenseStrategyForWorkload === 'Blitz/Trap') {
+    defendingLineupForWorkload.forEach(p => trackDefensiveEffort(p, 'trapRotation'));
+  } else if (defenseStrategyForWorkload === 'Half-Court Press' || defenseStrategyForWorkload === 'Half-court press') {
+    defendingLineupForWorkload.slice(0, 3).forEach(p => trackDefensiveEffort(p, 'pressChase'));
+  }
+  if (!stealPlayerId && !turnoverOccurred && (
+    defenseStrategyForWorkload === 'Full-Court Press' ||
+    defenseStrategyForWorkload === 'Full-court press' ||
+    defenseStrategyForWorkload === 'Blitz/Trap'
+  )) {
+    const gambler = [...defendingLineupForWorkload].sort((a, b) => (b.steal ?? b.defense) - (a.steal ?? a.defense))[0];
+    trackDefensiveEffort(gambler, 'failedSteal');
+  }
+
+  // 1. Offensive Ball-Handler/Shooter Tax (Usage Rate involvement)
+  // Shot attempts are tracked at the exact result. That keeps a miss attached to
+  // the original shooter even if an offensive rebound creates a second chance.
+  shotStaminaAttempts.forEach(attempt => {
+    const actor = allActivePlayers.find(p => p.id === attempt.playerId);
+    let creationTax = 0;
+    if (activeOffStrategy === 'Isolation (ISO)' || activeOffStrategy === 'Post Isolation') {
+      creationTax += STAMINA_CONFIG.ballHandling.isolation;
+    }
+    if (pace === 'late_clock') {
+      creationTax += STAMINA_CONFIG.ballHandling.lateClockCreation;
+    }
+    const baseCost = STAMINA_CONFIG.ballHandling.quickTouch + getShotBaseCost(attempt) + creationTax;
+    applyActionStaminaCost(attempt.playerId, baseCost * getContextMultiplier(actor, attempt.playerId, attempt.outcome, attempt.context));
+  });
+
+  defensiveStaminaAttempts.forEach(attempt => {
+    const actor = allActivePlayers.find(p => p.id === attempt.playerId);
+    applyActionStaminaCost(attempt.playerId, getDefensiveCost(attempt) * getContextMultiplier(actor, attempt.playerId, attempt.outcome));
+  });
+
+  defensiveEffortAttempts.forEach(attempt => {
+    applyActionStaminaCost(attempt.playerId, getDefensiveEffortCost(attempt));
+  });
+
+  if (activePlayerId && shotStaminaAttempts.length === 0) {
+    applyActionStaminaCost(activePlayerId, turnoverOccurred ? STAMINA_CONFIG.ballHandling.turnover : STAMINA_CONFIG.ballHandling.quickTouch);
+  }
+
+  // 2. Playmaker Assist Tax
+  if (eventIndicator?.type === 'AST' && eventIndicator.playerId) {
+    const actor = [...userLineup, ...aiLineup].find(p => p.id === eventIndicator?.playerId);
+    applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.ballHandling.quickTouch + 0.45);
+  }
+
+  // 3. Physical Rebounding Tax (OREB is extra contested)
+  if (eventIndicator?.type === 'OREB' && eventIndicator.playerId) {
+    const actor = [...userLineup, ...aiLineup].find(p => p.id === eventIndicator?.playerId);
+    applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.rebounding.offensiveReboundBattle);
+  } else if (eventIndicator?.type === 'REB' && eventIndicator.playerId) {
+    const actor = [...userLineup, ...aiLineup].find(p => p.id === eventIndicator?.playerId);
+    applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.rebounding.normalRebound);
+  }
+
+  // 4. Defensive Explosive Blocks & Steals Tax
+  const alreadyChargedContest = (playerId: string) => defensiveStaminaAttempts.some(a => a.playerId === playerId);
+  if (eventIndicator?.type === 'BLK' && eventIndicator.playerId) {
+    if (!alreadyChargedContest(eventIndicator.playerId)) {
+      applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.defense.successfulBlock);
+    }
+  } else if (eventIndicator?.type === 'STL' && eventIndicator.playerId) {
+    const actor = [...userLineup, ...aiLineup].find(p => p.id === eventIndicator?.playerId);
+    applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.defense.successfulSteal);
+  }
+
+  // 5. Physical Foul Tax
+  if (eventIndicator?.type === 'FOL' && eventIndicator.playerId) {
+    if (!alreadyChargedContest(eventIndicator.playerId)) {
+      applyActionStaminaCost(eventIndicator.playerId, STAMINA_CONFIG.defense.foul);
+    }
+  }
+
+  // ═══ STEP 10: HOT PLAYER CHECK ═══
+  const newTracker = { ...state.actionStaminaTracker };
+  const newHotPlayers = { ...state.hotPlayers };
+  const newConsecutive = { ...state.playerConsecutive };
+
+  if (activePlayerId && pointsScored > 0) {
+    newConsecutive[activePlayerId] = (newConsecutive[activePlayerId] || 0) + 1;
+    const entry = newTracker[activePlayerId] || { lost: 0, windowStart: gameTimeSec };
+    if (gameTimeSec - entry.windowStart > 60) { entry.lost = 0; entry.windowStart = gameTimeSec; }
+    entry.lost += pointsScored === 3 ? 4 : 3;
+    newTracker[activePlayerId] = entry;
+    if (entry.lost >= 15) newHotPlayers[activePlayerId] = true;
+  } else if (activePlayerId && pointsScored === 0) {
+    newConsecutive[activePlayerId] = 0;
+  }
+
+  Object.keys(newTracker).forEach(pid => {
+    if (gameTimeSec - newTracker[pid].windowStart > 60) {
+      newTracker[pid].lost = 0;
+      if (!newHotFromForm[pid]) newHotPlayers[pid] = false;
+    }
+  });
+
+  // Form-based hot/cold triggers
+  Object.keys(newFormRating).forEach(pid => {
+    if (newFormRating[pid] >= 1.10) {
+      newHotFromForm[pid] = true;
+      newHotPlayers[pid] = true;
+    } else if (newFormRating[pid] < 1.05 && newHotFromForm[pid]) {
+      newHotFromForm[pid] = false;
+      // Only remove hot if not hot from other paths
+      const fromStamina = (newTracker[pid] && newTracker[pid].lost >= 15);
+      if (!fromStamina) newHotPlayers[pid] = false;
+    }
+  });
+
+  // ═══ STEP 11: MOMENTUM ═══
+  let newUserMom = state.userMomentum, newAiMom = state.aiMomentum;
+  if (momentumSwingBump === 'user') {
+    newUserMom = Math.min(100, newUserMom + 3);
+  } else if (momentumSwingBump === 'ai') {
+    newAiMom = Math.min(100, newAiMom + 3);
+  }
+  let consUserRun = state.consecutiveUserRun, consAiRun = state.consecutiveAiRun;
+
+  if (pointsScored > 0) {
+    if (scoringTeamIsUser) {
+      newUserMom = Math.min(100, newUserMom + pointsScored * 3);
+      newAiMom = Math.max(0, newAiMom - pointsScored * 2);
+      consUserRun += pointsScored; consAiRun = 0;
+    } else {
+      newAiMom = Math.min(100, newAiMom + pointsScored * 3);
+      newUserMom = Math.max(0, newUserMom - pointsScored * 2);
+      consAiRun += pointsScored; consUserRun = 0;
+    }
+  } else {
+    if (newUserMom > 50) newUserMom -= 1;
+    if (newAiMom > 50) newAiMom -= 1;
+  }
+
+  // ═══ STEP 12: NARRATIVE INJECTIONS (Layer 5) ═══
+  // Run narrative
+  const aiRunText = runNarrative(aiTeamObj.name, consAiRun);
+  if (aiRunText) newEvents.push(makeEvent(newQuarter, newClock, aiRunText, false));
+  const userRunText = runNarrative("My Team", consUserRun);
+  if (userRunText) newEvents.push(makeEvent(newQuarter, newClock, userRunText, true));
+
+  // Hot player narrative
+  if (activePlayerId && pointsScored > 0) {
+    const consec = newConsecutive[activePlayerId] || 0;
+    const hotText = hotNarrative(isUserPoss ? userLineup.find(p => p.id === activePlayerId)! : aiLineup.find(p => p.id === activePlayerId)!, consec);
+    if (hotText) newEvents.push(makeEvent(newQuarter, newClock, hotText, isUserPoss));
+  }
+
+  // Dominant player (check all)
+  if (Math.random() < 0.15) {
+    [...userLineup, ...aiLineup].forEach(p => {
+      const pts = newPlayerStats[p.id]?.PTS || 0;
+      const dt = dominantNarrative(p, pts);
+      if (dt) newEvents.push(makeEvent(newQuarter, newClock, dt, userLineup.some(u => u.id === p.id)));
+    });
+  }
+
+  // Fatigue narrative (occasional)
+  if (Math.random() < 0.2) {
+    const ft = fatigueNarrative("My Team", userAvg, newQuarter, userLineup, newStamina);
+    if (ft) newEvents.push(makeEvent(newQuarter, newClock, ft, true));
+  }
+
+  // Strategy warnings as narrative
+  warnings.forEach(w => newEvents.push(makeEvent(newQuarter, newClock, w, true)));
+
+  // ═══ STEP 8 LAYER 7: HOME COURT NARRATIVE INJECTIONS ═══
+  // Q1 Opener — fires exactly once when Q1 starts (clock near 720)
+  if (newQuarter === 1 && newClock >= 700 && state.clock === 720) {
+    const openerText = userIsHome
+      ? `Welcome to the Arena: My Team has home court tonight!`
+      : `On the road tonight: ${aiTeamObj.name} has home court advantage`;
+    newEvents.push(makeEvent(newQuarter, newClock, openerText, userIsHome));
+  }
+
+  // Rally mode narrative — fires once when rally activates (prev tick no rally, this tick yes)
+  const prevRallyMode = userIsHome
+    ? state.userScore < state.aiScore && Math.abs(state.userScore - state.aiScore) <= 10
+    : state.aiScore < state.userScore && Math.abs(state.userScore - state.aiScore) <= 10;
+  if (homeCourt.rallyMode && !prevRallyMode) {
+    const rallyText = userIsHome
+      ? `Crowd rallying: fans refuse to let My Team lose at home!`
+      : `Home crowd rallying for ${aiTeamObj.name}: My Team feeling the pressure on the road`;
+    newEvents.push(makeEvent(newQuarter, newClock, rallyText, userIsHome));
+  }
+
+  // Layer 6 compound: Clutch + home crowd narrative (fires once per clutch window entry)
+  if (clutchSituation.active && !state.events.some(e => e.text.includes('Arena is ELECTRIC') || e.text.includes('Hostile crowd'))) {
+    const compoundText = userIsHome
+      ? `Arena is ELECTRIC: home crowd lifting My Team!`
+      : `Hostile crowd: My Team grinding on the road in crunch time`;
+    newEvents.push(makeEvent(newQuarter, newClock, compoundText, userIsHome));
+  }
+
+  // ═══ FORM NARRATIVE INJECTIONS ═══
+  [...userLineup, ...aiLineup].forEach(p => {
+    ensureForm(p.id); ensureFormFired(p.id);
+    const f = newFormRating[p.id];
+    const fired = newFormFired[p.id];
+    const isUser = userLineup.some(u => u.id === p.id);
+    // Hot 1.08 crossing
+    if (f >= 1.08 && !fired.hot108) {
+      fired.hot108 = true;
+      newEvents.push(makeEvent(newQuarter, newClock, `${p.name} is finding their rhythm`, isUser));
+    } else if (f < 1.08) fired.hot108 = false;
+    // Hot 1.12 crossing
+    if (f >= 1.12 && !fired.hot112) {
+      fired.hot112 = true;
+      newEvents.push(makeEvent(newQuarter, newClock, `${p.name} is heating up: can't miss right now`, isUser));
+    } else if (f < 1.12) fired.hot112 = false;
+    // Cold 0.92 crossing
+    if (f <= 0.92 && !fired.cold092) {
+      fired.cold092 = true;
+      newEvents.push(makeEvent(newQuarter, newClock, `${p.name} can't get it going tonight`, isUser));
+    } else if (f > 0.92) fired.cold092 = false;
+    // Cold 0.88 crossing
+    if (f <= 0.88 && !fired.cold088) {
+      fired.cold088 = true;
+      newEvents.push(makeEvent(newQuarter, newClock, `${p.name} is cold: ${isUser ? 'My Team' : aiTeamObj.name} may need to look elsewhere`, isUser));
+    } else if (f > 0.88) fired.cold088 = false;
+    // Recovery crossing (was cold, now recovered)
+    if (!fired.recovered && f > 0.97) {
+      fired.recovered = true;
+      newEvents.push(makeEvent(newQuarter, newClock, `${p.name} starting to find their touch`, isUser));
+    }
+    if (f < 0.92) fired.recovered = false;
+  });
+
+  // ═══ STEP 13: DERIVE SCORES ═══
+  const newUserPlayerIds = new Set(state.userPlayerIds);
+  userLineup.forEach(p => newUserPlayerIds.add(p.id));
+  const newAiPlayerIds = new Set(state.aiPlayerIds);
+  aiLineup.forEach(p => newAiPlayerIds.add(p.id));
+  const uIds = Array.from(newUserPlayerIds), aIds = Array.from(newAiPlayerIds);
+
+  const derivedUserScore = computeTeamScore(newPlayerStats, uIds);
+  const derivedAiScore = computeTeamScore(newPlayerStats, aIds);
+
+  const userTickPoints = derivedUserScore - state.userScore;
+  const aiTickPoints = derivedAiScore - state.aiScore;
+
+  if (state.isOT && (state.otPeriod ?? 0) > 0) {
+    const otIdx = (state.otPeriod ?? 1) - 1;
+    if (userTickPoints > 0) newOTScores.user[otIdx] += userTickPoints;
+    if (aiTickPoints > 0) newOTScores.ai[otIdx] += aiTickPoints;
+  }
+
+  // BUZZER BEATER CHECK (scoring in last 5 secs of ANY period)
+  if ((userTickPoints > 0 || aiTickPoints > 0) && newClock <= 5) {
+    const tied = derivedUserScore === derivedAiScore;
+    const userScored = userTickPoints > 0;
+    const scorerName = userScored ? userLineup.find(p=>p.id===activePlayerId)?.name || 'My Team' : aiLineup.find(p=>p.id===activePlayerId)?.name || aiTeamObj.name;
+    const teamName = userScored ? "My Team" : aiTeamObj.name;
+    
+    // Form delta
+    if (activePlayerId) newFormRating[activePlayerId] = clampForm(newFormRating[activePlayerId] + 0.08);
+    (userScored ? aiLineup : userLineup).forEach(p => {
+      newFormRating[p.id] = clampForm((newFormRating[p.id] ?? 1.0) - 0.05);
+    });
+
+    if (state.isOT) {
+      if (tied) newEvents.push(makeEvent(newQuarter, newClock, `BUZZER BEATER: ${scorerName} sends it to another OT! This game continues!`, userScored, 0));
+      else newEvents.push(makeEvent(newQuarter, newClock, `BUZZER BEATER: ${scorerName} ends it in OT! ${derivedUserScore}-${derivedAiScore} final!`, userScored, 0));
+    } else {
+      if (tied) newEvents.push(makeEvent(newQuarter, newClock, `BUZZER BEATER: ${scorerName} ties it at ${derivedUserScore}! Going to overtime!`, userScored, 0));
+      else newEvents.push(makeEvent(newQuarter, newClock, `BUZZER BEATER: ${scorerName} wins it at the buzzer! ${teamName} wins ${derivedUserScore}-${derivedAiScore}!`, userScored, 0));
+    }
+  }
+
+  let shootoutSequenceResult: MatchState['shootoutSequence'] = null;
+  // SUDDEN DEATH SHOOTOUT LOGIC
+  if (finished && state.isOT && (state.otPeriod ?? 0) >= 3 && derivedUserScore === derivedAiScore) {
+    // Both teams pick highest OVR players descending
+    const sortedUser = [...userLineup].filter(p => !newFouledOut.includes(p.id)).sort((a,b) => b.ovr - a.ovr);
+    const sortedAi = [...aiLineup].filter(p => !newFouledOut.includes(p.id)).sort((a,b) => b.ovr - a.ovr);
+    const results = [];
+    let winner: 'user' | 'ai' | 'coin_flip' | null = null;
+
+    for (let round = 0; round < Math.min(5, sortedUser.length, sortedAi.length); round++) {
+      const uPlayer = sortedUser[round];
+      const aPlayer = sortedAi[round];
+      const uChance = Math.min(0.95, Math.max(0.50, 0.60 + (uPlayer.offense - 60) * 0.003));
+      const aChance = Math.min(0.95, Math.max(0.50, 0.60 + (aPlayer.offense - 60) * 0.003));
+      
+      const uMade = Math.random() < uChance;
+      const aMade = Math.random() < aChance;
+      
+      results.push({
+        userPlayerId: uPlayer.id, userPlayerName: uPlayer.name,
+        aiPlayerId: aPlayer.id, aiPlayerName: aPlayer.name,
+        userMade: uMade, aiMade: aMade
+      });
+
+      if (uMade && !aMade) { winner = 'user'; break; }
+      if (!uMade && aMade) { winner = 'ai'; break; }
+    }
+    
+    if (!winner) winner = Math.random() < 0.5 ? 'user' : 'ai'; // coin flip fallback
+    
+    shootoutSequenceResult = { results, winner };
+    nextLastPlayCategory = 'foul_reset';
+    // We adjust final scores here because shootout resolves synchronously
+    if (winner === 'user') {
+        const uIdx = sortedUser[results.length - 1]?.id;
+        if (uIdx) newPlayerStats[uIdx].PTS += 1;
+        newOTScores.user[newOTScores.user.length - 1] += 1;
+    } else {
+        const aIdx = sortedAi[results.length - 1]?.id;
+        if (aIdx) newPlayerStats[aIdx].PTS += 1;
+        newOTScores.ai[newOTScores.ai.length - 1] += 1;
+    }
+  }
+
+  const finalUserScore = computeTeamScore(newPlayerStats, uIds);
+  const finalAiScore = computeTeamScore(newPlayerStats, aIds);
+
+  // ═══ DYNAMIC PLUS-MINUS CALCULATION ═══
+  const userPtsThisTick = finalUserScore - state.userScore;
+  const aiPtsThisTick = finalAiScore - state.aiScore;
+
+  if (userPtsThisTick > 0) {
+    userLineup.forEach(p => {
+      ensureStats(p.id);
+      newPlayerStats[p.id].plusMinus = (newPlayerStats[p.id].plusMinus ?? 0) + userPtsThisTick;
+    });
+    aiLineup.forEach(p => {
+      ensureStats(p.id);
+      newPlayerStats[p.id].plusMinus = (newPlayerStats[p.id].plusMinus ?? 0) - userPtsThisTick;
+    });
+  }
+  if (aiPtsThisTick > 0) {
+    aiLineup.forEach(p => {
+      ensureStats(p.id);
+      newPlayerStats[p.id].plusMinus = (newPlayerStats[p.id].plusMinus ?? 0) + aiPtsThisTick;
+    });
+    userLineup.forEach(p => {
+      ensureStats(p.id);
+      newPlayerStats[p.id].plusMinus = (newPlayerStats[p.id].plusMinus ?? 0) - aiPtsThisTick;
+    });
+  }
+
+  // Track quarter scores
+  const qScores = { user: [...state.quarterScores.user], ai: [...state.quarterScores.ai] };
+  let qStartUser = state.quarterStartUserScore;
+  let qStartAi = state.quarterStartAiScore;
+  if (quarterEnded) {
+    const prevQ = newQuarter - 2; // quarter that just ended (0-indexed)
+    if (prevQ >= 0 && prevQ < 4) {
+      qScores.user[prevQ] = finalUserScore - qStartUser;
+      qScores.ai[prevQ] = finalAiScore - qStartAi;
+    }
+    qStartUser = finalUserScore;
+    qStartAi = finalAiScore;
+  }
+  if (finished) {
+    const lastQ = newQuarter - 1;
+    if (lastQ >= 0 && lastQ < 4) {
+      qScores.user[lastQ] = finalUserScore - qStartUser;
+      qScores.ai[lastQ] = finalAiScore - qStartAi;
+    }
+  }
+
+  // Track longest runs
+  const longestUser = Math.max(state.longestUserRun, consUserRun);
+  const longestAi = Math.max(state.longestAiRun, consAiRun);
+
+  // Track hot player last scored time
+  const hotLastScored = { ...state.hotPlayerLastScored };
+  if (activePlayerId && pointsScored > 0) hotLastScored[activePlayerId] = gameTimeSec;
+
+  // Halftime
+  let halftimeShown = state.halftimeShown;
+  if (quarterEnded && state.quarter === 2 && !state.halftimeShown) halftimeShown = true;
+
+  const allEvents = [...newEvents, ...state.events].slice(0, 50);
+
+  // ═══ FOUL OUT CHECK ═══
+  // Note: if two players foul out same tick, only last auto-sub is returned (astronomically unlikely)
+  const checkFoulOuts = (lineup: Player[], isUser: boolean) => {
+    lineup.forEach(p => {
+      ensureStats(p.id);
+      if ((newPlayerStats[p.id].FOL ?? 0) >= 5 && !newFouledOut.includes(p.id)) {
+        newFouledOut.push(p.id);
+        ensureForm(p.id); newFormRating[p.id] = 0.85; // emotional collapse
+        if (isUser) {
+          const bench = allUserRoster.filter(bp =>
+            !lineup.find(lp => lp.id === bp.id) && !newFouledOut.includes(bp.id));
+          if (bench.length > 0) {
+            const sub = [...bench].sort((a, b) => b.ovr - a.ovr)[0];
+            pendingAutoSubResult = { outId: p.id, inId: sub.id };
+            allEvents.unshift(makeEvent(newQuarter, newClock, `DQ: ${p.name} fouled out. ${sub.name} checks in`, true));
+          } else {
+            allEvents.unshift(makeEvent(newQuarter, newClock, `DQ: ${p.name} has 5 fouls: no bench available, stays on court`, true));
+          }
+        } else {
+          const bench = aiTeamObj.roster.filter(bp =>
+            !lineup.find(lp => lp.id === bp.id) && !newFouledOut.includes(bp.id));
+          if (bench.length > 0) {
+            let sub = bench.find(bp => bp.position === p.position);
+            if (!sub) sub = [...bench].sort((a, b) => b.ovr - a.ovr)[0];
+            const idx = nextAiLineupIds.indexOf(p.id);
+            if (idx !== -1) {
+              nextAiLineupIds[idx] = sub.id;
+            }
+            allEvents.unshift(makeEvent(newQuarter, newClock, `DQ: ${p.name} fouled out. ${sub.name} checks in`, false));
+          } else {
+            allEvents.unshift(makeEvent(newQuarter, newClock, `DQ: ${p.name} has 5 fouls: stays on court`, false));
+          }
+        }
+      }
+    });
+  };
+  checkFoulOuts(userLineup, true);
+  checkFoulOuts(aiLineup, false);
+
+  // ─── FAST BREAK & SHOT CLOCK ENFORCEMENT ───
+  let nextPossClock = 24;
+  const nextPossTeam = nextPossessionTeam;
+  let nextFastBreakActive = false;
+  let nextFastBreakTeam: 'user' | 'ai' | null = null;
+
+  // 1. Trigger fast breaks on defense steals/blocks with high probabilistic transition (55% base rate)
+  if (stealPlayerId || blockOccurred) {
+    const wasUserAttacking = currentPossession === 'user';
+    const defensiveTeam = wasUserAttacking ? 'ai' : 'user';
+    if (Math.random() < 0.55) {
+      nextFastBreakActive = true;
+      nextFastBreakTeam = defensiveTeam;
+      allEvents.unshift(makeEvent(newQuarter, newClock,
+        `TRANSITION: ${defensiveTeam === 'user' ? 'My Team' : aiTeamObj.name} pushes the pace!`,
+        defensiveTeam === 'user'
+      ));
+    }
+  }
+
+  // 2. Shot clock tracking and reset logic
+  if (pointsScored > 0 || turnoverOccurred) {
+    // Made shot or turnover resets clock to 24s for next team
+    nextPossClock = 24;
+  } else {
+    const isOreb = eventIndicator?.type === 'OREB';
+    if (isOreb) {
+      // NBA 2018+ rule: shot clock resets to 14s on offensive rebound of rim shot
+      nextPossClock = 14;
+    } else {
+      // Possession team stayed the same (e.g. non-shooting foul retain or simple drift)
+      if (state.possessionTeam === nextPossTeam) {
+        nextPossClock = Math.max(0, (state.possessionClock ?? 24) - timeElapsed);
+      } else {
+        // Possession changed naturally
+        nextPossClock = 24;
+      }
+    }
+  }
+
+  const applyEjection = (
+    playerId: string,
+    isUserTeam: boolean,
+    playerName: string,
+    q: number,
+    clock: number
+  ): void => {
+    // Add to ejectedPlayers if not already there
+    if (!newFouledOut.includes(playerId)) {
+      newFouledOut.push(playerId);
+    }
+    // Mark form as collapsed (same as foul-out)
+    ensureForm(playerId);
+    newFormRating[playerId] = 0.85;
+    // Fire ejection event
+    newEvents.push(makeEvent(q, clock,
+      `EJECTED: ${playerName} is out of the game!`,
+      isUserTeam
+    ));
+    // If AI player: remove from nextAiLineupIds and replace with best available bench
+    if (!isUserTeam) {
+      const idx = nextAiLineupIds.indexOf(playerId);
+      if (idx !== -1) {
+        const bench = aiTeamObj.roster.filter(p =>
+          !nextAiLineupIds.includes(p.id) &&
+          !newFouledOut.includes(p.id)
+        );
+        if (bench.length > 0) {
+          const sub = bench.sort((a, b) => b.ovr - a.ovr)[0];
+          nextAiLineupIds[idx] = sub.id;
+          newEvents.push(makeEvent(q, clock,
+            `Substitution: ${aiTeamObj.name}: ${sub.name} checks in`,
+            false
+          ));
+        }
+      }
+    }
+    // If user player: set pendingAutoSubResult so the UI handles it
+    if (isUserTeam) {
+      const bench = allUserRoster.filter(p =>
+        !userLineup.find(lp => lp.id === p.id) &&
+        !newFouledOut.includes(p.id)
+      );
+      if (bench.length > 0) {
+        const sub = bench.sort((a, b) => b.ovr - a.ovr)[0];
+        pendingAutoSubResult = { outId: playerId, inId: sub.id };
+      }
+    }
+  };
+
+  return {
+    ...state,
+    quarter: newQuarter, clock: newClock,
+    userScore: finalUserScore, aiScore: finalAiScore,
+    events: allEvents, isFinished: finished,
+    lastScorerId: pointsScored > 0 ? activePlayerId : undefined,
+    lastPointsScored: pointsScored > 0 ? pointsScored : undefined,
+    userMomentum: newUserMom, aiMomentum: newAiMom,
+    playerStamina: newStamina, playerStats: newPlayerStats,
+    userOffStrategy: currentOff, userDefStrategy: currentDef,
+    lastStrategyChange: state.lastStrategyChange,
+    aiOffStrategy: aiOffStrat, aiDefStrategy: aiDefStrat,
+    lastAiStrategyChange: lastAiChange,
+    timeoutsLeft: state.timeoutsLeft,
+    momentumUsesLeft: state.momentumUsesLeft,
+    momentumActive, momentumEndTime,
+    actionStaminaTracker: newTracker, hotPlayers: newHotPlayers,
+    halftimeShown,
+    userPlayerIds: uIds, aiPlayerIds: aIds,
+    aiLineupIds: nextAiLineupIds,
+    effectiveUserOff: userEff.off, effectiveUserDef: userEff.def,
+    effectiveAiOff: aiEff.off, effectiveAiDef: aiEff.def,
+    prevUserOff: state.effectiveUserOff, prevUserDef: state.effectiveUserDef,
+    prevAiOff: state.effectiveAiOff, prevAiDef: state.effectiveAiDef,
+    strategyWarnings: warnings,
+    consecutiveUserRun: consUserRun, consecutiveAiRun: consAiRun,
+    playerConsecutive: newConsecutive,
+    aiTimeoutsLeft,
+    aiLastSubCheck: lastAiSubCheck,
+    hotPlayerFocusTarget: hotFocusTarget,
+    hotPlayerLastScored: hotLastScored,
+    difficulty: state.difficulty,
+    quarterScores: qScores,
+    longestUserRun: longestUser, longestAiRun: longestAi,
+    quarterStartUserScore: qStartUser, quarterStartAiScore: qStartAi,
+    formRating: newFormRating, formNarrativeFired: newFormFired, hotFromForm: newHotFromForm,
+    lastEventIndicator: eventIndicator,
+    // Foul system
+    teamFouls: newTeamFouls,
+    isInBonus: newIsInBonus,
+    fouledOut: newFouledOut,
+    ftSequence: ftSequenceResult,
+    pendingAutoSub: pendingAutoSubResult,
+    // Energy drink + decision tracking
+    energyDrinksLeft: state.energyDrinksLeft,
+    energyDrinkLocked: newEnergyDrinkLocked,
+    energyDrinkGoodUses: state.energyDrinkGoodUses,
+    energyDrinkPendingForm: null,
+    subsMade: state.subsMade,
+    goodSubsMade: state.goodSubsMade,
+    isHomeGame: state.isHomeGame,
+    // Overtime
+    isOT: state.isOT || (newQuarter >= 5 && quarterEnded),
+    otPeriod: state.otPeriod,
+    otScores: newOTScores,
+    shootoutSequence: shootoutSequenceResult,
+    // Fast break & shot clock
+    fastBreakActive: nextFastBreakActive,
+    fastBreakTeam: nextFastBreakTeam,
+    possessionClock: nextPossClock,
+    possessionTeam: nextPossTeam,
+    lastPlayCategory: nextLastPlayCategory,
+    injuries: state.injuries ?? {},
+    // Pillar 3: Persist rolling usage window — trim to last USAGE_WINDOW entries
+    possessionHistory: newPossessionHistory.slice(-USAGE_WINDOW),
+    lastTimeElapsed: timeElapsed,
+    lastPossessionClockStart: state.possessionClock ?? 24,
+    activeShotMeter: newActiveShotMeter,
+    teamSkillBuffs: newTeamSkillBuffs,
+    activeSkillBuffs: newActiveSkillBuffs,
+    disabledSkills: state.disabledSkills ?? {},
+    blockedSkills: state.blockedSkills ?? {},
+    skillMarks: newSkillMarks,
+    markImmunity: newMarkImmunity,
+    skillUsedThisGame: newSkillUsedThisGame,
+    flagrantFouls: state.flagrantFouls ?? {},
+    ejectedPlayers: state.ejectedPlayers ?? [],
+    prevAiLineupIds: [...nextAiLineupIds],
+  };
+}
+
+

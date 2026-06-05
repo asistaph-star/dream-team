@@ -194,6 +194,21 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Proceed to UI updates phase.
 
+### 18. Match Engine Major Decomposition
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [matchTick.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/matchTick.ts) (core simulation loops, period progression, scoring, clock orchestration)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (compatibility entry point wrapper delegating to matchTick.ts)
+  * [foulResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/foulResolver.ts) (free throw sequence execution, foul committer picker)
+  * [reboundResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/reboundResolver.ts) (rebounder picking, board award logic)
+  * [shotPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/shotPossessionResolver.ts) (shot intent selection, action stamina tracking, shot resolution execution)
+  * [userPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/userPossessionResolver.ts) (User offense resolution)
+  * [aiPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/aiPossessionResolver.ts) (AI offense resolution)
+* **What Code Does**: Decomposes the massive 3,600+ line gameplay execution engine into logical, cohesive sub-modules. The main entry point (`matchEngine.ts`) is reduced to a slim wrapper maintaining 100% public compatibility.
+* **Tests**: `test_match_engine_snapshot_baseline.ts --verify`, `test_skill_system_hard_reset_final_lock.ts`, and `test_match_realism_calibration.ts` pass cleanly with exact snapshot behavioral parity.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression

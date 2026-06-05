@@ -36,19 +36,15 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 
 ## matchEngine Refactor - Phase Status
 
-Rule: Always run npx tsc --noEmit + full regression suite before committing any refactor phase.
+The match engine decomposition has been fully completed and verified against baseline snapshots.
 
-| Phase | Status | Commit | What was done |
+| Phase / Batch | Status | Commit | What was done |
 |---|---|---|---|
-| Refactor-1A | Done | - | matchEngine audit/planning complete |
-| Refactor-1B | Done | - | Pure types, constants, helpers, mock teams extracted |
-| Refactor-1C | Done | - | Injury + roster calibration helpers extracted |
-| Refactor-1D | Done | 1f68541 | Stamina decay pure formulas -> staminaDecay.ts |
-| Refactor-1E | Done | a4bae97 | Rebound pure formula helpers -> reboundSystem.ts |
-| Refactor-1F | Done | 809c862 | Foul/free throw pure formula helpers -> foulSystem.ts |
-| Refactor-1G | Done | - | Event log audit complete. Extraction blocked due to RNG coupling. |
-| Refactor-1H | Done | - | Mark system audit complete. Extraction blocked until mark tests built. |
-| Refactor-1I | Done | 29145fa | Special skill hook audit complete. Extraction blocked to preserve RNG. |
+| Batch A | Done | `0605221b6` | Extracted event log builder, mark lifecycle, stamina mutations, stats mutations, form resolvers |
+| Batch B | Done | `58c271d2f` | Extracted special skill hooks |
+| Batch C | Done | `refactor(match): extract shot foul rebound flows` | Extracted User and AI possession flows, turnover and auto sub resolvers |
+| Batch D | Done | `refactor(match): extract shot foul rebound flows` | Extracted foul, rebound, and shot intent/contest resolvers |
+| Batch E | Done | `refactor(match): shrink match engine wrapper` | Extracted top-level orchestrator (`matchTick.ts`), shunk `matchEngine.ts` wrapper |
 
 ---
 
