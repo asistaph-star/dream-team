@@ -135,6 +135,16 @@ import { recoverPlayerStamina, getPlayerStaminaPercent, applyStaminaDrain } from
 import { ensurePlayerStatsExists, recordPlayerPoints, recordPlayerFreeThrow, recordPlayerRebound, recordPlayerAssist, recordPlayerSteal, recordPlayerBlock, recordPlayerTurnover, recordPlayerFoul } from "../match/engine/playerStatMutations";
 import { ensureFormExists, ensureFormFiredExists, adjustMomentum } from "../match/engine/momentumFormResolver";
 import { applyAntiSnowballScaling, getSkyWallDrain, getLockChainDrain } from "../match/staminaSkillEffects";
+import {
+  recoverSkillStamina as extRecoverSkillStamina,
+  tryColdTimeout as extTryColdTimeout,
+  applyBenchCaptain as extApplyBenchCaptain,
+  applyMomentumSwing as extApplyMomentumSwing,
+  applyDefensiveAnchor as extApplyDefensiveAnchor,
+  tryGameplanJammer as extTryGameplanJammer,
+  tryShadowGuard as extTryShadowGuard,
+  applyGreenSupport as extApplyGreenSupport
+} from "../match/engine/skillHooks";
 
 // Re-export everything the UI needs
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
@@ -394,6 +404,10 @@ export function simulateTick(
     ? (newQuarter - 1) * 720 + (720 - newClock)
     : 2880 + (newQuarter - 5) * 300 + (300 - newClock);
   const draft = createDraft(state);
+  draft.quarter = newQuarter;
+  draft.clock = newClock;
+  draft.teamSkillBuffs = newTeamSkillBuffs;
+  draft.activeSkillBuffs = newActiveSkillBuffs;
   decayTickMarks(draft);
   const onCourtIds = new Set([...userLineup, ...aiLineup].map(p => p.id));
   clearBenchedMarks(draft, onCourtIds);
@@ -427,199 +441,36 @@ export function simulateTick(
   const getLowestStaminaPlayer = (lineup: Player[]): Player =>
     extGetLowestStaminaPlayer(lineup, newStamina);
   const tryColdTimeout = (team: Player[], isUserTeam: boolean) => {
-    const markedPlayers = team.filter(p => (newSkillMarks[p.id] ?? []).length > 0);
-    const teamAvgStamina = avgStamina(team, newStamina);
-    if (teamAvgStamina >= 65 && markedPlayers.length === 0) return;
-    const useKey = `Timeout Reset Q${newQuarter}`;
-    if (hasTeamSkillUsed(isUserTeam, useKey)) return;
-    if (!rollSpecialMechanic(team, "TIMEOUT_RESET_CLEANSE", newStamina, (h) => {
-      const coldTimeoutIdentity = (getCalmRating(h) + getStaminaRating(h)) / 2;
-      return 0.90 + (coldTimeoutIdentity / 100) * 0.20;
-    })) return;
-    markTeamSkillUsed(isUserTeam, useKey);
-    let cleansed = 0;
-    markedPlayers.forEach(p => {
-      const before = newSkillMarks[p.id]?.length ?? 0;
-      if (before > 0) {
-        const { nextMarks, cleansedMark } = removeOldestMark(newSkillMarks, p.id);
-        newSkillMarks = nextMarks;
-        if (cleansedMark) {
-          const currentImmunities = newMarkImmunity[p.id] ?? [];
-          if (!currentImmunities.some(m => m.mark === cleansedMark)) {
-            currentImmunities.push({ mark: cleansedMark, possessionsLeft: 1 });
-          }
-          newMarkImmunity[p.id] = currentImmunities;
-        }
-        cleansed++;
-      }
-    });
-    const recoveryTargets = [...team]
-      .sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))
-      .slice(0, teamAvgStamina < 65 ? 2 : 1);
-    recoveryTargets.forEach(p => recoverSkillStamina(p, 12));
-    const recoveryText = recoveryTargets.length > 0 ? `steadies ${recoveryTargets.length} tired player${recoveryTargets.length > 1 ? "s" : ""}` : "";
-    const cleanseText = cleansed > 0 ? `cleanses ${cleansed} pressure mark${cleansed !== 1 ? "s" : ""}` : "";
-    const joiner = cleanseText && recoveryText ? " and " : "";
-    skillLog(`Timeout Reset ${cleanseText}${joiner}${recoveryText}`, isUserTeam);
+    extTryColdTimeout(draft, team, isUserTeam);
+    newSkillMarks = draft.skillMarks;
+    newMarkImmunity = draft.markImmunity;
   };
-
   const applyBenchCaptain = (team: Player[], isUserTeam: boolean) => {
-    const teamAvg = avgStamina(team, newStamina);
-    const lowestStamPlayer = getLowestStaminaPlayer(team);
-    const lowestStam = lowestStamPlayer ? (newStamina[lowestStamPlayer.id] ?? 100) : 100;
-    
-    if (teamAvg >= 65 && lowestStam >= 45) return;
-
-    const teamName = isUserTeam ? "User" : "AI";
-    const useKey = `${teamName} Bench Captain Q${newQuarter}`;
-    if (hasTeamSkillUsed(isUserTeam, useKey)) return;
-
-    const pbSummary = resolveLineupArchetypes(team);
-    const pbLevel = pbSummary.allResults.find(r => r.id === "playmaking")?.level ?? 0;
-    const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
-
-    if (!rollSpecialMechanic(team, "BENCH_CAPTAIN_STABILIZE", newStamina, (h) => {
-      const identity = getBenchCaptainIdentity(h);
-      const scale = 0.85 + (identity / 100) * 0.30;
-      return scale * scaleMultiplier;
-    })) return;
-
-    const holders = team.filter(p => hasSpecialSkillMechanic(p, "BENCH_CAPTAIN_STABILIZE"));
-    const leader = [...holders].sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
-    if (!leader) return;
-
-    markTeamSkillUsed(isUserTeam, useKey);
-
-    const leaderIdentity = getBenchCaptainIdentity(leader);
-    const recovery = calculateBenchCaptainRecovery(leaderIdentity, getCalmRating(leader));
-    const staminaRecover = recovery.staminaRecover;
-
-    recoverSkillStamina(lowestStamPlayer, staminaRecover);
-
-    ensureForm(lowestStamPlayer.id);
-    let formText = "";
-    if (newFormRating[lowestStamPlayer.id] < 1.0) {
-      const formStabilize = recovery.formStabilize;
-      newFormRating[lowestStamPlayer.id] = clampForm(newFormRating[lowestStamPlayer.id] + formStabilize);
-      formText = ` and focus (+${(formStabilize * 100).toFixed(2)}%)`;
-    }
-
-    skillLog(`${leader.name}'s Bench Captain stabilizes ${lowestStamPlayer.name}'s stamina (+${staminaRecover})${formText}`, isUserTeam);
+    extApplyBenchCaptain(draft, team, isUserTeam);
   };
-
   let momentumSwingBump: 'user' | 'ai' | null = null;
   const applyMomentumSwing = (team: Player[], isUserTeam: boolean) => {
-    // Only eligible after defensive momentum events
-    if (!shouldMomentumSwingTrigger(state.lastPlayCategory)) return;
-
-    const teamName = isUserTeam ? "User" : "AI";
-    const useKey = `${teamName} Momentum Swing Q${newQuarter}`;
-    if (hasTeamSkillUsed(isUserTeam, useKey)) return;
-
-    if (!rollSpecialMechanic(team, "MOMENTUM_SWING_RECOVERY", newStamina, (h) => {
-      const identity = getMomentumSwingIdentity(h);
-      return 0.85 + (identity / 100) * 0.30;
-    })) return;
-
-    const holders = team.filter(p => hasSpecialSkillMechanic(p, "MOMENTUM_SWING_RECOVERY"));
-    const leader = [...holders].sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
-    if (!leader) return;
-
-    markTeamSkillUsed(isUserTeam, useKey);
-
-    const leaderIdentity = getMomentumSwingIdentity(leader);
-    const recovery = calculateMomentumSwingRecovery(leaderIdentity, getCalmRating(leader));
-
-    // Stamina recovery to lowest-stamina active teammate
-    const lowestStamPlayer = getLowestStaminaPlayer(team);
-    let staminaText = "";
-    if (lowestStamPlayer) {
-      recoverSkillStamina(lowestStamPlayer, recovery.staminaRecover);
-      staminaText = ` steadies ${lowestStamPlayer.name}'s stamina (+${recovery.staminaRecover})`;
-    }
-
-    // Form recovery to leader if cold
-    let formText = "";
-    ensureForm(leader.id);
-    if (newFormRating[leader.id] < 1.0) {
-      newFormRating[leader.id] = clampForm(newFormRating[leader.id] + recovery.formRecover);
-      formText = ` and focus (+${(recovery.formRecover * 100).toFixed(2)}%)`;
-    }
-
-    // Track momentum bump for application in STEP 11 (where newUserMom/newAiMom are declared)
-    momentumSwingBump = isUserTeam ? 'user' : 'ai';
-
-    skillLog(`${leader.name}'s Momentum Swing stabilizes after the play${staminaText}${formText}`, isUserTeam);
+    const bump = extApplyMomentumSwing(draft, team, isUserTeam, state.lastPlayCategory);
+    if (bump) momentumSwingBump = bump;
   };
-
   const applyDefensiveAnchor = (defendingTeam: Player[], attackingTeam: Player[], isDefendingUserTeam: boolean) => {
-    if (pace === 'fastbreak') return;
-
-    const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_BOOST"));
-    if (holders.length === 0) return;
-
-    // Defensive Anchor triggers on court but does not stack (select the best holder)
-    const leader = [...holders].sort((a_p, b_p) => {
-      return getDefensiveAnchorIdentity(b_p) - getDefensiveAnchorIdentity(a_p);
-    })[0];
-    if (!leader) return;
-
-    const defSide = isDefendingUserTeam ? 'user' : 'ai';
-    const leaderIdentity = getDefensiveAnchorIdentity(leader); // Rating between 0 and 100
-    const baseEffectiveDef = isDefendingUserTeam ? userEffRaw.def : aiEffRaw.def;
-    const leaderStamina = newStamina[leader.id] ?? 100;
-
-    // Scale leader identity to represent IQ points (e.g. up to 1000) for translateDefIQBoost.
-    // translateDefIQBoost scales this by dividing by 7000, so 1000 IQ points yields up to ~14% team defense boost.
-    const iqPoints = leaderIdentity * 10;
-    const defBoost = translateDefIQBoost(iqPoints, baseEffectiveDef, leaderStamina);
-
-    newTeamSkillBuffs[defSide].defIQ += defBoost;
-    newActiveSkillBuffs[leader.id] = {
-      offIQBoost: 0,
-      defIQBoost: defBoost,
-      staminaDecayMult: 1.0,
-      benchRecoveryBonus: 0
-    };
+    extApplyDefensiveAnchor(draft, defendingTeam, isDefendingUserTeam, userEffRaw.def, aiEffRaw.def, pace === 'fastbreak');
   };
-
   const tryGameplanJammer = (defendingTeam: Player[], target: Player, sourceText: string, isDisruptingUser: boolean): boolean => {
-    if (!rollSpecialMechanic(defendingTeam, "GAMEPLAN_JAMMER_STATIC", newStamina, (h) => {
-      const identity = (getOnBallDefenseRating(h) + getStealRating(h)) / 2;
-      return 0.90 + (identity / 100) * 0.20;
-    })) return false;
-    newSkillMarks = addMark(newSkillMarks, newMarkImmunity, target.id, "Static", "GAMEPLAN_JAMMER_STATIC", 2);
-    skillLog(`Gameplan Jammer blocks ${target.name}'s ${sourceText} and applies Static`, isDisruptingUser);
-    return true;
+    const success = extTryGameplanJammer(draft, defendingTeam, target, sourceText, isDisruptingUser);
+    if (success) {
+      newSkillMarks = draft.skillMarks;
+    }
+    return success;
   };
   const tryShadowGuard = (defendingTeam: Player[], isDefendingUser: boolean): boolean => {
-    if (!rollBaseSkill(defendingTeam, "Shadow Guard", newStamina)) return false;
-    skillLog(`Shadow Guard cuts off the perimeter trigger`, isDefendingUser);
-    return true;
+    return extTryShadowGuard(draft, defendingTeam, isDefendingUser);
   };
   const recoverSkillStamina = (player: Player, amount: number): boolean => {
-    if (hasMark(newSkillMarks, player.id, "Pinned")) return false;
-    newStamina[player.id] = recoverToMax(player, amount, newStamina);
-    return true;
+    return extRecoverSkillStamina(draft, player, amount);
   };
   const applyGreenSupport = (team: Player[], isUserTeam: boolean) => {
-    team.forEach(p => {
-      if (hasBaseSkill(p, "Future Core")) {
-        ensureForm(p.id);
-        if (newFormRating[p.id] < 1.0) newFormRating[p.id] = clampForm(newFormRating[p.id] + 0.006);
-      }
-    });
-    const foulsThisQuarter = isUserTeam ? newTeamFouls.user[newQuarter - 1] : newTeamFouls.ai[newQuarter - 1];
-    if (foulsThisQuarter > 0 && rollBaseSkill(team, "Enforcer Lift", newStamina)) {
-      const enforcerHolders = team.filter(p => hasBaseSkill(p, "Enforcer Lift"));
-      const bestEnforcer = enforcerHolders.reduce((best, p) => {
-        const id = getEnforcerIdentity(p);
-        return id > best ? id : best;
-      }, 50);
-      const enforcerLiftScale = calculateEnforcerScale(bestEnforcer);
-      team.forEach(p => recoverSkillStamina(p, 6 * enforcerLiftScale));
-      skillLog(`Enforcer Lift turns physical play into team energy`, isUserTeam);
-    }
+    extApplyGreenSupport(draft, team, isUserTeam, newTeamFouls.user[newQuarter - 1], newTeamFouls.ai[newQuarter - 1]);
   };
 
   // ═══ ENERGY DRINK: Lock helpers ═══
