@@ -1,10 +1,32 @@
 import { Player } from "@/lib/types/player";
 
 export function getRequiredDuplicateCount(tier: string, targetStarLevel: number): number {
-  if (tier === "Silver" || tier === "Blue") return targetStarLevel >= 4 ? 1 : 0;
-  if (tier === "Violet") return targetStarLevel >= 2 ? 1 : 0;
-  if (tier === "Orange") return 1;
-  if (tier === "Red") return targetStarLevel >= 4 ? 2 : 1;
+  if (tier === "Silver") {
+    if (targetStarLevel === 1) return 1;
+    if (targetStarLevel === 5) return 1;
+    return 0;
+  }
+  if (tier === "Blue") {
+    if (targetStarLevel === 5) return 2;
+    return 0;
+  }
+  if (tier === "Violet") {
+    if (targetStarLevel === 3) return 2;
+    if (targetStarLevel === 5) return 2;
+    return 0;
+  }
+  if (tier === "Orange") {
+    if (targetStarLevel === 3) return 1;
+    if (targetStarLevel === 4) return 2;
+    if (targetStarLevel === 5) return 2;
+    return 0;
+  }
+  if (tier === "Red") {
+    if (targetStarLevel === 1) return 2;
+    if (targetStarLevel === 3) return 2;
+    if (targetStarLevel === 5) return 3;
+    return 0;
+  }
   return 0;
 }
 

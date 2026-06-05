@@ -12,11 +12,15 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 |---|---|
 | Lineup archetype system | Built and gameplay-connected |
 | Archetype detection UI | Built |
-| Regression test suite | Strong and active (39/39 passing) |
+| Regression test suite | Strong and active (40/40 passing) |
 | First big balance pass | Complete |
 | 22 Base Skills final-lock | Done (22/22 verified) |
 | Base Skill real-data assignment | Done (deterministic & tested) |
 | Base Skill star-up safety | Done (repaired on load) |
+| Upgrade System final-lock | Done (20 duplicates matrix locked) |
+| Upgrade failure safety | Done (materials only, cards safe) |
+| Upgrade success rate scaling | Done (100% to 5% Red ★5) |
+| Star-up stat repair on load | Done (repaired via repairStarGrowth) |
 | 15 Learned Special Skill Families | Done, 15/15 active and rollable |
 | Legacy X Skills | Migration-only and non-rollable |
 | Player Attribute final-audit | Done |
@@ -91,10 +95,10 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Phase UpgradeSystemFinalLock** - Final verification of card upgrade success rates, failure metrics, duplicate requirement matrices, and safety under save/load constraints.
+**Phase NBADataPipelineFinalLock** - Syncing/source stability checks and verification of real rosters season transition.
 
 ### Goal
-Ensure that the duplicate consumption matrix is balanced, that upgrade failure consumes only materials while keeping duplicates safe, that correct duplicate prioritization is enforced, and that the upgrade pipeline handles save/load states cleanly.
+Ensure that the NBA Data Pipeline runs reliably, attributes derive correctly from tradition stats without regression, and season transition processes cleanly.
 
 ### Future Phase
-**Phase NBADataPipelineFinalLock** - Syncing/source stability checks and verification of real rosters season transition.
+**Phase MatchRealismCalibration** - Tapping matchEngine scoring, foul rates, and stamina fatigue details for maximum realism.

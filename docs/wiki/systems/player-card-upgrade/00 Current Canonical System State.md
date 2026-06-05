@@ -118,14 +118,33 @@ Final balance audit: **not done** — blocked until skill audit lock and refacto
 
 ---
 
-## Upgrade System — LOCKED STABLE
-- 20-total-duplicate matrix (1 original + 20 duplicates = 21 copies to fully max).
-- Multi-duplicate backend consumption (Red ★4 and Red ★5 each require 2).
-- Clean duplicates prioritized over learned-skill duplicates.
-- Failure consumes materials only; duplicates stay safe.
-- Success consumes exact selected duplicates.
-- Learned Skill sacrifice warning before consuming invested cards.
-- Cancel consumes nothing.
+## Upgrade System — LOCKED STABLE (Phase UpgradeSystemFinalLock)
+- **20-total-duplicate matrix**: 1 base card + 20 duplicates = 21 copies required to fully max a player card to Red ★5.
+- **Duplicate Milestone Matrix**:
+  - **Silver (2 total)**: Star 1 (1 duplicate), Star 5 (1 duplicate).
+  - **Blue (2 total)**: Star 5 (2 duplicates).
+  - **Violet (4 total)**: Star 3 (2 duplicates), Star 5 (2 duplicates).
+  - **Orange (5 total)**: Star 3 (1 duplicate), Star 4 (2 duplicates), Star 5 (2 duplicates).
+  - **Red (7 total)**: Star 1 (2 duplicates), Star 3 (2 duplicates), Star 5 (3 duplicates).
+  - *All other star target levels (not listed above) require 0 duplicates.*
+- **Success Rate Gating**:
+  - Silver Star 1 starts at 100% success rate.
+  - Red Star 5 bottoms out at exactly 5% success rate.
+  - Success rates decay logically within each tier and decrease across tiers for the same level.
+- **Failure Rules**:
+  - Upgrade failures are 100% safe.
+  - Failure consumes upgrade materials/stones only.
+  - The base card and duplicates remain safe and are never consumed, degraded, or broken.
+  - Star level and learned skills remain intact.
+- **Success Rules**:
+  - Star level increments by exactly 1.
+  - Required duplicates and upgrade materials are consumed.
+  - Correct skill slot unlocks are triggered (Slot 1 at Star 1, Slot 2 at Star 5).
+  - Star growth stats are applied exactly once.
+- **Clean duplicates prioritized**: Roster sacrifice selection automatically prioritizes clean copies before skilled copies.
+- **Sacrifice warning**: If duplicate cards with learned special skills are selected for sacrifice, a confirmation warning modal blocks progression until approved.
+- **Star growth repair**: `repairStarGrowth` resets player stats to templates and applies correct star growth stats on roster load, preventing double-boosting or base skill reassignments.
+- **Cancel**: Canceling the upgrade consumes nothing.
 
 ## Skill Tape Economy — LOCKED STABLE
 - Skill Tape is consumed when a reroll is generated.
