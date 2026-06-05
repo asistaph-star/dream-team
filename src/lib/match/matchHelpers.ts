@@ -1,5 +1,5 @@
 import { Player } from "../types/player";
-import { hasSpecialSkillMechanic } from "../skills/skillMechanics";
+import { hasSpecialSkillMechanic } from "../skills/skillResolver";
 import { getPlayerMaxStamina } from "../utils/matchTypes";
 
 export function getIndividualThreePointShotMod(shooting: number | undefined): number {

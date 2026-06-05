@@ -119,7 +119,7 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 | Anti-Meta / Gameplan | ✅ Connected with GAMEPLAN_JAMMER |
 
 First balance pass: **complete**.
-Final balance audit: **not done** — blocked until skill audit lock and refactor safety work are done.
+Final balance audit: **complete** via Match Realism Calibration phase.
 
 ---
 

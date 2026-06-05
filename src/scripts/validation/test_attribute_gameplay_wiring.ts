@@ -45,9 +45,9 @@ function run() {
 
   // 3. Hustle rebound modifier
   console.log("\n--- Section 3: Hustle Rebound Modifier ---");
-  const pLowHustle: Player = { id: "p1", name: "Low Hustle", position: "C", rarity: "gold", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 45 };
-  const pMidHustle: Player = { id: "p2", name: "Mid Hustle", position: "C", rarity: "gold", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 80 };
-  const pHighHustle: Player = { id: "p3", name: "High Hustle", position: "C", rarity: "gold", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 150 };
+  const pLowHustle: Player = { id: "p1", name: "Low Hustle", position: "C", rarity: "Rare", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 45, level: 1, maxLevel: 5, exp: 0, ovr: 80, offense: 80 };
+  const pMidHustle: Player = { id: "p2", name: "Mid Hustle", position: "C", rarity: "Rare", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 80, level: 1, maxLevel: 5, exp: 0, ovr: 80, offense: 80 };
+  const pHighHustle: Player = { id: "p3", name: "High Hustle", position: "C", rarity: "Rare", rebound: 80, stamina: 100, playmaking: 80, defense: 80, shooting: 80, speed: 80, strength: 80, hustle: 150, level: 1, maxLevel: 5, exp: 0, ovr: 80, offense: 80 };
 
   const staminaMap = { p1: 100, p2: 100, p3: 100 };
   const lowReboundScore = calculateTeamReboundScore([pLowHustle], staminaMap);

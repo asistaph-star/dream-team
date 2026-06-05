@@ -177,4 +177,5 @@ export interface MatchState {
   flagrantFouls: Record<string, number>;
   ejectedPlayers: string[];
   prevAiLineupIds: string[];
+  disableAiCoach?: boolean;
 }

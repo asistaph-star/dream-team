@@ -177,7 +177,7 @@ const { simulateTick, createInitialMatchState, computeEffective } = matchEngine;
 const { resolveLineupArchetypes } = require("../../lib/lineup/lineupArchetypeResolver");
 const getFoulStamMod = (avg: number) => avg >= 70 ? 1.0 : avg >= 50 ? 1.12 : avg >= 30 ? 1.28 : 1.45;
 const { getFoulDrawTendency } = require("../../lib/utils/playerIdentity");
-const { hasSpecialSkillMechanic } = require("../../lib/skills/skillMechanics");
+const { hasSpecialSkillMechanic } = require("../../lib/skills/skillResolver");
 
 // Option B Gating Logic
 function getOptionBBoost(lineup: Player[]): number {

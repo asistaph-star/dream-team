@@ -78,33 +78,3 @@ export const doesSkillMatchMechanic = (rawSkill: string, mechanicId: SpecialSkil
   return mechanics.includes(mechanicId);
 };
 
-export const hasSpecialSkillMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): boolean => {
-  if (!player.specialSkillSlots) return false;
-  
-  return player.specialSkillSlots.some(slot => {
-    if (!slot) return false;
-    return doesSkillMatchMechanic(slot, mechanicId);
-  });
-};
-
-export const getPlayerSpecialSkillMechanics = (player: Player): SpecialSkillMechanicId[] => {
-  if (!player.specialSkillSlots) return [];
-  
-  const allMechanics: SpecialSkillMechanicId[] = [];
-  
-  for (const slot of player.specialSkillSlots) {
-    if (slot) {
-      const mechanics = resolveSpecialSkillMechanics(slot);
-      allMechanics.push(...mechanics);
-    }
-  }
-  
-  // Dedupe mechanics
-  return Array.from(new Set(allMechanics));
-};
-
-export const getSpecialSkillsForMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): string[] => {
-  if (!player.specialSkillSlots) return [];
-  return player.specialSkillSlots.filter((slot): slot is string => !!slot && doesSkillMatchMechanic(slot, mechanicId));
-};
-

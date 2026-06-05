@@ -139,6 +139,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **What Code Does**: Integrates the new detailed attributes directly into match gameplay equations, providing defensive contest bonuses, pressure resistance, rebound enhancement, and turnover reduction.
 * **Tests**: [test_attribute_gameplay_wiring.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_attribute_gameplay_wiring.ts) and [test_shooting_foul_symmetry.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_shooting_foul_symmetry.ts) pass.
 * **Risk Level**: SAFE
+* **Recommended Next Step**: Proceed to Match Realism Calibration phase.
+
+### 13. Match Realism Calibration
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [sim_match_realism_calibration.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/balance/sim_match_realism_calibration.ts)
+  * [test_match_realism_calibration.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_match_realism_calibration.ts)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (AI shot clock violation check)
+* **What Code Does**: Runs simulation sweeps verifying that baseline team scoring (95-130), FG% (42-55%), 3PT% (30-42%), rebounds (35-60), turnovers (8-20), and fouls (12-28) are fully within NBA-realistic target bounds. Confirms that High-IQ reduces turnovers symmetrically and High-Hustle improves team rebounds without inflating/deflating other metrics.
+* **Tests**: [test_match_realism_calibration.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_match_realism_calibration.ts) passes.
+* **Risk Level**: SAFE
 * **Recommended Next Step**: Proceed to UI updates phase.
 
 ---

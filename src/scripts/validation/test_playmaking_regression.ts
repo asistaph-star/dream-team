@@ -1,7 +1,7 @@
 import { Player } from "../../lib/types/player";
 import { simulateTick, createInitialMatchState, computeEffective } from "../../lib/utils/matchEngine";
 import { resolveLineupArchetypes } from "../../lib/lineup/lineupArchetypeResolver";
-import { getSpecialSkillsForMechanic } from "../../lib/skills/skillMechanics";
+import { getSpecialSkillsForMechanic } from "../../lib/skills/skillResolver";
 import { getBestSpecialSkillForMechanic, getSpecialSkillQuality, getTriggerBoost } from "../../lib/skills/skillResolver";
 import { SPECIAL_SKILL_RATES, getSkillQualityRate } from "../../lib/skills/skillCatalog";
 import { SpecialSkillName } from "../../lib/skills/assignBaseSkills";

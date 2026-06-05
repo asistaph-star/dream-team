@@ -1,6 +1,6 @@
 import { Player } from "../types/player";
 import { MatchState } from "../utils/matchTypes";
-import { SpecialSkillMechanicId, getSpecialSkillsForMechanic } from "./skillMechanics";
+import { SpecialSkillMechanicId, resolveSpecialSkillMechanics, doesSkillMatchMechanic } from "./skillMechanics";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats, BaseSkillName, SpecialSkillName } from "./assignBaseSkills";
 import {
   BASE_SKILL_RATES,
@@ -229,4 +229,31 @@ export const drainStamina = (
   const actual = Math.round(amount * staminaScale * getDrainMultiplier(target, targetLineup));
   stamina[target.id] = Math.max(0, (stamina[target.id] ?? 100) - actual);
   return actual;
+};
+
+export const hasSpecialSkillMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): boolean => {
+  const skills = getSpecialSkills(player);
+  return skills.some(skill => {
+    if (!skill) return false;
+    return doesSkillMatchMechanic(skill, mechanicId);
+  });
+};
+
+export const getPlayerSpecialSkillMechanics = (player: Player): SpecialSkillMechanicId[] => {
+  const skills = getSpecialSkills(player);
+  const allMechanics: SpecialSkillMechanicId[] = [];
+  
+  for (const skill of skills) {
+    if (skill) {
+      const mechanics = resolveSpecialSkillMechanics(skill);
+      allMechanics.push(...mechanics);
+    }
+  }
+  
+  return Array.from(new Set(allMechanics));
+};
+
+export const getSpecialSkillsForMechanic = (player: Player, mechanicId: SpecialSkillMechanicId): SpecialSkillName[] => {
+  const skills = getSpecialSkills(player);
+  return skills.filter(skill => doesSkillMatchMechanic(skill, mechanicId));
 };

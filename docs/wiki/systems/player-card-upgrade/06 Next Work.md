@@ -28,6 +28,7 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | Attribute Model Refinement (IQ & Hustle) | Done |
 | Match Engine Wiring (IQ & Hustle Wiring) | Done |
 | matchEngine architecture cleanup | In progress |
+| Match Realism Calibration | Done (realism verified) |
 
 ---
 
@@ -102,6 +103,3 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 
 ### Goal
 Implement visual elements in the hex chart, player detail panels, card compare overlay, and roster screens to correctly display and represent these gameplay attributes.
-
-### Future Phase
-**Phase MatchRealismCalibration** - Tapping matchEngine scoring, foul rates, and stamina fatigue details for maximum realism.

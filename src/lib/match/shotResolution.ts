@@ -120,7 +120,7 @@ export function calculateFinalScoringChance(params: ShotScoringChanceParams): nu
                        params.effectivePressMod *
                        params.usageMod;
   const withDecision = baseAdjusted * params.decisionWeightMod;
-  const with3PTMod = withDecision * params.individual3ptMod;
+  const with3PTMod = withDecision * params.individual3ptMod * (params.difficultyMod < -0.09 ? 0.91 : 1.0);
   
   const hustleContestMod = params.hustleContestMod ?? 1.0;
   const hustleContestFactor = 1.0 / hustleContestMod;
