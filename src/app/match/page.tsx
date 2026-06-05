@@ -35,7 +35,6 @@ import { StrategyModal } from "@/features/match/components/StrategyModal";
 import { PostGameScreen } from "@/features/match/components/PostGameScreen";
 import { MatchBottomHUD } from "@/features/match/components/MatchBottomHUD";
 import { MatchActionBar } from "@/features/match/components/MatchActionBar";
-import { MatchTacticsStrip } from "@/features/match/components/MatchTacticsStrip";
 import { ShootoutOverlay } from "@/features/match/components/ShootoutOverlay";
 import { MatchScoreboard } from "@/features/match/components/MatchScoreboard";
 import { OvertimeTransitionOverlay } from "@/features/match/components/OvertimeTransitionOverlay";
@@ -1090,14 +1089,6 @@ export default function MatchPage() {
                 
                 {/* BOTTOM HUD - ACTION BAR Container */}
                 <div className="flex gap-2 items-end shrink-0">
-                    <MatchTacticsStrip
-                      offStrategy={matchState.userOffStrategy}
-                      defStrategy={matchState.userDefStrategy}
-                      offCooldownEnd={offCooldownEnd}
-                      defCooldownEnd={defCooldownEnd}
-                      cooldownNow={cooldownNow}
-                      onOpenStrategy={() => openModal('strategy')}
-                    />
                     <MatchActionBar
                       openModal={openModal}
                       handleTimeout={handleTimeout}
