@@ -128,11 +128,13 @@ import { SpecialSkillMechanicId } from "../skills/skillMechanics";
 import { hasSpecialSkillMechanic } from "../skills/skillResolver";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 import { resolveLineupArchetypes } from "../lineup/lineupArchetypeResolver";
-import {
-  applyAntiSnowballScaling,
-  getSkyWallDrain,
-  getLockChainDrain
-} from "../match/staminaSkillEffects";
+import { createDraft, finalizeDraft } from "../match/engine/matchStateDraft";
+import { addEvent, logSkillTrigger } from "../match/engine/eventLogBuilder";
+import { decayTickMarks, clearBenchedMarks } from "../match/engine/markLifecycle";
+import { recoverPlayerStamina, getPlayerStaminaPercent, applyStaminaDrain } from "../match/engine/staminaMutations";
+import { ensurePlayerStatsExists, recordPlayerPoints, recordPlayerFreeThrow, recordPlayerRebound, recordPlayerAssist, recordPlayerSteal, recordPlayerBlock, recordPlayerTurnover, recordPlayerFoul } from "../match/engine/playerStatMutations";
+import { ensureFormExists, ensureFormFiredExists, adjustMomentum } from "../match/engine/momentumFormResolver";
+import { applyAntiSnowballScaling, getSkyWallDrain, getLockChainDrain } from "../match/staminaSkillEffects";
 
 // Re-export everything the UI needs
 export type { Difficulty, PlayerMatchStats, MatchEvent, MatchState } from "./matchTypes";
@@ -391,26 +393,27 @@ export function simulateTick(
   const gameTimeSec = newQuarter <= 4
     ? (newQuarter - 1) * 720 + (720 - newClock)
     : 2880 + (newQuarter - 5) * 300 + (300 - newClock);
-  const newStamina = { ...state.playerStamina };
-  const newPlayerStats: Record<string, PlayerMatchStats> = {};
-  Object.keys(state.playerStats).forEach(k => { newPlayerStats[k] = { ...state.playerStats[k] }; });
-  const ensureStats = (id: string) => { if (!newPlayerStats[id]) newPlayerStats[id] = emptyStats(); };
-  const newEvents: MatchEvent[] = [];
-  const decayed = decayMarks(state.skillMarks ?? {}, state.markImmunity ?? {});
-  let newSkillMarks: MatchState['skillMarks'] = decayed.nextMarks;
-  let newMarkImmunity: MatchState['markImmunity'] = decayed.nextImmunity;
-
-  // Substitution clear: remove marks and immunities for players who went to the bench
+  const draft = createDraft(state);
+  decayTickMarks(draft);
   const onCourtIds = new Set([...userLineup, ...aiLineup].map(p => p.id));
-  Object.keys(newSkillMarks).forEach(id => {
-    if (!onCourtIds.has(id)) delete newSkillMarks[id];
-  });
-  Object.keys(newMarkImmunity).forEach(id => {
-    if (!onCourtIds.has(id)) delete newMarkImmunity[id];
-  });
+  clearBenchedMarks(draft, onCourtIds);
+
+  const newStamina = draft.playerStamina;
+  const newPlayerStats = draft.playerStats;
+  const newEvents = draft.events;
+  let newSkillMarks = draft.skillMarks;
+  let newMarkImmunity = draft.markImmunity;
+  const newSkillUsedThisGame = draft.skillUsedThisGame;
+  const newFormRating = draft.formRating;
+  const newFormFired = draft.formNarrativeFired;
+  const newHotFromForm = draft.hotFromForm;
+
+  const ensureStats = (id: string) => ensurePlayerStatsExists(draft, id);
+  const ensureForm = (id: string) => ensureFormExists(draft, id);
+  const ensureFormFired = (id: string) => ensureFormFiredExists(draft, id);
+  const skillLog = (text: string, isUserTeam: boolean) => logSkillTrigger(draft, text, isUserTeam);
 
   const warnings: string[] = [];
-  const newSkillUsedThisGame: MatchState['skillUsedThisGame'] = { ...(state.skillUsedThisGame ?? {}) };
   const teamSkillKey = (isUserTeam: boolean): string => isUserTeam ? "user" : "ai";
   const hasTeamSkillUsed = (isUserTeam: boolean, skillUse: string): boolean =>
     (newSkillUsedThisGame[teamSkillKey(isUserTeam)] ?? []).includes(skillUse);
@@ -418,18 +421,9 @@ export function simulateTick(
     const key = teamSkillKey(isUserTeam);
     newSkillUsedThisGame[key] = [...(newSkillUsedThisGame[key] ?? []), skillUse];
   };
-  // Form rating state
-  const newFormRating: Record<string, number> = { ...state.formRating };
-  const newFormFired: Record<string, { hot108: boolean; hot112: boolean; cold092: boolean; cold088: boolean; recovered: boolean }> = {};
-  Object.keys(state.formNarrativeFired).forEach(k => { newFormFired[k] = { ...state.formNarrativeFired[k] }; });
-  const newHotFromForm: Record<string, boolean> = { ...state.hotFromForm };
-  const ensureForm = (id: string) => { if (newFormRating[id] === undefined) newFormRating[id] = 1.0; };
-  const ensureFormFired = (id: string) => { if (!newFormFired[id]) newFormFired[id] = { hot108: false, hot112: false, cold092: false, cold088: false, recovered: true }; };
+
   let stealPlayerId = '';
   let eventIndicator: { playerId: string; type: 'BLK' | 'STL' | 'TOV' | 'REB' | 'OREB' | 'AST' | 'FOL' } | undefined;
-  const skillLog = (text: string, isUserTeam: boolean) => {
-    newEvents.push(makeEvent(newQuarter, newClock, `SKILL: ${text}`, isUserTeam));
-  };
   const getLowestStaminaPlayer = (lineup: Player[]): Player =>
     extGetLowestStaminaPlayer(lineup, newStamina);
   const tryColdTimeout = (team: Player[], isUserTeam: boolean) => {
