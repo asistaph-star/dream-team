@@ -179,24 +179,22 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           <div className="flex-1 h-full relative flex flex-col p-8 z-10">
             
             {/* Top Attributes Panel */}
-            <div className="mb-6 grid grid-cols-2 gap-x-8">
+            <div className="mb-4 grid grid-cols-2 gap-x-8">
               {/* Left Column: Core Attributes */}
               <div>
-                <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
                   <Activity className="text-cyan-400 w-4 h-4" />
                   <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
                 </div>
                 
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
                   {attributeRows.map(stat => (
-                    <div key={stat.label} className="flex flex-col gap-1">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
-                        <span className="text-[11px] font-black text-white">{stat.val}</span>
+                    <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
+                      <span className="w-20 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
+                      <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                        <div className="h-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                       </div>
-                      <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                        <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                      </div>
+                      <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
                     </div>
                   ))}
                 </div>
@@ -204,21 +202,19 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
 
               {/* Right Column: Detailed & Physicals */}
               <div>
-                <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
                   <Activity className="text-emerald-400 w-4 h-4" />
                   <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Detailed & Physicals</h3>
                 </div>
                 
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
                   {secondaryRows.map(stat => (
-                    <div key={stat.label} className="flex flex-col gap-1">
-                      <div className="flex justify-between items-end">
-                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
-                        <span className="text-[11px] font-black text-white">{stat.val}</span>
+                    <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
+                      <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
+                      <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                        <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                       </div>
-                      <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                      </div>
+                      <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
                     </div>
                   ))}
                 </div>
