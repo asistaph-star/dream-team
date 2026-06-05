@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Player } from "@/lib/types/player";
 import { lowPolyBg } from "@/lib/constants/visuals";
 import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRight, Plus } from "lucide-react";
-import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain } from "@/lib/utils/starGrowth";
+import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain, getStarGrowthGain } from "@/lib/utils/starGrowth";
 import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
 import { SkillBadge } from "@/components/skills/SkillBadge";
 import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEXT, getSkillQualityRate, BASE_SKILL_RATES } from "@/lib/skills/skillCatalog";
@@ -72,7 +72,15 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
     { label: 'Assist', val: details.assist },
     { label: 'Calm', val: details.calm }
   ];
-  const attributeVisualMax = Math.max(180, ...attributeRows.map(stat => stat.val));
+  const secondaryRows = [
+    { label: 'Basketball IQ', val: details.basketballIQ },
+    { label: 'Hustle', val: details.hustle },
+    { label: 'Finishing', val: details.finishing },
+    { label: 'Speed', val: player.speed },
+    { label: 'Strength', val: player.strength },
+    { label: 'Stamina', val: player.stamina ?? 100 }
+  ];
+  const attributeVisualMax = Math.max(180, ...attributeRows.map(stat => stat.val), ...secondaryRows.map(stat => stat.val));
 
   // Extract skills (fallback to placeholders if undefined in mock data)
   const baseSkills = player.baseSkills || ['Shoot', 'Pass', 'Defend'];
@@ -171,24 +179,49 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           <div className="flex-1 h-full relative flex flex-col p-8 z-10">
             
             {/* Top Attributes Panel */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-3">
-                <Activity className="text-cyan-400 w-4 h-4" />
-                <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
+            <div className="mb-6 grid grid-cols-2 gap-x-8">
+              {/* Left Column: Core Attributes */}
+              <div>
+                <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
+                  <Activity className="text-cyan-400 w-4 h-4" />
+                  <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
+                </div>
+                
+                <div className="flex flex-col gap-2.5">
+                  {attributeRows.map(stat => (
+                    <div key={stat.label} className="flex flex-col gap-1">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
+                        <span className="text-[11px] font-black text-white">{stat.val}</span>
+                      </div>
+                      <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                        <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                {attributeRows.map(stat => (
-                  <div key={stat.label} className="flex flex-col gap-1.5">
-                    <div className="flex justify-between items-end">
-                      <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
-                      <span className="text-[12px] font-black text-white ">{stat.val}</span>
+
+              {/* Right Column: Detailed & Physicals */}
+              <div>
+                <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
+                  <Activity className="text-emerald-400 w-4 h-4" />
+                  <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Detailed & Physicals</h3>
+                </div>
+                
+                <div className="flex flex-col gap-2.5">
+                  {secondaryRows.map(stat => (
+                    <div key={stat.label} className="flex flex-col gap-1">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{stat.label}</span>
+                        <span className="text-[11px] font-black text-white">{stat.val}</span>
+                      </div>
+                      <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                        <div className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                      </div>
                     </div>
-                    <div className="h-1 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                      <div className="h-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -415,56 +448,123 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       </div>
 
                       {/* Stats List */}
-                      <div className="bg-black/40 px-5 py-4 border border-white/5 rounded-lg flex flex-col gap-4 shadow-inner">
+                      <div className="bg-black/40 border border-white/5 rounded-lg flex flex-col shadow-inner overflow-hidden flex-1 min-h-[140px]">
                         {(() => {
+                          const projectedDetails = getDetailedAttributes(projectedPlayer);
                           const currentGrowth = getCumulativeStarGrowthGain(currentStars);
                           const targetGrowth = getCumulativeStarGrowthGain(targetStars);
 
-                          let row3Label = "Star Level";
-                          let row3Cur = `Lv ${currentStars}`;
-                          let row3Proj = `Lv ${targetStars}`;
-
+                          let skillUnlockRow = null;
                           if (targetStars === 1) {
-                            row3Label = "Special Skill 1";
-                            row3Cur = "Locked";
-                            row3Proj = "Unlocked";
+                            skillUnlockRow = (
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-emerald-400 font-bold">Special Skill Slot 1</span>
+                                <span className="text-emerald-400 font-extrabold uppercase">Unlocked</span>
+                              </div>
+                            );
                           } else if (targetStars === 5) {
-                            row3Label = "Special Skill 2";
-                            row3Cur = "Locked";
-                            row3Proj = "Unlocked";
+                            skillUnlockRow = (
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-emerald-400 font-bold">Special Skill Slot 2</span>
+                                <span className="text-emerald-400 font-extrabold uppercase">Unlocked</span>
+                              </div>
+                            );
                           }
 
                           return (
-                            <>
-                              <div className="flex justify-between items-center relative">
-                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">All Attributes</span>
-                                <div className="flex items-center gap-3  text-[14px] font-bold">
-                                  <span className="text-white">{currentGrowth.attributeGain}</span>
-                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
-                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.attributeGain}</span>
-                                </div>
-                              </div>
-                              <div className="w-full h-[1px] bg-white/5" />
+                            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+                              <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Gameplay Upgrades</div>
+                              
+                              {skillUnlockRow}
 
-                              <div className="flex justify-between items-center relative">
-                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">Stamina</span>
-                                <div className="flex items-center gap-3  text-[14px] font-bold">
-                                  <span className="text-white">{currentGrowth.staminaGain}</span>
+                              {/* Stamina */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Stamina</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-white">{player.stamina ?? 100}</span>
                                   <ArrowRight className="w-3 h-3 text-zinc-600" />
-                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{targetGrowth.staminaGain}</span>
+                                  <span className="text-emerald-400">{projectedPlayer.stamina ?? 100}</span>
                                 </div>
                               </div>
-                              <div className="w-full h-[1px] bg-white/5" />
 
-                              <div className="flex justify-between items-center relative">
-                                <span className="text-zinc-400 text-[11px] font-black tracking-widest uppercase">{row3Label}</span>
-                                <div className="flex items-center gap-3  text-[14px] font-bold">
-                                  <span className="text-white">{row3Cur}</span>
+                              {/* Hustle */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Hustle (Full-Rate)</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-white">{details.hustle}</span>
                                   <ArrowRight className="w-3 h-3 text-zinc-600" />
-                                  <span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">{row3Proj}</span>
+                                  <span className="text-emerald-400">{projectedDetails.hustle}</span>
                                 </div>
                               </div>
-                            </>
+
+                              {/* Basketball IQ */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Basketball IQ (Half-Rate)</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-white">{details.basketballIQ}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-emerald-400">{projectedDetails.basketballIQ}</span>
+                                </div>
+                              </div>
+
+                              {/* Finishing */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Finishing</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-white">{details.finishing}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-emerald-400">{projectedDetails.finishing}</span>
+                                </div>
+                              </div>
+
+                              {/* Other Game Ratings */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Other Game Ratings</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-white">+{targetGrowth.attributeGain - currentGrowth.attributeGain}</span>
+                                </div>
+                              </div>
+
+                              {/* Divider */}
+                              <div className="h-[1px] bg-white/5 my-1" />
+                              <div className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Protected Fields</div>
+
+                              {/* OVR */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">OVR Rating</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-zinc-500">{player.ovr}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-zinc-500 font-extrabold">{player.ovr} (Protected)</span>
+                                </div>
+                              </div>
+
+                              {/* Salary */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Salary</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-zinc-500">{player.salary ?? 500}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-zinc-500 font-extrabold">{player.salary ?? 500} (Protected)</span>
+                                </div>
+                              </div>
+
+                              {/* Rarity */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Rarity</span>
+                                <div className="flex items-center gap-2 font-bold">
+                                  <span className="text-zinc-500">{player.rarity}</span>
+                                  <ArrowRight className="w-3 h-3 text-zinc-600" />
+                                  <span className="text-zinc-500 font-extrabold">{player.rarity} (Protected)</span>
+                                </div>
+                              </div>
+
+                              {/* Tendencies */}
+                              <div className="flex justify-between items-center text-[11px] py-0.5">
+                                <span className="text-zinc-400 font-medium">Tendencies</span>
+                                <span className="text-zinc-500 font-extrabold">No change (Protected)</span>
+                              </div>
+                            </div>
                           );
                         })()}
                       </div>

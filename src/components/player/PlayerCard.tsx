@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Player, PlayerRarity } from "@/lib/types/player";
 import { getTierRating, getTierColor, mockPlayers } from "@/lib/data/mockPlayers";
 import { useGameState } from "@/lib/context/GameStateContext";
-import { getDerivedOffenseDefense } from "@/lib/utils/starGrowth";
+import { getDerivedOffenseDefense, getDetailedAttributes } from "@/lib/utils/starGrowth";
 import { SkillBadge, SkillBadgeColor, skillQualityStyles, skillBadgeStyles } from "@/components/skills/SkillBadge";
 
 // Inject CSS styles globally exactly once to prevent React drag-and-drop from unmounting/remounting <style> tags
@@ -411,6 +411,13 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
   const defenseBonus = Math.max(0, Math.round((player.defense ?? baseDefense) - baseDefense));
   const staminaBonus = Math.max(0, Math.floor((player.stamina ?? baseStamina) - baseStamina));
 
+  const currentDetailed = getDetailedAttributes(player);
+  const baseDetailed = getDetailedAttributes(basePlayer ?? player);
+  const iqBonus = Math.max(0, Math.round(currentDetailed.basketballIQ - baseDetailed.basketballIQ));
+  const hustleBonus = Math.max(0, Math.round(currentDetailed.hustle - baseDetailed.hustle));
+  const finishingBonus = Math.max(0, Math.round(currentDetailed.finishing - baseDetailed.finishing));
+  const assistBonus = Math.max(0, Math.round(currentDetailed.assist - baseDetailed.assist));
+
   const StatWithBonus = ({ base, bonus }: { base: number; bonus: number }) => (
     <span className="font-extrabold flex items-baseline gap-1">
       <span className="text-white">{Math.round(base)}</span>
@@ -487,6 +494,25 @@ function StatsContent({ player, tierColor, tierRating, isHover, onFireClick, onC
         <div className="flex gap-1 items-center">
           <span className="text-gray-400">TO:</span>
           <span className="font-extrabold text-white">{player.topg?.toFixed(1) ?? '0.0'}</span>
+        </div>
+
+        <div className="h-[1px] bg-white/10 col-span-2 my-1" />
+
+        <div className="flex gap-1 items-center">
+          <span className="text-gray-400">Basketball IQ:</span>
+          <StatWithBonus base={baseDetailed.basketballIQ} bonus={iqBonus} />
+        </div>
+        <div className="flex gap-1 items-center">
+          <span className="text-gray-400">Hustle:</span>
+          <StatWithBonus base={baseDetailed.hustle} bonus={hustleBonus} />
+        </div>
+        <div className="flex gap-1 items-center">
+          <span className="text-gray-400">Finishing:</span>
+          <StatWithBonus base={baseDetailed.finishing} bonus={finishingBonus} />
+        </div>
+        <div className="flex gap-1 items-center">
+          <span className="text-gray-400">Assist:</span>
+          <StatWithBonus base={baseDetailed.assist} bonus={assistBonus} />
         </div>
 
         <div className="col-span-2 border-t border-gray-700/50 pt-2 mt-1">
