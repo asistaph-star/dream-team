@@ -97,10 +97,12 @@ This document provides a comprehensive verification log and completion tracker f
 * **Status**: DONE
 * **Evidence File Paths**:
   * [starRequirements.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starRequirements.ts) (Exact 20-duplicate matrix limits duplicate requirements to approved milestones)
-  * [starGrowth.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starGrowth.ts) (applyStarGrowth, repairStarGrowth, getDetailedAttributes)
+  * [starGrowth.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starGrowth.ts) (applyStarGrowth, repairStarGrowth, getDetailedAttributes, handles finishing stat growth and repair)
+  * [nbaAttributeMapper.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/nbaAttributeMapper.ts) (deriveAttributesFromNbaStats maps finishing baseline)
+  * [mockPlayers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/data/mockPlayers.ts) (maps finishing to mock player card properties)
   * [GameStateContext.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/context/GameStateContext.tsx#L949) (ascendPlayer, success rates, failure safety, learned skill sacrifice warning, clean copy prioritization)
-* **What Code Does**: Locks card upgrade safety and duplicate count requirements. Upgrade success rate starts at 100% (Silver ★1) and bottoms at 5% (Red ★5). Materials are consumed on failure but card and duplicates remain safe. Star growth is repaired on reload.
-* **Tests**: [test_upgrade_system_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_upgrade_system_final_lock.ts) passes.
+* **What Code Does**: Locks card upgrade safety and duplicate count requirements. Upgrade success rate starts at 100% (Silver ★1) and bottoms at 5% (Red ★5). Materials are consumed on failure but card and duplicates remain safe. Star growth is repaired on reload. Fully integrates the finishing sub-attribute into both star growth and NBA stats derivation mapping.
+* **Tests**: [test_upgrade_system_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_upgrade_system_final_lock.ts) and [test_player_attribute_integrity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_player_attribute_integrity.ts) pass.
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Proceed to NBADataPipelineFinalLock.
 
