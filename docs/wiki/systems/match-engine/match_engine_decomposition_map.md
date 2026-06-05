@@ -3,7 +3,9 @@
 This document maps the decomposition of `matchEngine.ts` (~3,680 lines) into cleaner modular systems.
 
 - **Original line count**: 3,682
-- **Preflight latest commit**: `a996543d83f3e1b3c95a0bc08e3d0628e8334a17`
+- **Batch A commit**: `0605221b6d0819ce299dfbf87c933c8b41ca0fa8`
+- **Batch B commit**: `58c271d2f048947d29a221aebbd7a69d5703997c`
+- **Current line count (matchEngine.ts)**: 3,527
 
 ---
 
