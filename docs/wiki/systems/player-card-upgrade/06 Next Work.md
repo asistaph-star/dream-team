@@ -12,11 +12,13 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 |---|---|
 | Lineup archetype system | Built and gameplay-connected |
 | Archetype detection UI | Built |
-| Regression test suite | Strong and active (36/36 passing) |
+| Regression test suite | Strong and active (38/38 passing) |
 | First big balance pass | Complete |
 | 22 Base Skills final-lock | Done |
 | 15 Learned Special Skill Families | Done, 15/15 active and rollable |
 | Legacy X Skills | Migration-only and non-rollable |
+| Player Attribute final-audit | Done |
+| OVR protection / Star-up separation | Done |
 | matchEngine architecture cleanup | In progress |
 
 ---
@@ -87,10 +89,10 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Phase LearnedFamilyFinalLock** - Final Verification Lock for All 15 Learned Skill Families.
+**Phase BaseSkillRealDataLock** - Final verification of Base Skill mapping templates, validation of sync:players pipeline, and verification of real rosters season transition.
 
 ### Goal
-Verify all 15 family skills are active, rollable, mapped to mechanics, tested, displayed cleanly in the UI, and separated from the 22 base skills and legacy X migration.
+Validate dynamic statistical templates, ensure base skill assignment logic matches the newly calculated dynamic attributes, and verify season transitions.
 
 ### Future Phase
-**Phase PlayerAttributeFinalAudit** / **BaseSkillRealDataLock** - Final verification of player attributes mapping, rating bounds, and real-data verification.
+**Phase UpgradeSystemCompletion** - If any upgrades or modifications to duplicate requirements or failure metrics are needed.

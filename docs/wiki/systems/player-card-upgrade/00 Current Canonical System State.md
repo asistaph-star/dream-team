@@ -8,14 +8,31 @@ This is the single source of truth for the Player Card, Upgrade, and Skill syste
 `src/lib/types/player.ts` defines the player card: name, position, rarity, level, EXP, OVR, offense, defense, shooting, speed, strength, playmaking, stamina, salary, price, trend, detailed attributes, current-season stats, injury status, star level, base skills, special learned skill slots, skill rarities, and skill tiers.
 
 ## OVR
-- OVR comes **only** from the NBA Data Pipeline (`players_update.json` → `mockPlayers.ts` → `nbaAttributeMapper.ts`).
-- Star-up **does not** increase OVR.
+- OVR comes **only** from the NBA Data Pipeline (`players_update.json` ➔ `mockPlayers.ts` ➔ `nbaAttributeMapper.ts`).
+- Star-up **does not** increase OVR. `applyStarGrowth` explicitly enforces `ovr: player.ovr`.
+- Card rarity matches OVR brackets (Mythic: 95+, Legendary: 85-94, Epic: 75-84, Rare: 65-74, Common: <65).
 
 ## Star-Up
 - Star-up only boosts gameplay attributes and unlocks Learned Skill slots.
 - 25 total star levels across 5 tiers: Silver, Blue, Violet, Orange, Red (5 levels each).
+- **Boost Values**:
+  - Stamina: +2 per star level.
+  - Detailed gameplay attributes (`threePt`, `twoPt`, `freeThrow`, `handle`, `assist`, `steal`, `block`, `rebound`, `onBall`, `calm`) and core sub-ratings (`shooting`, `playmaking`, `speed`, `strength`) are boosted by `attributeGain` matching the star's color tier:
+    - Silver/Blue: +1 per star level
+    - Violet: +2 per star level
+    - Orange: +3 per star level
+    - Red: +4 per star level
+- **Preservation & Repair**:
+  - Roster load calls `repairStarGrowth(player, baseline)` which completely resets stats to baseline and re-applies star growth based on the current `starLevel`. This prevents double-applied boosts, and guarantees data integrity on load.
 - Learned Skill Slot 1 unlocks at Star 1.
 - Learned Skill Slot 2 unlocks at Star 5.
+
+## Player Tendencies
+- **threePtTendency**: Controls the base 2PT/3PT shot selection ratio inside `generateShot`.
+- **driveTendency**: Scales driving/rim shot frequency (e.g. drivingLayup, euroStep, floater, fingerRoll, dunk, powerLayup).
+- **pullUpTendency**: Scales pull-up jumper shot frequency (e.g. pullUpMid, stepBackMid, fadeaway, pullUpThree, stepBackThree).
+- **foulDrawTendency**: Scales base shooting foul chance and increases activation chance of foul-related skills (Flop and Four-Point Bait).
+- **Stamina Decay Gating**: Drive and pull-up tendency multipliers scale down using stepped stamina factor buckets based on current player stamina (>=70%: 1.0x, >=40%: 0.75x, >=20%: 0.50x, <20%: 0.25x).
 
 ---
 

@@ -58,6 +58,29 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: MEDIUM
 * **Recommended Next Step**: Monitor rescue frequency and scoring rates.
 
+### 6. Player Tendencies Integration
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [playerIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerIdentity.ts#L71-L105) (getThreePtTendency, getDriveTendency, getPullUpTendency, getFoulDrawTendency)
+  * [shotEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/shotEngine.ts#L113) (uses calculateShotIntentWeights to scale shot weights)
+  * [playerIntentSelection.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/playerIntentSelection.ts) (calculateShotIntentWeights scales driveTendency and pullUpTendency based on stamina)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts#L1716) (uses getFoulDrawTendency to determine base foul chances and flop/four-point bait triggers)
+* **What Code Does**: Applies drive, pull-up, three-point, and foul draw tendencies directly inside the gameplay loop, properly scaled down by player fatigue.
+* **Tests**: [test_tendency_wiring.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_tendency_wiring.ts) passes.
+* **Risk Level**: MEDIUM
+* **Recommended Next Step**: Maintain as-is.
+
+### 7. Player Attribute Integrity and OVR Protection
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [starGrowth.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starGrowth.ts#L119) (applyStarGrowth sets ovr: player.ovr)
+  * [GameStateContext.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/context/GameStateContext.tsx#L949) (ascendPlayer consumes duplicates and updates player cards via applyStarGrowth)
+  * [starRequirements.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starRequirements.ts#L3) (getRequiredDuplicateCount handles duplicate gating)
+* **What Code Does**: Guarantees OVR and salaries are protected from star-up upgrades. Star-up upgrades only boost core gameplay attributes and stamina, and unlock learned skill slots. Roster load safely repairs star growth to prevent double-boosting.
+* **Tests**: [test_player_attribute_integrity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_player_attribute_integrity.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Proceed to BaseSkillRealDataLock.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
@@ -97,18 +120,7 @@ This document provides a comprehensive verification log and completion tracker f
 
 ## Section 3: Partial Systems
 
-### 1. Player Tendencies Integration
-* **Status**: PARTIAL
-* **Evidence File Paths**:
-  * [player.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/types/player.ts#L74-L77) (threePtTendency, driveTendency, pullUpTendency, foulDrawTendency definitions)
-  * [playerIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerIdentity.ts#L71-L105) (getThreePtTendency, getDriveTendency, getPullUpTendency, getFoulDrawTendency)
-  * [shotEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/shotEngine.ts#L51) (uses getThreePtTendency)
-  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts#L1628) (uses getFoulDrawTendency)
-* **Missing Work**: driveTendency and pullUpTendency are defined and mapped but are never referenced anywhere in matchEngine.ts, shot resolution, or play intent.
-* **Risk Level**: MEDIUM
-* **Recommended Next Step**: Integrate driveTendency and pullUpTendency into playIntent.ts and shot selection calculations.
-
-### 2. Strategy Commentary Hints
+### 1. Strategy Commentary Hints
 * **Status**: PARTIAL
 * **Evidence File Paths**:
   * [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts#L138-L250) (getSubtleStrategyHint)
@@ -181,8 +193,9 @@ All core special skill family implementations are complete:
 - Phase TendencyWiring: Completed and verified.
 - Phase MomentumSwing: Completed and verified.
 - Phase BrokenPlayRescue: Completed and verified.
+- Phase LearnedFamilyFinalLock: Completed and verified.
+- Phase PlayerAttributeFinalAudit: Completed and verified.
 
 Next phases:
-1. **Phase LearnedFamilyFinalLock**: Final verification lock for all 15 learned special skill families, ensuring they are active, rollable, mapped to mechanics, tested, displayed cleanly, and separated from the 22 base skills and legacy X migration.
-2. **Phase PlayerAttributeFinalAudit** / **BaseSkillRealDataLock**: Final verification of player attributes mapping, base skills, and real-data verification.
+1. **Phase BaseSkillRealDataLock**: Lock down Base Skill mapping templates, validation of sync:players pipeline, and verification of real rosters season transition.
 
