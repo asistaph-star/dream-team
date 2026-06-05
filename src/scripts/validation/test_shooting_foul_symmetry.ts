@@ -66,7 +66,7 @@ async function run() {
     "User path: Discipline Wall holders lookup from aiLineup present"
   );
   assert(
-    engineContent.includes("const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);"),
+    engineContent.includes("const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);"),
     "User path: maxRating computed from aiLineup holders"
   );
   assert(
@@ -103,7 +103,7 @@ async function run() {
     "AI path: dwHolders lookup from userLineup present"
   );
   assert(
-    engineContent.includes("const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);"),
+    engineContent.includes("const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);"),
     "AI path: dwMaxRating computed from userLineup holders"
   );
   assert(

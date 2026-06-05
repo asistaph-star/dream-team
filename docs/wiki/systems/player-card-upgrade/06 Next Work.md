@@ -25,6 +25,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | Legacy X Skills | Migration-only and non-rollable |
 | Player Attribute final-audit | Done |
 | OVR protection / Star-up separation | Done |
+| Attribute Model Refinement (IQ & Hustle) | Done |
+| Match Engine Wiring (IQ & Hustle Wiring) | Done |
 | matchEngine architecture cleanup | In progress |
 
 ---
@@ -60,6 +62,7 @@ Rule: Always run npx tsc --noEmit + full regression suite before committing any 
 | reboundSystem.ts | 1E | Partial | REB_W, getPositionReboundWeight, calculateTeamReboundScore, calculateOffensiveReboundChance, calculateGlassScale, calculateBarrierScale |
 | foulSystem.ts | 1F | Partial | FOUL_W, getPositionFoulWeight, getFoulStaminaModifier, getClutchRatingByRarity, calculateCrowdNoisePenalty, calculateFreeThrowChance, calculateBaseShootingFoulChance, calculateFourPointBaitBoost |
 | brokenPlayRescue.ts | BrokenPlayRescue | Done | getBrokenPlayRescueIdentity, calculateBrokenPlayRescueChanceScale, calculateBrokenPlayRescueStaminaCost, calculateBrokenPlayRescueShotPenalty |
+| attributeGameplayEffects.ts | MatchEngineWiring | Done | Pure gameplay modifiers for basketballIQ and hustle attributes |
 
 ---
 
@@ -95,10 +98,10 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Phase NBADataPipelineFinalLock** - Syncing/source stability checks and verification of real rosters season transition.
+**Phase UI** - Update frontend components to display the new detailed attributes (`basketballIQ` and `hustle`).
 
 ### Goal
-Ensure that the NBA Data Pipeline runs reliably, attributes derive correctly from tradition stats without regression, and season transition processes cleanly.
+Implement visual elements in the hex chart, player detail panels, card compare overlay, and roster screens to correctly display and represent these gameplay attributes.
 
 ### Future Phase
 **Phase MatchRealismCalibration** - Tapping matchEngine scoring, foul rates, and stamina fatigue details for maximum realism.

@@ -12,8 +12,9 @@
  */
 
 import { Player } from "../types/player";
-import { getReboundRating } from "../utils/playerIdentity";
+import { getReboundRating, getHustleRating } from "../utils/playerIdentity";
 import { getPlayerStaminaMod } from "../utils/matchTypes";
+import { calculateHustleReboundModifier } from "./attributeGameplayEffects";
 
 // ─── Position Rebound Weights ─────────────────────────────────────────────────
 // Exact values from matchEngine.ts — do not change.
@@ -50,7 +51,8 @@ export function calculateTeamReboundScore(
       s +
       getReboundRating(p) *
         (REB_W[p.position] || 1.0) *
-        getPlayerStaminaMod(p, staminaMap[p.id]),
+        getPlayerStaminaMod(p, staminaMap[p.id]) *
+        calculateHustleReboundModifier(getHustleRating(p)),
     0
   );
 }

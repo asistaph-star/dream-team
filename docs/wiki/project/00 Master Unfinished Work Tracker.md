@@ -116,9 +116,7 @@ This document provides a comprehensive verification log and completion tracker f
 * **What Code Does**: Guarantees players are parsed correctly from players_update.json data source, verifies OVR ranking brackets, delta caps, salary formulas, season transition stats fallbacks, pre-match injury availability, and enforces that no random in-match injuries exist.
 * **Tests**: [test_nba_data_pipeline_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_nba_data_pipeline_final_lock.ts) passes.
 * **Risk Level**: SAFE
-* **Recommended Next Step**: Maintain as-is.
-
-### 11. Attribute Model Refinement (IQ & Hustle)
+* **Recommended Next Step**: Maintain as-is### 11. Attribute Model Refinement (IQ & Hustle)
 * **Status**: DONE
 * **Evidence File Paths**:
   * [player.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/types/player.ts) (Player interface detailed attributes)
@@ -130,6 +128,18 @@ This document provides a comprehensive verification log and completion tracker f
 * **Tests**: [test_attribute_model_refinement.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_attribute_model_refinement.ts) and [test_player_attribute_integrity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_player_attribute_integrity.ts) pass.
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Proceed to matchEngine wiring phase.
+
+### 12. Match Engine Wiring (IQ & Hustle Integration)
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [attributeGameplayEffects.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/attributeGameplayEffects.ts) (turnover, rebound, Discipline Wall scale, pressure shot, hustle contest helpers)
+  * [shotResolution.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/shotResolution.ts) (hustleContestMod and basketballIQPressureMod parameters and math)
+  * [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) (hustle-based rebound score multiplier)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (wired turnover scaling, Discipline Wall scaling, pressure shot mitigation, and hustle contest multipliers)
+* **What Code Does**: Integrates the new detailed attributes directly into match gameplay equations, providing defensive contest bonuses, pressure resistance, rebound enhancement, and turnover reduction.
+* **Tests**: [test_attribute_gameplay_wiring.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_attribute_gameplay_wiring.ts) and [test_shooting_foul_symmetry.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_shooting_foul_symmetry.ts) pass.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Proceed to UI updates phase.
 
 ---
 
@@ -194,7 +204,7 @@ None. All 15 planned learned special skill families and mechanics are now fully 
   * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts#L1482-L3155) (User and AI possession blocks)
 * **Reason Blocked**: The core tick loops, time increments, and event narrative logs are highly coupled with the local variables within simulateTick's massive closure. Extracting the event array mutations (newEvents.push) and RNG rolls out of the main file risks breaking deterministic replay sync, tick durations, and match sequence ordering.
 * **Risk Level**: CRITICAL
-* **Recommended Next Step**: Do not attempt to extract the core game loop. Keep simulateTick as the controller.
+* **Recommended Next Step**: Do not attempt to extract the game loop. Keep simulateTick as the controller.
 
 ---
 
@@ -249,9 +259,10 @@ All core special skill family implementations are complete:
 - Phase UpgradeSystemFinalLock: Completed and verified.
 - Phase NBADataPipelineFinalLock: Completed and verified.
 - Phase AttributeModelRefinement: Completed and verified.
+- Phase MatchEngineWiring: Completed and verified.
 
 Next phases:
-1. **Phase MatchEngineWiring**: Integration of basketballIQ and hustle attributes into the match simulation loop formulas.
+1. **Phase UI**: Update hex chart, player detail panels, and compare card overlay components to display the new attributes.las.
 
 
 

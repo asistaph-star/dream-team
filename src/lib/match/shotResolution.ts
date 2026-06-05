@@ -14,6 +14,8 @@ export interface ShotScoringChanceParams {
   difficultyMod: number;
   decisionWeightMod: number;
   maxCeilingLimit: number;
+  basketballIQPressureMod?: number;
+  hustleContestMod?: number;
 }
 
 export function getHomeCourtBoost(rarity: string, crowdEnergy: number, rallyMode: boolean): number {
@@ -119,6 +121,13 @@ export function calculateFinalScoringChance(params: ShotScoringChanceParams): nu
                        params.usageMod;
   const withDecision = baseAdjusted * params.decisionWeightMod;
   const with3PTMod = withDecision * params.individual3ptMod;
-  const total = with3PTMod + params.additiveBonus + params.difficultyMod;
+  
+  const hustleContestMod = params.hustleContestMod ?? 1.0;
+  const hustleContestFactor = 1.0 / hustleContestMod;
+  const withHustle = with3PTMod * hustleContestFactor;
+
+  const iqPressureMod = params.basketballIQPressureMod ?? 0.0;
+  
+  const total = withHustle + params.additiveBonus + params.difficultyMod + iqPressureMod;
   return Math.max(0.15, Math.min(params.maxCeilingLimit, total));
 }

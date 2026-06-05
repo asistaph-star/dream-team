@@ -96,13 +96,19 @@ import {
   calculateBrokenPlayRescueShotPenalty
 } from "../match/brokenPlayRescue";
 import {
+  calculateBasketballIQTurnoverModifier,
+  calculateBasketballIQShotQualityModifier,
+  calculateBasketballIQDisciplineScale,
+  calculateHustleContestModifier
+} from "../match/attributeGameplayEffects";
+import {
   getTovStamMod as extGetTovStamMod,
   getLowestStaminaPlayer as extGetLowestStaminaPlayer,
   getPrimaryBallHandler as extGetPrimaryBallHandler,
   isEnergyDrinkLocked as extIsEnergyDrinkLocked,
   getUsageMod as extGetUsageMod
 } from "../match/playerMatchModifiers";
-import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating } from "./playerIdentity";
+import { getFreeThrowRating, getFoulDrawTendency, getFinishingRating, getThreePtRating, getReboundRating, getStealRating, getBlockRating, getHandleRating, getAssistRating, getShotIdentityEfficiencyAdjustment, getOnBallDefenseRating, getSpeedRating, getStrengthRating, getOffenseRating, getTwoPtRating, getStaminaRating, getCalmRating, getBasketballIQRating, getHustleRating } from "./playerIdentity";
 import {
   addMark,
   consumeMark,
@@ -1362,13 +1368,19 @@ export function simulateTick(
       const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (cageStepIdentity / 100) * 0.20;
     }) ? 1.12 : 1.0;
-    const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure * lockChainTOVMod);
+    const committerForRescue = pickCommitter(userLineup);
+    const candidateIQ = getBasketballIQRating(committerForRescue);
+    const primaryBallhandler = userLineup.find(p => p.position === 'PG') || userLineup[0];
+    const pbIQ = getBasketballIQRating(primaryBallhandler);
+    const teamAvgIQ = userLineup.reduce((sum, p) => sum + getBasketballIQRating(p), 0) / userLineup.length;
+    const chosenIQ = candidateIQ ?? pbIQ ?? teamAvgIQ;
+    const iqTovMod = calculateBasketballIQTurnoverModifier(chosenIQ);
+
+    const finalTOVChance = Math.min(0.25, baseTOVRate * defPressureMod * tovStamMod * lateClockMod * handsActivePressure * screenBreakerPressure * cageStepPressure * lockChainTOVMod * iqTovMod);
     let userBrokenPlayRescued = false;
     let userBrokenPlayRescuedScorer: Player | null = null;
     let isTovRolled = Math.random() < finalTOVChance;
-    let committerForRescue: Player | null = null;
     if (isTovRolled) {
-      committerForRescue = pickCommitter(userLineup);
       const rescueUsesKey = `User Broken Play Rescue Q${newQuarter}`;
       if (!hasTeamSkillUsed(true, rescueUsesKey) && rollSpecialMechanic([committerForRescue], "BROKEN_PLAY_RESCUE_SAVE", newStamina, (h) => {
         return calculateBrokenPlayRescueChanceScale(getBrokenPlayRescueIdentity(h), staminaPct(h));
@@ -1761,8 +1773,8 @@ export function simulateTick(
             } else if (disciplineWall) {
               skillLog(`Discipline Wall holds off Four-Point Bait X`, false);
               const holders = aiLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
-              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
-              const disciplineScale = calculateDisciplineScale(maxRating);
+              const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);
+              const disciplineScale = calculateBasketballIQDisciplineScale(maxRating);
               skillShotBonus -= 0.03 * disciplineScale;
             } else {
               const baitSummary = resolveLineupArchetypes(userLineup);
@@ -1820,6 +1832,15 @@ export function simulateTick(
 
           const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
 
+          const iqContext = {
+            isLateClock: pace === 'late_clock',
+            isLowStamina: staminaPct(scorer) <= 0.65,
+            isHeavyContest: primaryDefender !== undefined && getOnBallDefenseRating(primaryDefender) >= 80,
+            isBrokenPlayRescue: userBrokenPlayRescued
+          };
+          const basketballIQPressureMod = calculateBasketballIQShotQualityModifier(getBasketballIQRating(scorer), iqContext);
+          const hustleContestMod = primaryDefender ? calculateHustleContestModifier(getHustleRating(primaryDefender)) : 1.0;
+
           const finalScoringChance = calculateFinalScoringChance({
             finalChance,
             staminaMod: shooterStamMod,
@@ -1832,7 +1853,9 @@ export function simulateTick(
             additiveBonus: cappedAdditiveBonus,
             difficultyMod: shotValueDifficulty,
             decisionWeightMod,
-            maxCeilingLimit: 0.85
+            maxCeilingLimit: 0.85,
+            basketballIQPressureMod,
+            hustleContestMod
           });
           const isSuccess = Math.random() < finalScoringChance;
           if (is3PT) {
@@ -2392,6 +2415,15 @@ export function simulateTick(
 
             const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
 
+            const iqContext = {
+              isLateClock: pace === 'late_clock',
+              isLowStamina: staminaPct(scorer) <= 0.65,
+              isHeavyContest: primaryDefender !== undefined && getOnBallDefenseRating(primaryDefender) >= 80,
+              isBrokenPlayRescue: false
+            };
+            const basketballIQPressureMod = calculateBasketballIQShotQualityModifier(getBasketballIQRating(scorer), iqContext);
+            const hustleContestMod = primaryDefender ? calculateHustleContestModifier(getHustleRating(primaryDefender)) : 1.0;
+
             const aiBlitzFinalChance = calculateFinalScoringChance({
               finalChance,
               staminaMod: aiScorerStamMod,
@@ -2404,7 +2436,9 @@ export function simulateTick(
               additiveBonus: aiBlitzCappedAdditiveBonus,
               difficultyMod: aiBlitzShotValueDifficulty,
               decisionWeightMod: 1.0,
-              maxCeilingLimit: 0.80
+              maxCeilingLimit: 0.80,
+              basketballIQPressureMod,
+              hustleContestMod
             });
             const isSuccess = Math.random() < aiBlitzFinalChance;
             if (is3PT) {
@@ -2692,8 +2726,8 @@ export function simulateTick(
               } else if (disciplineWall) {
                 skillLog(`Discipline Wall holds off Four-Point Bait X`, true);
                 const dwHolders = userLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
-                const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getOnBallDefenseRating(p))) : (primaryDefender ? getOnBallDefenseRating(primaryDefender) : 50);
-                const disciplineScale = calculateDisciplineScale(dwMaxRating);
+                const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);
+                const disciplineScale = calculateBasketballIQDisciplineScale(dwMaxRating);
                 aiSkillShotBonus -= 0.03 * disciplineScale;
               } else {
                 const baitSummary = resolveLineupArchetypes(aiLineup);
@@ -2741,6 +2775,15 @@ export function simulateTick(
 
             const individual3ptMod = is3PT ? getIndividualThreePointShotMod(scorer.shooting) : 1.0;
 
+            const iqContext = {
+              isLateClock: pace === 'late_clock',
+              isLowStamina: staminaPct(scorer) <= 0.65,
+              isHeavyContest: primaryDefender !== undefined && getOnBallDefenseRating(primaryDefender) >= 80,
+              isBrokenPlayRescue: false
+            };
+            const basketballIQPressureMod = calculateBasketballIQShotQualityModifier(getBasketballIQRating(scorer), iqContext);
+            const hustleContestMod = primaryDefender ? calculateHustleContestModifier(getHustleRating(primaryDefender)) : 1.0;
+
             const aiFinalChance = calculateFinalScoringChance({
               finalChance,
               staminaMod: aiScorerStamMod,
@@ -2753,7 +2796,9 @@ export function simulateTick(
               additiveBonus: aiCappedAdditiveBonus,
               difficultyMod: aiShotValueDifficulty,
               decisionWeightMod: 1.0,
-              maxCeilingLimit: 0.85
+              maxCeilingLimit: 0.85,
+              basketballIQPressureMod,
+              hustleContestMod
             });
             const isSuccess = Math.random() < aiFinalChance;
             if (is3PT) {
