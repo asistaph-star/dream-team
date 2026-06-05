@@ -1,4 +1,4 @@
-import { Player } from "../types/player";
+import { Player, InjuryStatus } from "../types/player";
 import { assignBaseSkillsFromStats } from "../skills/assignBaseSkills";
 
 // ═══════════════════════════════════════════════════════
@@ -887,12 +887,28 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
 
   // 2. Apply Dynamic Injury Status Mappings
   const injury = (injuriesData as Record<string, any>)[key];
-  if (injury && injury.isInjured) {
+  if (injury) {
+    const status = injury.status ?? (injury.isInjured ? "OUT" : "AVAILABLE");
+    const injuryStatus: InjuryStatus = {
+      status: status,
+      reason: injury.injuryName ?? injury.reason,
+      bodyPart: injury.bodyPart,
+      expectedReturn: injury.expectedReturn,
+      source: injury.source ?? "LOCAL_SYNC",
+      updatedAt: injury.updatedAt,
+    };
     return {
       ...updatedPlayer,
-      isInjured: true,
-      injuryName: injury.injuryName
+      isInjured: status !== "AVAILABLE",
+      injuryName: injury.injuryName,
+      injuryStatus
     };
   }
-  return updatedPlayer;
+  return {
+    ...updatedPlayer,
+    injuryStatus: {
+      status: "AVAILABLE",
+      source: "LOCAL_SYNC"
+    }
+  };
 });

@@ -5,6 +5,17 @@ import { CardEra, SkillTier, DataSource } from "../players/playerCardTypes";
 export type PlayerPosition = 'PG' | 'SG' | 'SF' | 'PF' | 'C';
 export type PlayerRarity = 'Common' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic';
 
+export type InjuryStatusCode = 'AVAILABLE' | 'PROBABLE' | 'QUESTIONABLE' | 'DOUBTFUL' | 'OUT' | 'REST' | 'GTD';
+
+export interface InjuryStatus {
+  status: InjuryStatusCode;
+  reason?: string;
+  bodyPart?: string;
+  expectedReturn?: string;
+  source?: 'NBA_OFFICIAL' | 'ESPN' | 'ROTOWIRE' | 'MANUAL' | 'LOCAL_SYNC';
+  updatedAt?: string;
+}
+
 export interface NbaSeasonStats {
   season: string;
   seasonType?: 'Regular Season' | 'Playoffs' | 'Preseason';
@@ -94,6 +105,7 @@ export interface Player {
   currentSeasonStats?: NbaSeasonStats;
   isInjured?: boolean;
   injuryName?: string;
+  injuryStatus?: InjuryStatus;
   quantity?: number;    // default 1 — copies owned
   starLevel?: number;   // default 0 — ascension rank (0 to 5)
   starGrowthAppliedLevel?: number; // migration guard for applied star-up stat bonuses
