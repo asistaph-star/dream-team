@@ -12,7 +12,7 @@ export const isShaiGilgeousAlexander = (player: Player): boolean => {
 
 export const getFlopFoulPressureBonus = (scorer: Player): number => {
   const baseBonus = 0.04;
-  return isShaiGilgeousAlexander(scorer) && hasSpecialSkillMechanic(scorer, "FLOP_SELL_CONTACT") ? baseBonus * 2 : baseBonus;
+  return isShaiGilgeousAlexander(scorer) && hasSpecialSkillMechanic(scorer, "FLOP_FOUL_PRESSURE") ? baseBonus * 2 : baseBonus;
 };
 
 export const getGlassStrikeOrebBoost = (level: number): number => {

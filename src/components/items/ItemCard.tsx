@@ -90,7 +90,7 @@ export function ItemCard({
 
       {locked && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
-          <span className="text-2xl opacity-50">🔒</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/60 border border-white/20 px-2 py-1">Locked</span>
         </div>
       )}
 

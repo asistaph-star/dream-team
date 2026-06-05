@@ -429,8 +429,8 @@ async function main() {
     const forceMarksCallback = (state: any, uLineup: Player[], aLineup: Player[]) => {
       aLineup.forEach(p => {
         const currentList = state.skillMarks[p.id] ?? [];
-        if (!currentList.some((m: any) => m.mark === "Debt")) {
-          state.skillMarks = addMark(state.skillMarks, state.markImmunity, p.id, "Debt", "Chain Pass X", 3);
+        if (!currentList.some((m: any) => m.mark === "Hooked")) {
+          state.skillMarks = addMark(state.skillMarks, state.markImmunity, p.id, "Hooked", "Chain Pass X", 3);
         }
       });
     };
@@ -506,8 +506,8 @@ async function main() {
     const forceMarksCallback = (state: any, uLineup: Player[], aLineup: Player[]) => {
       // Force Debt on PG
       const pgList = state.skillMarks[aLineup[0].id] ?? [];
-      if (!pgList.some((m: any) => m.mark === "Debt")) {
-        state.skillMarks = addMark(state.skillMarks, state.markImmunity, aLineup[0].id, "Debt", "Chain Pass X", 3);
+      if (!pgList.some((m: any) => m.mark === "Hooked")) {
+        state.skillMarks = addMark(state.skillMarks, state.markImmunity, aLineup[0].id, "Hooked", "Chain Pass X", 3);
       }
       // Force Tilted on SG and SF to make total 3 marked
       for (let i = 1; i <= 2; i++) {
@@ -546,8 +546,8 @@ async function main() {
     // Force marks to guarantee high-drain activations and test counterplay mitigation
     const forceMarksCallback = (state: any, uLineup: Player[], aLineup: Player[]) => {
       const pgList = state.skillMarks[aLineup[0].id] ?? [];
-      if (!pgList.some((m: any) => m.mark === "Debt")) {
-        state.skillMarks = addMark(state.skillMarks, state.markImmunity, aLineup[0].id, "Debt", "Chain Pass X", 3);
+      if (!pgList.some((m: any) => m.mark === "Hooked")) {
+        state.skillMarks = addMark(state.skillMarks, state.markImmunity, aLineup[0].id, "Hooked", "Chain Pass X", 3);
       }
       for (let i = 1; i <= 2; i++) {
         const list = state.skillMarks[aLineup[i].id] ?? [];

@@ -124,4 +124,7 @@ export interface Player {
   dataSource?: DataSource;
   seasonTag?: string;
   eraLabel?: string;
+  nbaPlayerId?: string;
+  playerId?: string;
+  sourcePlayerId?: string;
 }

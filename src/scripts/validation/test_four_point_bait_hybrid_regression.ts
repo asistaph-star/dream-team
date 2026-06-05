@@ -54,7 +54,7 @@ mockedResolver.rollSpecialMechanic = (
 ): boolean => {
   const result = originalResolver.rollSpecialMechanic(lineup, mechanicId, stamina, scaleFn);
   
-  if (mechanicId === "DEEP_STRIKE_FOUR_POINT_BAIT") {
+  if (mechanicId === "DEEP_STRIKE_FOUL_PRESSURE") {
     fourPointBaitRolls++;
     currentAttackingLineup = lineup;
     currentStamina = stamina;
@@ -102,7 +102,7 @@ mockedResolver.rollSpecialMechanic = (
   }
   
   // Flop Context Tracking
-  if (mechanicId === "FLOP_SELL_CONTACT") {
+  if (mechanicId === "FLOP_PRESSURE") {
     flopTriggered = result;
     flopComposed = false;
     flopCleaned = false;
@@ -230,7 +230,7 @@ function calculateBaseSfChance(isUserPath: boolean, scorer: Player, state: any, 
   if (flopTriggered) {
     const baseBonus = 0.04;
     const isSGA = scorer.name.toLowerCase().includes("shai gilgeous-alexander");
-    const flopBonus = isSGA && hasSpecialSkillMechanic(scorer, "FLOP_SELL_CONTACT") ? baseBonus * 2 : baseBonus;
+    const flopBonus = isSGA && hasSpecialSkillMechanic(scorer, "FLOP_PRESSURE") ? baseBonus * 2 : baseBonus;
     if (flopComposed) {
       // cancelled
     } else if (flopCleaned) {
@@ -281,7 +281,7 @@ for (let i = 0; i < matchEngineLines.length; i++) {
   if (line.includes("Math.random() < sfChance") && !line.includes("sfChance_ai")) {
     let contextHasBait = false;
     for (let j = Math.max(0, i - 60); j < i; j++) {
-      if (matchEngineLines[j].includes("DEEP_STRIKE_FOUR_POINT_BAIT")) {
+      if (matchEngineLines[j].includes("DEEP_STRIKE_FOUL_PRESSURE")) {
         contextHasBait = true;
         break;
       }

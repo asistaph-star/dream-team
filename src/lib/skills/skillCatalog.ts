@@ -1,6 +1,6 @@
 import { BaseSkillName, SpecialSkillName } from "./assignBaseSkills";
 
-export type SkillMark = "Exposed" | "Debt" | "Hooked" | "Pinned" | "Static" | "Tilted";
+export type SkillMark = "Exposed" | "Tilted" | "Hooked" | "Pinned" | "Static";
 export type SkillQuality = "Common" | "Rare" | "Elite" | "Epic" | "Legendary";
 
 export const SKILL_QUALITY_ORDER: SkillQuality[] = ["Common", "Rare", "Elite", "Epic", "Legendary"];
@@ -61,40 +61,23 @@ export const BASE_SKILL_TEXT: Record<BaseSkillName, string> = {
   "Enforcer Lift": "Turns controlled physical defense into team stamina support. Recovers ~6 stamina for the team when triggered.",
 };
 
-export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> & Record<string, string> = {
+export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   // Family Skills (Official)
-  "DEEP_STRIKE": "Applies Exposed (lasts 2 possessions) through perimeter pressure, and pressures Exposed defenders into 3PT shooting fouls, adding +9.0% foul pressure.",
-  "COURT_VISION_ENGINE": "Creates rhythm passing bonuses on assists and places Debt (lasts 2 possessions) on marked opponents after assisted scores.",
-  "POSTER_SPARK": "Drains 110 stamina (190 if marked with Debt) when attacking marked defenders, and applies Tilted (lasts 3 possessions) and drains 45 stamina from tired defenders.",
-  "FLOP": "Sells light contact into foul pressure, adding +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
-  "BROKEN_PLAY_RESCUE": "Rare clutch ability to recover a near-turnover into a difficult 2PT rescue shot attempt, costing stamina to the rescuer.",
-  "SKY_WALL": "Triggers intense vertical rim block pressure, reducing shot quality and draining stamina on paint attacks.",
-  "LOCK_CHAIN": "Applies Hooked (lasts 2 possessions) to pressured ball handlers (drains 38 stamina per possession) and drains stamina from ball handlers on turnovers.",
-  "DEFENSIVE_ANCHOR": "Drains 40 stamina from the opposing lineup (60 if 3+ marked) on defensive triggers, and applies Pinned (lasts 2 possessions) on corner actions to prevent stamina recovery.",
-  "CLEAN_CHALLENGE": "Challenges foul-baiting and counters forced foul or 3PT bait effects, reducing opponent skill bonuses by -3.0%.",
-  "GLASS_STRIKE": "Crashes the glass with disciplined timing, improving second-chance pressure and creating putback scoring moments.",
-  "BENCH_CAPTAIN": "Improves rotation stamina recovery for benched players, and drains 12 stamina from each marked opponent when they act (does not stack).",
-  "MOMENTUM_SWING": "Triggers after defensive momentum events (steal, block, turnover) to recover stamina for the lowest-stamina teammate, restore form, and boost momentum.",
-  "COMPOSURE_SHIELD": "Cancels forced foul pressure before it becomes free throws, and counters Tilted marks or bad momentum, reducing opponent skill bonuses by -2.0%.",
-  "GAMEPLAN_JAMMER": "Blocks opponent special skill triggers, applying Static (lasts 2 possessions), and consumes Debt to drain 45 stamina from 2 additional opposing players.",
-  "TIMEOUT_RESET": "Cleanses 1 mark from all marked players and recovers 12 stamina for tired players when team stamina is low.",
-
-  // Legacy Skills (Compatibility Lookup)
-  "Red Dot X": "Applies Exposed (lasts 2 possessions) through perimeter pressure.",
-  "Four-Point Bait X": "Pressures Exposed defenders into 3PT shooting fouls, adding +9.0% foul pressure.",
-  "Lung Burner X": "Drains stamina when attacking marked defenders. Drains 110 stamina from the defender (190 if they have a Debt mark).",
-  "Chain Pass X": "Places Debt (lasts 2 possessions) after normal assisted scores.",
-  "Debt Collector X": "Consumes Debt to spread stamina drain. Drains 45 stamina from 2 additional opposing players.",
-  "Five-Man Squeeze X": "Drains the active opponent lineup after defensive triggers. Drains 40 stamina from all 5 players (increases to 60 if 3+ are marked).",
-  "Cold Timeout X": "Cleanses marks when team stamina is low. Removes 1 mark from all marked players and recovers 12 stamina for 1-2 tired players.",
-  "Dead Air X": "Blocks a mid-air skill moment, adding +0.5% shot contest and applying Static (lasts 2 possessions).",
-  "Clean Contest X": "Counters forced foul and 3PT bait effects, reducing opponent skill bonuses by -3.0%.",
-  "Contact Tax X": "Applies Tilted (lasts 3 possessions) and drains 45 stamina when attacking tired defenders.",
-  "Cage Step X": "Applies Hooked (lasts 2 possessions) to ball handlers under defensive pressure. Hooked players drain 38 stamina per possession.",
-  "Corner Trap X": "Applies Pinned (lasts 2 possessions) on sideline or corner-style perimeter actions. Pinned players cannot receive skill-based stamina recovery while active. Pinned is cleared when the player is subbed out.",
-  "Pressure Coach X": "Marked opponents lose extra stamina when acting. Drains 12 stamina from each marked opponent during triggers.",
-  "Flop X": "Sells light contact into foul pressure. Adds +4.0% foul pressure on contact (+8.0% for Shai Gilgeous-Alexander).",
-  "Composure X": "Cancels forced foul pressure before it becomes free throws, reducing opponent skill bonuses by -2.0%.",
+  "DEEP_STRIKE": "Gives a small 3PT shot-quality boost on attempts. On trigger, applies Exposed to the primary defender for 2 possessions. If the defender is already Exposed, adds small 3PT foul pressure.",
+  "COURT_VISION_ENGINE": "Assisted shots receive a small shot-quality boost. Clean passes reduce bad-shot penalty slightly. Can improve team rhythm after assists.",
+  "POSTER_SPARK": "Gives a small finish boost on drives, dunks, and contact finishes. Can apply Tilted to the defender for 2 possessions on strong paint attacks.",
+  "FLOP": "Adds small foul pressure on contact shots, drives, or contested jumpers.",
+  "BROKEN_PLAY_RESCUE": "Rarely cancels a near-turnover, forcing a difficult 2PT rescue shot. Costs the rescuer stamina.",
+  "SKY_WALL": "Boosts block and paint contest pressure. After a successful block, all opponents lose a small amount of stamina.",
+  "LOCK_CHAIN": "Slightly increases ball-handler pressure and turnover pressure. Can apply Hooked. After a successful steal, all opponents lose a small amount of stamina.",
+  "DEFENSIVE_ANCHOR": "Gives a small team contest and rotation boost while active. Helps reduce opponent rhythm and improves team defensive positioning.",
+  "CLEAN_CHALLENGE": "Reduces foul-bait effects, lowers bad foul chance, and counters Flop and Deep Strike foul pressure.",
+  "GLASS_STRIKE": "Improves offensive rebound timing and gives a controlled putback chance after offensive rebounds.",
+  "BENCH_CAPTAIN": "Speeds up bench stamina recovery and stabilizes form for tired teammates.",
+  "MOMENTUM_SWING": "After a block, steal, or forced turnover, gives small momentum recovery and slightly helps the lowest-stamina teammate.",
+  "COMPOSURE_SHIELD": "Protects team from Tilted marks, foul-bait pressure, and momentum collapse. Can cancel some foul-bait triggers.",
+  "GAMEPLAN_JAMMER": "Temporarily weakens one opponent special-skill trigger. Can apply Static for 2 possessions.",
+  "TIMEOUT_RESET": "Triggers when team stamina is low or negative marks are stacking. Clears limited marks from teammates and gives small recovery to tired players.",
 };
 
 // All 15 official Special Skill Families are active.
@@ -140,7 +123,7 @@ export const BASE_SKILL_RATES: Partial<Record<BaseSkillName, [number, number, nu
   "Enforcer Lift": [160, 240, 0],
 };
 
-export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> & Record<string, number> = {
+export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> = {
   // Family Skills (Official)
   "DEEP_STRIKE": 300,
   "COURT_VISION_ENGINE": 240,
@@ -157,21 +140,4 @@ export const SPECIAL_SKILL_RATES: Record<SpecialSkillName, number> & Record<stri
   "COMPOSURE_SHIELD": 330,
   "GAMEPLAN_JAMMER": 220,
   "TIMEOUT_RESET": 260,
-
-  // Legacy Skills (Compatibility Lookup)
-  "Red Dot X": 300,
-  "Four-Point Bait X": 250,
-  "Lung Burner X": 280,
-  "Chain Pass X": 260,
-  "Debt Collector X": 240,
-  "Five-Man Squeeze X": 230,
-  "Cold Timeout X": 260,
-  "Dead Air X": 220,
-  "Clean Contest X": 260,
-  "Contact Tax X": 260,
-  "Cage Step X": 240,
-  "Corner Trap X": 250,
-  "Pressure Coach X": 1000,
-  "Flop X": 230,
-  "Composure X": 330,
 };

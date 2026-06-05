@@ -102,13 +102,13 @@ let marksCleansed = 0;
 mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina: Record<string, number>, scaleFn?: any): boolean => {
   const result = originalResolver.rollSpecialMechanic(lineup, mechanicId, stamina, scaleFn);
   
-  if (mechanicId === "DEEP_STRIKE_FOUR_POINT_BAIT") {
+  if (mechanicId === "DEEP_STRIKE_FOUL_PRESSURE") {
     fourPointBaitRolls++;
     if (result) fourPointBaitTriggers++;
-  } else if (mechanicId === "DEEP_STRIKE_EXPOSE_SETUP") {
+  } else if (mechanicId === "DEEP_STRIKE_EXPOSE") {
     redDotRolls++;
     if (result) redDotTriggers++;
-  } else if (mechanicId === "FLOP_SELL_CONTACT") {
+  } else if (mechanicId === "FLOP_PRESSURE") {
     flopRolls++;
     if (result) flopTriggers++;
   } else if (mechanicId === "COMPOSURE_SHIELD_CANCEL") {
@@ -117,7 +117,7 @@ mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina
   } else if (mechanicId === "CLEAN_CHALLENGE_CONTEST") {
     cleanContestRolls++;
     if (result) cleanContestTriggers++;
-  } else if (mechanicId === "DEFENSIVE_ANCHOR_TEAM_PRESSURE") {
+  } else if (mechanicId === "DEFENSIVE_ANCHOR_TEAM_BOOST") {
     defensiveAnchorRolls++;
     if (result) defensiveAnchorTriggers++;
   } else if (mechanicId === "TIMEOUT_RESET_CLEANSE") {
@@ -126,16 +126,16 @@ mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina
   } else if (mechanicId === "GLASS_STRIKE_REBOUND") {
     glassStrikeRolls++;
     if (result) glassStrikeTriggers++;
-  } else if (mechanicId === "POSTER_SPARK_CONTACT_TAX") {
+  } else if (mechanicId === "POSTER_SPARK_TILT") {
     contactTaxRolls++;
     if (result) contactTaxTriggers++;
-  } else if (mechanicId === "POSTER_SPARK_LUNG_BURNER") {
+  } else if (mechanicId === "POSTER_SPARK_TILT") {
     lungBurnerRolls++;
     if (result) lungBurnerTriggers++;
-  } else if (mechanicId === "GAMEPLAN_DEAD_AIR") {
+  } else if (mechanicId === "GAMEPLAN_STATIC") {
     deadAirRolls++;
     if (result) deadAirTriggers++;
-  } else if (mechanicId === "SKY_WALL_RIM_PRESSURE") {
+  } else if (mechanicId === "SKY_WALL_BLOCK_BOOST") {
     skyWallRolls++;
     if (result) skyWallTriggers++;
   }

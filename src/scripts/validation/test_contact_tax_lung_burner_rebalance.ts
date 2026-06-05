@@ -75,9 +75,9 @@ let capturedDrains: DrainRecord[] = [];
 
 mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina: Record<string, number>, scaleFn?: any): boolean => {
   const result = originalResolver.rollSpecialMechanic(lineup, mechanicId, stamina, scaleFn);
-  if (mechanicId === "POSTER_SPARK_CONTACT_TAX") {
+  if (mechanicId === "POSTER_SPARK_TILT") {
     if (result) activeSource = "Contact Tax";
-  } else if (mechanicId === "POSTER_SPARK_LUNG_BURNER") {
+  } else if (mechanicId === "POSTER_SPARK_TILT") {
     if (result) activeSource = "Lung Burner";
   }
   return result;
@@ -249,7 +249,7 @@ function runRebalanceTests() {
     
     // Force rollSpecialMechanic to succeed for Contact Tax
     mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any) => {
-      if (mechanicId === "POSTER_SPARK_CONTACT_TAX") {
+      if (mechanicId === "POSTER_SPARK_TILT") {
         activeSource = "Contact Tax";
         return true;
       }
@@ -303,7 +303,7 @@ function runRebalanceTests() {
     
     // Force defender to be marked
     defLineup.forEach(p => {
-      state.skillMarks[p.id] = [{ mark: forceDebt ? "Debt" : "Tilted", possessionsLeft: 3, sourceSkill: "Test Setup" }];
+      state.skillMarks[p.id] = [{ mark: forceDebt ? "Hooked" : "Tilted", possessionsLeft: 3, sourceSkill: "Test Setup" }];
     });
 
     // Mock shotEngine.generateShot to return a driving layup
@@ -315,7 +315,7 @@ function runRebalanceTests() {
     
     // Mock rollSpecialMechanic to succeed for Lung Burner, fail for others
     mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any) => {
-      if (mechanicId === "POSTER_SPARK_LUNG_BURNER") {
+      if (mechanicId === "POSTER_SPARK_TILT") {
         activeSource = "Lung Burner";
         return true;
       }
@@ -340,7 +340,7 @@ function runRebalanceTests() {
         state.possessionTeam = isAiOffense ? "ai" : "user";
         state.ftSequence = null;
         defLineup.forEach(p => {
-          state.skillMarks[p.id] = [{ mark: forceDebt ? "Debt" : "Tilted", possessionsLeft: 3, sourceSkill: "Test Setup" }];
+          state.skillMarks[p.id] = [{ mark: forceDebt ? "Hooked" : "Tilted", possessionsLeft: 3, sourceSkill: "Test Setup" }];
           state.playerStamina[p.id] = defenderStamina;
         });
         const eff = computeEffective(userLineup, state.playerStamina, "Post Isolation", "Man-to-Man");

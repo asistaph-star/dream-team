@@ -7,7 +7,6 @@ import { mockMaterials } from "@/lib/data/mockItems";
 import { getTierRating, getTierColor } from "@/lib/data/mockPlayers";
 import { Player } from "@/lib/types/player";
 import { mockAiTeams, Difficulty, MatchState, MatchEvent, PlayerMatchStats, createInitialMatchState, simulateTick, computeTeamScore, computeEffective, avgStamina, getStaminaMod, getPlayerMaxStamina, getStaminaPercent, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, emptyStats, generatePreMatchInjuries, calibrateLineupForInjuries } from "@/lib/utils/matchEngine";
-import { Swords, Flame, Snowflake } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { SeasonMap } from "@/components/season/SeasonMap";
 import { ViewState } from "@/features/match/types";
@@ -36,6 +35,7 @@ import { StrategyModal } from "@/features/match/components/StrategyModal";
 import { PostGameScreen } from "@/features/match/components/PostGameScreen";
 import { MatchBottomHUD } from "@/features/match/components/MatchBottomHUD";
 import { MatchActionBar } from "@/features/match/components/MatchActionBar";
+import { MatchTacticsStrip } from "@/features/match/components/MatchTacticsStrip";
 import { ShootoutOverlay } from "@/features/match/components/ShootoutOverlay";
 import { MatchScoreboard } from "@/features/match/components/MatchScoreboard";
 import { OvertimeTransitionOverlay } from "@/features/match/components/OvertimeTransitionOverlay";
@@ -1084,11 +1084,20 @@ export default function MatchPage() {
                   getDisplayStats={getDisplayStats}
                   logEndRef={logEndRef}
                   roster={roster}
+                  userOffStrategy={matchState.userOffStrategy}
+                  userDefStrategy={matchState.userDefStrategy}
                 />
                 
                 {/* BOTTOM HUD - ACTION BAR Container */}
                 <div className="flex gap-2 items-end shrink-0">
-                    
+                    <MatchTacticsStrip
+                      offStrategy={matchState.userOffStrategy}
+                      defStrategy={matchState.userDefStrategy}
+                      offCooldownEnd={offCooldownEnd}
+                      defCooldownEnd={defCooldownEnd}
+                      cooldownNow={cooldownNow}
+                      onOpenStrategy={() => openModal('strategy')}
+                    />
                     <MatchActionBar
                       openModal={openModal}
                       handleTimeout={handleTimeout}

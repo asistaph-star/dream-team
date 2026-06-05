@@ -1,47 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ItemCard } from "@/components/items/ItemCard";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { EquipmentSlot, Equipment } from "@/lib/types/item";
 import { mockMaterials, craftingRecipes } from "@/lib/data/mockItems";
-import { ChevronLeft, ChevronRight, Gem, Hammer, AlertTriangle, PackageOpen, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { SidebarTabs } from "@/components/shared/SidebarTabs";
 import { DetailPanelShell } from "@/components/shared/DetailPanelShell";
-import { lowPolyBg } from "@/lib/constants/visuals";
+import { ItemGlyph } from "@/components/items/ItemGlyph";
+import { CraftDetailPanel } from "@/features/inventory/components/CraftDetailPanel";
+import { CraftRevealModal } from "@/features/inventory/components/CraftRevealModal";
 
 type Tab = 'MATERIALS' | 'EQUIPMENT' | 'CRAFTING';
 
-const diagonalStripes = `repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 6px)`;
+const CRAFT_SLOTS = Object.keys(craftingRecipes) as EquipmentSlot[];
 
-const RawItem = ({ icon, glowColor }: { icon: string, glowColor: string }) => (
-  <div className="relative w-full h-full flex items-center justify-center">
-    <div 
-      className="text-4xl md:text-5xl transition-all duration-300 relative z-10" 
-      style={{ filter: `drop-shadow(0 5px 15px ${glowColor}) saturate(1.2)` }}
-    >
-      {icon}
-    </div>
-  </div>
-);
-
-const getMaterialIcon = (id: string) => {
-  if (id === 'skill_tape') return <RawItem icon="TAPE" glowColor="rgba(239,68,68,0.8)" />;
-  if (id === 'mat_upgrade') return <RawItem icon="💎" glowColor="rgba(168,85,247,0.8)" />;
-  if (id === 'mat_crafting') return <RawItem icon="🧵" glowColor="rgba(16,185,129,0.8)" />;
-  if (id === 'mat_fluid') return <RawItem icon="🧪" glowColor="rgba(59,130,246,0.8)" />;
-  return <RawItem icon="💰" glowColor="rgba(234,179,8,0.8)" />;
+const MATERIAL_GLYPHS: Record<string, { label: string; sublabel: string; glowColor: string }> = {
+  skill_tape: { label: "TAPE", sublabel: "SKILL", glowColor: "rgba(239,68,68,0.8)" },
+  mat_upgrade: { label: "STN", sublabel: "UPGR", glowColor: "rgba(168,85,247,0.8)" },
+  mat_crafting: { label: "THR", sublabel: "CRFT", glowColor: "rgba(16,185,129,0.8)" },
+  mat_fluid: { label: "FLD", sublabel: "FLUID", glowColor: "rgba(59,130,246,0.8)" },
 };
 
-const getEquipmentEmoji = (slot: string) => {
-  let icon = '📦';
-  if (slot === 'Shoes') icon = '👟';
-  if (slot === 'Tshirt') icon = '👕';
-  if (slot === 'Jersey') icon = '🎽';
-  if (slot === 'Headband') icon = '🥽';
-  if (slot === 'KneePads') icon = '🦿';
-  return <RawItem icon={icon} glowColor="rgba(6,182,212,0.8)" />;
+const EQUIPMENT_GLYPHS: Record<string, { label: string; sublabel: string }> = {
+  Shoes: { label: "SHO", sublabel: "FEET" },
+  Tshirt: { label: "TOP", sublabel: "BASE" },
+  Jersey: { label: "JRS", sublabel: "GAME" },
+  Headband: { label: "HBD", sublabel: "HEAD" },
+  KneePads: { label: "KPD", sublabel: "KNEE" },
+};
+
+const getMaterialIcon = (id: string) => {
+  const glyph = MATERIAL_GLYPHS[id] ?? { label: "MAT", sublabel: "ITEM", glowColor: "rgba(234,179,8,0.8)" };
+  return <ItemGlyph label={glyph.label} sublabel={glyph.sublabel} glowColor={glyph.glowColor} />;
+};
+
+const getEquipmentGlyph = (slot: string) => {
+  const glyph = EQUIPMENT_GLYPHS[slot] ?? { label: "EQP", sublabel: "GEAR" };
+  return <ItemGlyph label={glyph.label} sublabel={glyph.sublabel} glowColor="rgba(6,182,212,0.8)" />;
 };
 
 export default function InventoryPage() {
@@ -58,12 +55,19 @@ export default function InventoryPage() {
 
   const [upgradeResult, setUpgradeResult] = useState<{ success: boolean; msg?: string } | null>(null);
   const [craftResult, setCraftResult] = useState<{ success: boolean; msg?: string } | null>(null);
+  const [craftedItem, setCraftedItem] = useState<Equipment | null>(null);
+
+  useEffect(() => {
+    if (activeTab === 'CRAFTING' && !selectedCraftSlot) {
+      setSelectedCraftSlot(CRAFT_SLOTS[0]);
+    }
+  }, [activeTab, selectedCraftSlot]);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     setSelectedEquip(null);
     setSelectedMatId(null);
-    setSelectedCraftSlot(null);
+    setSelectedCraftSlot(tab === 'CRAFTING' ? CRAFT_SLOTS[0] : null);
     setUpgradeResult(null);
     setCraftResult(null);
   };
@@ -72,11 +76,28 @@ export default function InventoryPage() {
     if (!selectedCraftSlot) return;
     const res = craftEquipment(selectedCraftSlot);
     if (res) {
-      setCraftResult({ success: true, msg: `Crafted ${res.name} (+${res.bonus.value}${res.bonus.isPercentage ? '%' : ''})` });
+      setCraftedItem(res);
+      setCraftResult({ success: true, msg: `Forged ${res.name}!` });
     } else {
       setCraftResult({ success: false, msg: "Not enough Crafting Thread!" });
     }
     setTimeout(() => setCraftResult(null), 3000);
+  };
+
+  const handleViewMaterials = () => {
+    setActiveTab('MATERIALS');
+    setSelectedMatId('mat_crafting');
+    setSelectedCraftSlot(null);
+    setCraftResult(null);
+  };
+
+  const handleViewCraftedEquipment = () => {
+    if (!craftedItem) return;
+    const latest = inventory.equipment.find((e) => e.id === craftedItem.id) ?? craftedItem;
+    setActiveTab('EQUIPMENT');
+    setSelectedEquip(latest);
+    setSelectedCraftSlot(null);
+    setCraftedItem(null);
   };
 
   const handleUpgrade = () => {
@@ -130,8 +151,8 @@ export default function InventoryPage() {
         
         {/* Left: < Warehouse */}
         <div className="flex items-center gap-3 pl-4">
-          <Link href="/" className="text-white hover:text-gray-300 transition-colors drop-shadow-md relative z-10">
-            <ChevronLeft size={36} className="text-white font-black" strokeWidth={3} />
+          <Link href="/" className="text-white hover:text-gray-300 transition-colors drop-shadow-md relative z-10 w-9 h-9 flex items-center justify-center font-black text-2xl leading-none">
+            ‹
           </Link>
           <span className="text-[20px] font-bold text-white drop-shadow-md tracking-wide relative z-10">Warehouse</span>
         </div>
@@ -150,8 +171,22 @@ export default function InventoryPage() {
         />
 
         {/* ── Middle Grid ── */}
-        <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col">
-          {/* Container for Items & Dot Grid */}
+        <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col min-w-0">
+          {activeTab === 'CRAFTING' && (
+            <div className="mb-4 bg-[#313338] border border-white/10 rounded-sm px-4 py-3 flex items-center justify-between shrink-0">
+              <div>
+                <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Crafting Thread</div>
+                <div className="text-xl font-black text-emerald-400 font-mono mt-0.5">
+                  {inventory.materials.mat_crafting.toLocaleString()}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Blueprints</div>
+                <div className="text-sm font-bold text-white mt-0.5">{CRAFT_SLOTS.length} slots available</div>
+              </div>
+            </div>
+          )}
+
           <div className="flex-1 bg-white/[0.02] relative flex flex-col overflow-hidden rounded-sm">
             {/* Animated Glowing Edge Dots */}
             <div 
@@ -197,7 +232,7 @@ export default function InventoryPage() {
                 <ItemCard
                   key={eq.id}
                   id={eq.id}
-                  icon={getEquipmentEmoji(eq.slot)}
+                  icon={getEquipmentGlyph(eq.slot)}
                   glowColor={glowColor}
                   quantity={1}
                   showQuantity={true}
@@ -209,19 +244,21 @@ export default function InventoryPage() {
             })}
 
             {/* CRAFTING GRID */}
-            {activeTab === 'CRAFTING' && Object.entries(craftingRecipes).map(([slot, recipe]) => {
+            {activeTab === 'CRAFTING' && CRAFT_SLOTS.map((slot) => {
+              const recipe = craftingRecipes[slot];
               const isSelected = selectedCraftSlot === slot;
-              const glowColor = '#10b981';
+              const canAfford = inventory.materials.mat_crafting >= recipe.cost;
+              const glowColor = canAfford ? '#10b981' : '#64748b';
               return (
                 <ItemCard
                   key={slot}
                   id={slot}
-                  icon={getEquipmentEmoji(slot)}
+                  icon={getEquipmentGlyph(slot)}
                   glowColor={glowColor}
                   selected={isSelected}
-                  badgeText="Blueprint"
-                  onClick={() => setSelectedCraftSlot(slot as EquipmentSlot)}
-                  className="grayscale opacity-70 mix-blend-luminosity hover:mix-blend-normal hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+                  badgeText={canAfford ? "Ready" : `${recipe.cost} THR`}
+                  onClick={() => setSelectedCraftSlot(slot)}
+                  className={canAfford ? "" : "opacity-80"}
                 />
               );
             })}
@@ -241,7 +278,7 @@ export default function InventoryPage() {
         </div>
 
         {/* ── Right Detail Panel ── */}
-        <div className="w-[300px] z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 h-full">
+        <div className="w-[340px] z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 h-full">
           <div className="flex-1 bg-[#313338] border border-white/10 rounded-sm flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.5)] overflow-hidden">
           
           {/* DETAILS: MATERIALS */}
@@ -288,7 +325,7 @@ export default function InventoryPage() {
               <DetailPanelShell
                 title={`Lv.${currentLevel} ${selectedEquip.name}`}
                 glowColor={glowColor}
-                icon={getEquipmentEmoji(selectedEquip.slot)}
+                icon={getEquipmentGlyph(selectedEquip.slot)}
                 subtitle="Owned: 1"
                 infoContent={
                   <>
@@ -346,66 +383,24 @@ export default function InventoryPage() {
           })()}
 
           {/* DETAILS: CRAFTING */}
-          {activeTab === 'CRAFTING' && selectedCraftSlot && (() => {
-            const recipe = craftingRecipes[selectedCraftSlot as EquipmentSlot];
-            const canCraft = inventory.materials.mat_crafting >= recipe.cost;
-            const glowColor = '#10b981';
-            
-            return (
-              <DetailPanelShell
-                title={`${selectedCraftSlot} Blueprint`}
-                glowColor={glowColor}
-                icon={getEquipmentEmoji(selectedCraftSlot)}
-                subtitle="Owned: 1 (Permanent)"
-                infoContent={
-                  <>
-                    <p className="text-xs text-gray-300 leading-relaxed mb-4">
-                      Use Crafting Thread to forge a random piece of {selectedCraftSlot} equipment. Stats are rolled randomly upon crafting.
-                    </p>
-                    
-                    <div className="bg-[#242426] p-3 border border-[#444] mb-4">
-                      <div className="text-xs text-gray-400 mb-1">Potential Effect</div>
-                      <div className="text-sm text-green-400 font-bold">+{recipe.minBonus}–{recipe.maxBonus}{recipe.isPercentage ? '%' : ''} {recipe.statName}</div>
-                    </div>
-
-                    <div className="text-[13px] text-gray-400 font-semibold mb-2">Requirements</div>
-                    <div className="bg-[#242426] p-3 border border-[#444] flex justify-between items-center text-xs">
-                      <span className="text-gray-500">Crafting Thread: </span>
-                      <span className={canCraft ? 'text-green-400 font-bold' : 'text-red-400 font-bold'}>{recipe.cost} / {inventory.materials.mat_crafting}</span>
-                    </div>
-
-                    {craftResult && (
-                      <div className={`mt-2 p-2 text-xs text-center border font-semibold ${craftResult.success ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50'}`}>
-                        {craftResult.msg}
-                      </div>
-                    )}
-                  </>
-                }
-                actionButtons={
-                  <>
-                    <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
-                      <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-                      <span className="relative z-10">Get Mat.</span>
-                    </button>
-                    <button 
-                      onClick={handleCraft}
-                      disabled={!canCraft}
-                      className={`w-full py-2.5 font-bold text-[14px] shadow-sm relative ${canCraft ? 'bg-gradient-to-br from-[#e5303c] to-[#be1824] hover:brightness-110 text-white' : 'bg-[#444] text-gray-500 cursor-not-allowed'}`}
-                      style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}
-                    >
-                      {canCraft && <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />}
-                      <span className="relative z-10">Craft</span>
-                    </button>
-                  </>
-                }
-              />
-            );
-          })()}
+          {activeTab === 'CRAFTING' && selectedCraftSlot && (
+            <CraftDetailPanel
+              slot={selectedCraftSlot}
+              ownedThread={inventory.materials.mat_crafting}
+              onCraft={handleCraft}
+              onGetMaterials={handleViewMaterials}
+              craftResult={craftResult}
+              renderIcon={getEquipmentGlyph}
+            />
+          )}
 
           {/* DETAILS: EMPTY STATE */}
-          {!selectedEquip && !selectedMatId && !selectedCraftSlot && (
+          {((activeTab === 'MATERIALS' && !selectedMatId) ||
+            (activeTab === 'EQUIPMENT' && !selectedEquip)) && (
             <div className="flex-1 flex flex-col items-center justify-center opacity-30 p-6 text-center">
-              <PackageOpen size={48} className="mb-4 text-gray-500" />
+              <div className="w-14 h-14 border-2 border-dashed border-gray-500 rounded-sm flex items-center justify-center mb-4 text-[10px] font-black tracking-widest text-gray-500">
+                EMPTY
+              </div>
               <div className="text-sm font-semibold tracking-wide text-white">Select an Item</div>
               <div className="text-xs text-gray-400 mt-2">Click any item in the grid to view details and perform actions.</div>
             </div>
@@ -413,6 +408,15 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+
+      {craftedItem && (
+        <CraftRevealModal
+          equipment={craftedItem}
+          renderIcon={getEquipmentGlyph}
+          onClose={() => setCraftedItem(null)}
+          onViewEquipment={handleViewCraftedEquipment}
+        />
+      )}
     </div>
   );
 }

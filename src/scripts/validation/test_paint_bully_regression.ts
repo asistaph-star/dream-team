@@ -100,19 +100,19 @@ mockedResolver.rollBaseSkill = (lineup: Player[], skillName: any, stamina: Recor
 // Intercept special mechanic rolls
 mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina: Record<string, number>, scaleFn?: any): boolean => {
   const result = originalResolver.rollSpecialMechanic(lineup, mechanicId, stamina, scaleFn);
-  if (mechanicId === "POSTER_SPARK_CONTACT_TAX") {
+  if (mechanicId === "POSTER_SPARK_TILT") {
     contactTaxRolls++;
     if (result) contactTaxTriggers++;
-  } else if (mechanicId === "POSTER_SPARK_LUNG_BURNER") {
+  } else if (mechanicId === "POSTER_SPARK_TILT") {
     lungBurnerRolls++;
     if (result) lungBurnerTriggers++;
-  } else if (mechanicId === "SKY_WALL_RIM_PRESSURE") {
+  } else if (mechanicId === "SKY_WALL_BLOCK_BOOST") {
     skyWallRolls++;
     if (result) skyWallTriggers++;
   } else if (mechanicId === "GLASS_STRIKE_REBOUND") {
     glassStrikeRolls++;
     if (result) glassStrikeTriggers++;
-  } else if (mechanicId === "FLOP_SELL_CONTACT") {
+  } else if (mechanicId === "FLOP_PRESSURE") {
     flopRolls++;
     if (result) flopTriggers++;
   }

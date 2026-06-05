@@ -830,6 +830,7 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
 
   const updatedPlayer = {
     ...p,
+    sourcePlayerId: p.id,
     ovr,
     price,
     baseSalary,

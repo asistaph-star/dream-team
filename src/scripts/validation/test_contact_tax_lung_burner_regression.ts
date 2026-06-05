@@ -72,24 +72,24 @@ let activeSkillDrainSource = "";
 mockedResolver.rollSpecialMechanic = (lineup: Player[], mechanicId: any, stamina: Record<string, number>, scaleFn?: any): boolean => {
   const result = originalResolver.rollSpecialMechanic(lineup, mechanicId, stamina, scaleFn);
   
-  if (mechanicId === "POSTER_SPARK_CONTACT_TAX") {
+  if (mechanicId === "POSTER_SPARK_TILT") {
     contactTaxRolls++;
     if (result) {
       contactTaxTriggers++;
       activeSkillDrainSource = "Contact Tax";
     }
-  } else if (mechanicId === "POSTER_SPARK_LUNG_BURNER") {
+  } else if (mechanicId === "POSTER_SPARK_TILT") {
     lungBurnerRolls++;
     if (result) {
       lungBurnerTriggers++;
       activeSkillDrainSource = "Lung Burner";
     }
-  } else if (mechanicId === "FLOP_SELL_CONTACT") {
+  } else if (mechanicId === "FLOP_PRESSURE") {
     flopRolls++;
     if (result) {
       flopTriggers++;
     }
-  } else if (mechanicId === "SKY_WALL_RIM_PRESSURE") {
+  } else if (mechanicId === "SKY_WALL_BLOCK_BOOST") {
     skyWallRolls++;
     if (result) {
       skyWallTriggers++;
@@ -128,7 +128,7 @@ mockedResolver.drainStamina = (stamina: Record<string, number>, target: Player, 
   } else if (activeSkillDrainSource === "Lung Burner") {
     lungBurnerStaminaDrained += actual;
     if (activeMatchState) {
-      const hadDebt = originalResolver.hasMark(activeMatchState.skillMarks, target.id, "Debt");
+      const hadDebt = originalResolver.hasMark(activeMatchState.skillMarks, target.id, "Hooked");
       if (hadDebt) {
         lungBurnerDebtDrains++;
       } else {
@@ -381,18 +381,18 @@ function runMatches(
       // Scenario 5: Force Debt marks on AI defenders on every tick to stress Lung Burner Debt Drains
       if (scenarioId === 5) {
         aiLineup.forEach(p => {
-          state.skillMarks[p.id] = [{ mark: "Debt", possessionsLeft: 3, sourceSkill: "Debt Injector" }];
+          state.skillMarks[p.id] = [{ mark: "Hooked", possessionsLeft: 3, sourceSkill: "Debt Injector" }];
         });
       }
 
       // Track how many players have Debt mark before tick
       aiLineup.forEach(p => {
-        if (originalResolver.hasMark(state.skillMarks, p.id, "Debt")) {
+        if (originalResolver.hasMark(state.skillMarks, p.id, "Hooked")) {
           debtMarkInteractions++;
         }
       });
       userLineup.forEach(p => {
-        if (originalResolver.hasMark(state.skillMarks, p.id, "Debt")) {
+        if (originalResolver.hasMark(state.skillMarks, p.id, "Hooked")) {
           debtMarkInteractions++;
         }
       });

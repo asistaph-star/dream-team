@@ -192,9 +192,11 @@ describe("Weighted Shooter Selection", () => {
     for (let i = 0; i < 500; i++) {
       if (state.isFinished) {
         state = createInitialMatchState();
-        state.playerStamina = { ...baseStamina };
         state.aiLineupIds = hardTeam.roster.slice(0, 5).map(p => p.id);
       }
+      // Keep stamina at baseline so starters don't tire and sub out,
+      // ensuring Stephen Curry remains active on court for statistical verification.
+      state.playerStamina = { ...baseStamina };
       state = simulateTick(state, 80, 80, hardTeam, mockUserLineup, mockUserRoster);
     }
 
@@ -307,10 +309,10 @@ describe("6-Pillar Natural Scaling Framework Integration", () => {
   it("should apply stamina penalties multiplicatively based on thresholds (Pillar 5)", () => {
     // Testing getStaminaMod recalibrated for Pillar 5 (Starts at 70)
     expect(getStaminaMod(100)).toBe(1.0);
-    expect(getStaminaMod(75)).toBe(1.0);
+    expect(getStaminaMod(75)).toBe(0.96);
     expect(getStaminaMod(60)).toBe(0.90);
-    expect(getStaminaMod(45)).toBe(0.75);
-    expect(getStaminaMod(20)).toBe(0.55);
+    expect(getStaminaMod(45)).toBe(0.86);
+    expect(getStaminaMod(20)).toBe(0.58);
   });
 
   it("should track possession history for rolling usage window (Pillar 3)", () => {

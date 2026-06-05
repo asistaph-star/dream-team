@@ -6,6 +6,7 @@ import { mockPlayers } from "@/lib/data/mockPlayers";
 import { Equipment, EquipmentSlot, Inventory, MaterialId } from "@/lib/types/item";
 import { craftingRecipes } from "@/lib/data/mockItems";
 import { applyStarGrowth, repairStarGrowth } from "@/lib/utils/starGrowth";
+import { getPlayerDuplicateKey } from "@/lib/utils/playerIdentity";
 import { SpecialSkillName } from "@/lib/skills/assignBaseSkills";
 import { rollSkillQuality, SPECIAL_SKILL_NAMES } from "@/lib/skills/skillCatalog";
 import { wouldCreateDuplicateFamily, migratePlayerSpecialSkills } from "@/lib/skills/skillMigration";
@@ -138,7 +139,12 @@ const normalizeRoster = (players: Player[]): Player[] => {
       targetRarity = "Common";
     }
     
-    const updatedPlayer = { ...player, starLevel: targetStarLevel, rarity: targetRarity };
+    const updatedPlayer = { 
+      ...player, 
+      starLevel: targetStarLevel, 
+      rarity: targetRarity,
+      sourcePlayerId: player.sourcePlayerId ?? baseline?.sourcePlayerId ?? baseline?.id
+    };
     const migratedPlayer = migratePlayerSpecialSkills(updatedPlayer);
     return unlockSpecialSkillQualities(repairStarGrowth(migratedPlayer, baseline), targetStarLevel);
   });
@@ -485,7 +491,11 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
       else selectedPlayer = mockPlayers[7];
     }
 
-    const newPlayer = { ...selectedPlayer, id: `p_${Date.now()}_${Math.floor(Math.random() * 1000)}` };
+    const newPlayer = { 
+      ...selectedPlayer, 
+      id: `p_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      sourcePlayerId: selectedPlayer.sourcePlayerId ?? selectedPlayer.id
+    };
     setRoster(prev => [newPlayer, ...prev]);
 
     return { success: true, player: newPlayer };
@@ -860,7 +870,8 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
     setCash(prev => prev - cost);
     const newPlayer = { 
       ...player, 
-      id: `p_${Date.now()}_${Math.floor(Math.random() * 1000)}` 
+      id: `p_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      sourcePlayerId: player.sourcePlayerId ?? player.id
     };
     setRoster(prev => [newPlayer, ...prev]);
     return { success: true };
@@ -980,16 +991,18 @@ export function GameStateProvider({ children }: { children: React.ReactNode }) {
 
     let duplicatesToSacrifice: Player[] = [];
     if (requiredDuplicates > 0) {
+      const targetKey = getPlayerDuplicateKey(player);
       const dupCandidates = roster.filter(
-        p => p.name === player.name && 
+        p => getPlayerDuplicateKey(p) === targetKey && 
         p.id !== player.id && 
-        !activeLineup.some(al => al.id === p.id)
+        !activeLineup.some(al => al.id === p.id) &&
+        !activeReserves.some(ar => ar.id === p.id)
       );
 
       if (dupCandidates.length < requiredDuplicates) {
         return { 
           success: false, 
-          error: `Ascension requires sacrificing ${requiredDuplicates} exact Duplicate(s) of ${player.name} that are NOT in your active starting 5 lineup!` 
+          error: `Ascension requires sacrificing ${requiredDuplicates} exact Duplicate(s) of ${player.name} that are NOT in your active starting 5 lineup or reserves bench!` 
         };
       }
       

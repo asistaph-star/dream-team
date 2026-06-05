@@ -116,7 +116,9 @@ This document provides a comprehensive verification log and completion tracker f
 * **What Code Does**: Guarantees players are parsed correctly from players_update.json data source, verifies OVR ranking brackets, delta caps, salary formulas, season transition stats fallbacks, pre-match injury availability, and enforces that no random in-match injuries exist.
 * **Tests**: [test_nba_data_pipeline_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_nba_data_pipeline_final_lock.ts) passes.
 * **Risk Level**: SAFE
-* **Recommended Next Step**: Maintain as-is### 11. Attribute Model Refinement (IQ & Hustle)
+* **Recommended Next Step**: Maintain as-is.
+
+### 11. Attribute Model Refinement (IQ & Hustle)
 * **Status**: DONE
 * **Evidence File Paths**:
   * [player.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/types/player.ts) (Player interface detailed attributes)
@@ -152,40 +154,51 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Proceed to UI updates phase.
 
----
-
-## Section 2: Done but Needs Continued Regression
-
-### 1. Glass Strike putback gating
-* **Status**: DONE (Test fails due to static analysis checking for extracted functions)
+### 14. Glass Strike Putback Gating
+* **Status**: DONE
 * **Evidence File Paths**:
   * [reboundSystem.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/reboundSystem.ts) (calculateOffensiveReboundChance)
   * [matchHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/matchHelpers.ts) (getGlassStrikeOrebBoost, getGlassStrikePutbackBoost)
   * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (triggers putback action loops)
 * **What Code Does**: Increases offensive rebound rate and provides putback shot quality multipliers based on rebound archetype level.
-* **Why Tests Fail**: [test_glass_strike_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_glass_strike_gating.ts) scans matchEngine.ts statically for getGlassStrikeOrebBoost and getGlassStrikePutbackBoost, which were extracted to matchHelpers.ts.
-* **Risk Level**: MEDIUM
-* **Recommended Next Step**: Update the static assertions in the validation script to scan matchHelpers.ts instead of matchEngine.ts.
+* **Tests**: [test_glass_strike_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_glass_strike_gating.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
 
-### 2. Bench Captain integration
-* **Status**: DONE (Test fails due to static analysis checking for extracted functions)
+### 15. Bench Captain Integration
+* **Status**: DONE
 * **Evidence File Paths**:
   * [archetypeEffects.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/archetypeEffects.ts) (getBenchCaptainIdentity, calculateBenchCaptainRecovery)
-  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts#L510-L550) (applyBenchCaptain)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (applyBenchCaptain)
 * **What Code Does**: Triggers stamina stabilization for tired court players and increases benched player recovery once per quarter.
-* **Why Tests Fail**: [test_bench_captain_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_bench_captain_gating.ts) scans matchEngine.ts statically for Math.min(8, Math.round(6 * scale)), which was moved to archetypeEffects.ts.
-* **Risk Level**: MEDIUM
-* **Recommended Next Step**: Update the static assertions in the validation script to scan archetypeEffects.ts.
+* **Tests**: [test_bench_captain_gating.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_bench_captain_gating.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
 
-### 3. Gated Defensive Anchor
-* **Status**: DONE (Test fails due to test runner collision under mocked Math.random)
+### 16. Defensive Anchor Team Boost
+* **Status**: DONE
 * **Evidence File Paths**:
-  * [archetypeEffects.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/archetypeEffects.ts) (getDefensiveAnchorIdentity, calculateDefensiveAnchorTriggerScale)
-  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts#L552-L635) (applyDefensiveAnchor)
-* **What Code Does**: Applies single-target or team-wide opponent stamina drain based on the defensive anchor player's attributes and team's stamina-drain archetype level.
-* **Why Tests Fail**: [test_gated_defensive_anchor.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_gated_defensive_anchor.ts) mocks Math.random to 0.0, causing both Defensive Anchor (team pressure) and Five-Man Squeeze X (steals/turnovers) to trigger in the same tick. This results in double drains that exceed the test's hardcoded threshold expectations.
-* **Risk Level**: HIGH
-* **Recommended Next Step**: Refactor the test script to separate the mock setups, or bypass the turnover segment to isolate the start-of-tick pressure.
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (applyDefensiveAnchor, Defensive Anchor recalculation)
+* **What Code Does**: Calculates a team defensive IQ rating boost dynamically every tick depending on the Defensive Anchor leader's stamina and capability score. The boost does not stack if multiple anchors are on court.
+* **Tests**: [test_skill_system_hard_reset_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_system_hard_reset_final_lock.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
+### 17. 15-Family Skill System Hard Reset & Final Lock
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [staminaSkillEffects.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/staminaSkillEffects.ts) (only contains getSkyWallDrain, getLockChainDrain, and applyAntiSnowballScaling)
+  * [matchEngine.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/matchEngine.ts) (removed all legacy stubs and drains, updated to pass skill rarity to drains)
+* **What Code Does**: Completely replaces 15 legacy X skills with the new clean family ID system, eliminates all unused stamina drains (Defensive Anchor, Power Driver, Poster Spark, Bench Captain, Gameplan Jammer), and implements exact rarity-based drains for Sky Wall (3/5/7/9) and Lock Chain (2/4/6/8) with proper anti-snowball scaling bounds (0.60x at <50% stamina, 0.30x at <30% stamina).
+* **Tests**: [test_skill_system_hard_reset_family_effects.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_system_hard_reset_family_effects.ts) and [test_skill_system_hard_reset_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_system_hard_reset_final_lock.ts) pass.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Proceed to UI updates phase.
+
+---
+
+## Section 2: Done but Needs Continued Regression
+
+None. All tests are passing cleanly.
 
 ---
 

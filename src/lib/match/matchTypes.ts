@@ -165,12 +165,12 @@ export interface MatchState {
     blockedAtQuarter: number;
   }[]>;
   skillMarks: Record<string, {
-    mark: 'Exposed' | 'Debt' | 'Hooked' | 'Pinned' | 'Static' | 'Tilted';
+    mark: 'Exposed' | 'Hooked' | 'Pinned' | 'Static' | 'Tilted';
     possessionsLeft: number;
     sourceSkill: string;
   }[]>;
   markImmunity: Record<string, {
-    mark: 'Exposed' | 'Debt' | 'Hooked' | 'Pinned' | 'Static' | 'Tilted';
+    mark: 'Exposed' | 'Hooked' | 'Pinned' | 'Static' | 'Tilted';
     possessionsLeft: number;
   }[]>;
   skillUsedThisGame: Record<string, string[]>;

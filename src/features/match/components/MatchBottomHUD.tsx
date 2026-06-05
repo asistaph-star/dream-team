@@ -17,6 +17,8 @@ interface MatchBottomHUDProps {
   getDisplayStats: (pid: string) => PlayerMatchStats;
   logEndRef: RefObject<HTMLDivElement | null>;
   roster: Player[];
+  userOffStrategy: string;
+  userDefStrategy: string;
 }
 
 export function MatchBottomHUD({
@@ -32,18 +34,39 @@ export function MatchBottomHUD({
   aiTeam,
   getDisplayStats,
   logEndRef,
-  roster
+  roster,
+  userOffStrategy,
+  userDefStrategy,
 }: MatchBottomHUDProps) {
+  const latestEvent = displayEvents[displayEvents.length - 1];
+  const recentEvents = [...displayEvents].slice(-8).reverse();
+  const shortStrategy = (name: string) => {
+    const trimmed = name.split("(")[0]?.trim() ?? name;
+    return trimmed.length > 16 ? `${trimmed.slice(0, 16)}…` : trimmed;
+  };
+
   return (
     <>
-      {/* BOTTOM HUD - CHAT */}
-      <div className="w-[280px] bg-slate-800/95 rounded p-2 text-white border border-gray-600 shadow-xl shrink-0">
+      {/* BOTTOM HUD - MATCH FEED */}
+      <div className="w-[280px] bg-[#0d1520]/95 rounded-lg p-2 text-white border border-gray-700/80 shadow-xl shrink-0">
           <div className="flex gap-2 mb-2">
-              <button className="bg-gray-700 px-3 py-1 text-[10px] rounded font-bold uppercase">Global</button>
-              <button className="bg-blue-600 px-3 py-1 text-[10px] rounded font-bold uppercase">Match</button>
+              <span className="bg-cyan-600/20 border border-cyan-500/40 px-3 py-1 text-[10px] rounded font-black uppercase tracking-widest text-cyan-300">Live Feed</span>
+              <span className="bg-black/40 border border-white/10 px-3 py-1 text-[10px] rounded font-bold uppercase text-gray-400">Match</span>
           </div>
-          <div className="h-28 bg-black/40 p-2 text-[11px] overflow-y-auto ">
-              <p><span className="text-blue-400">System:</span> Match started!</p>
+          <div className="h-28 bg-black/50 border border-white/5 rounded-sm p-2 text-[11px] overflow-y-auto flex flex-col justify-end gap-1">
+              {recentEvents.length === 0 ? (
+                <p><span className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Tip-off pending</span></p>
+              ) : (
+                recentEvents.map((ev, idx) => (
+                  <p key={ev.id} className={idx === 0 ? "text-[12px]" : "opacity-70"}>
+                    <span className="text-yellow-400 font-bold tabular-nums">{ev.time}</span>
+                    <span className={`font-black ml-1 uppercase text-[10px] ${ev.isUserTeam ? 'text-cyan-400' : 'text-red-400'}`}>
+                      {ev.isUserTeam ? 'HOME' : 'AWAY'}
+                    </span>
+                    <span className="text-gray-200 ml-1">{ev.text}</span>
+                  </p>
+                ))
+              )}
           </div>
       </div>
 
@@ -51,12 +74,12 @@ export function MatchBottomHUD({
       <div className="flex-1 max-w-[740px] bg-slate-900/98 rounded-lg overflow-hidden border border-gray-700/80 shadow-2xl flex flex-col h-[166px]" style={{backdropFilter:'blur(8px)'}}>
           {/* Tab bar */}
           <div className="flex items-center bg-[#0d1520] border-b border-gray-700/60 text-[11px] font-bold">
-              <button onClick={() => setActiveLogTab('pbp')} className={`px-5 py-2 transition-all border-r border-gray-700/60 ${activeLogTab === 'pbp' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer'}`}>▶ Play by Play</button>
-              <button onClick={() => setActiveLogTab('stats')} className={`px-5 py-2 transition-all ${activeLogTab === 'stats' ? 'bg-[#1e3a5f] text-cyan-300 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer'}`}>Statistics</button>
+              <button onClick={() => setActiveLogTab('pbp')} className={`px-5 py-2 transition-all border-r border-gray-700/60 ${activeLogTab === 'pbp' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer'}`}>Play by Play</button>
+              <button onClick={() => setActiveLogTab('stats')} className={`px-5 py-2 transition-all ${activeLogTab === 'stats' ? 'bg-[#1e3a5f] text-cyan-300 border-b-2 border-cyan-400' : 'text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer'}`}>Box Score</button>
               {activeLogTab === 'stats' && (
                 <div className="flex items-center gap-1 ml-auto pr-2">
-                  <button onClick={() => setStatsTeam('user')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsTeam === 'user' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' : 'text-gray-500 hover:text-gray-300'}`}>● MY TEAM</button>
-                  <button onClick={() => setStatsTeam('ai')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsTeam === 'ai' ? 'bg-red-500/20 text-red-300 border border-red-500/50' : 'text-gray-500 hover:text-gray-300'}`}>● {aiTeam.name.split(' ').slice(-1)[0].toUpperCase()}</button>
+                  <button onClick={() => setStatsTeam('user')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsTeam === 'user' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' : 'text-gray-500 hover:text-gray-300'}`}>MY TEAM</button>
+                  <button onClick={() => setStatsTeam('ai')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsTeam === 'ai' ? 'bg-red-500/20 text-red-300 border border-red-500/50' : 'text-gray-500 hover:text-gray-300'}`}>{aiTeam.name.split(' ').slice(-1)[0].toUpperCase()}</button>
                   <span className="text-gray-700 mx-1">|</span>
                   <button onClick={() => setStatsFilter('starters')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsFilter === 'starters' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40' : 'text-gray-500 hover:text-gray-300'}`}>COURT</button>
                   <button onClick={() => setStatsFilter('bench')} className={`px-2 py-0.5 rounded text-[9px] font-bold transition-all cursor-pointer ${statsFilter === 'bench' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40' : 'text-gray-500 hover:text-gray-300'}`}>BENCH</button>
@@ -65,16 +88,34 @@ export function MatchBottomHUD({
           </div>
 
           {activeLogTab === 'pbp' ? (
-            <div className="flex-1 pt-3 px-3 pb-0 bg-slate-900 text-[11px] overflow-y-auto no-scrollbar flex flex-col justify-end">
-              <div className="space-y-1.5 pb-2">
-                {[...displayEvents].reverse().map(ev => (
-                  <p key={ev.id}>
-                    <span className="text-yellow-400 font-bold">{ev.time}</span> -
-                    <span className={`font-bold ml-1 ${ev.isUserTeam ? 'text-cyan-400' : 'text-red-400'}`}>{ev.isUserTeam ? 'My Team' : aiTeam.name}</span>
-                    <span className="text-gray-200 ml-1">{ev.text}</span>
+            <div className="flex-1 pt-2 px-3 pb-2 bg-slate-900 text-[11px] overflow-hidden flex flex-col">
+              {latestEvent && (
+                <div className="mb-2 rounded-sm border border-white/10 bg-black/35 px-3 py-2">
+                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-1">Latest Play</div>
+                  <p>
+                    <span className="text-yellow-400 font-bold tabular-nums">{latestEvent.time}</span>
+                    <span className={`font-black ml-2 uppercase text-[10px] ${latestEvent.isUserTeam ? 'text-cyan-400' : 'text-red-400'}`}>
+                      {latestEvent.isUserTeam ? 'HOME' : 'AWAY'}
+                    </span>
+                    <span className="text-white ml-2 font-semibold">{latestEvent.text}</span>
                   </p>
-                ))}
-                <div ref={logEndRef} />
+                </div>
+              )}
+              <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col justify-end">
+                <div className="space-y-1 pb-1">
+                  {recentEvents.slice(1).map(ev => (
+                    <p key={ev.id}>
+                      <span className="text-yellow-400 font-bold tabular-nums">{ev.time}</span>
+                      <span className={`font-black ml-1 uppercase text-[10px] ${ev.isUserTeam ? 'text-cyan-400' : 'text-red-400'}`}>{ev.isUserTeam ? 'HOME' : 'AWAY'}</span>
+                      <span className="text-gray-300 ml-1">{ev.text}</span>
+                    </p>
+                  ))}
+                  <div ref={logEndRef} />
+                </div>
+              </div>
+              <div className="border-t border-white/5 pt-1.5 mt-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-widest">
+                <span className="text-cyan-400 truncate max-w-[45%]">OFF: {shortStrategy(userOffStrategy)}</span>
+                <span className="text-red-400 truncate max-w-[45%] text-right">DEF: {shortStrategy(userDefStrategy)}</span>
               </div>
             </div>
           ) : (() => {
@@ -167,13 +208,13 @@ export function MatchBottomHUD({
                           <td className="px-2 py-1.5 text-center text-gray-300">{s.TPM ?? 0}/{s.TPA ?? 0}</td>
                           <td className="px-2 py-1.5 text-center text-gray-300">{s.FTM ?? 0}/{s.FTA ?? 0}</td>
                           <td className={`px-2 py-1.5 font-bold ${isLeadReb ? 'text-cyan-400' : 'text-gray-300'}`}>
-                            <div className="flex items-center justify-center gap-0.5">{s.REB}{isLeadReb && <span className="text-[9px] leading-none">★</span>}</div>
+                            <div className="flex items-center justify-center gap-0.5">{s.REB}{isLeadReb && <span className="text-[8px] leading-none font-black text-cyan-500">TOP</span>}</div>
                           </td>
                           <td className={`px-2 py-1.5 font-bold ${isLeadAst ? 'text-purple-400' : 'text-gray-300'}`}>
-                            <div className="flex items-center justify-center gap-0.5">{s.AST}{isLeadAst && <span className="text-[9px] leading-none">★</span>}</div>
+                            <div className="flex items-center justify-center gap-0.5">{s.AST}{isLeadAst && <span className="text-[8px] leading-none font-black text-purple-400">TOP</span>}</div>
                           </td>
                           <td className={`px-2 py-1.5 font-bold ${isLeadStl ? 'text-green-400' : 'text-gray-300'}`}>
-                            <div className="flex items-center justify-center gap-0.5">{s.STL}{isLeadStl && <span className="text-[9px] leading-none">★</span>}</div>
+                            <div className="flex items-center justify-center gap-0.5">{s.STL}{isLeadStl && <span className="text-[8px] leading-none font-black text-green-400">TOP</span>}</div>
                           </td>
                           <td className="px-2 py-1.5 text-center text-gray-300">{s.BLK ?? 0}</td>
                           <td className={`px-2 py-1.5 text-center ${(s.TOV ?? 0) >= 4 ? 'text-red-400 font-bold' : 'text-gray-400'}`}>{s.TOV ?? 0}</td>
@@ -198,7 +239,10 @@ export function MatchBottomHUD({
                             })()}
                           </td>
                           <td className={`px-2 py-1.5 font-black text-sm ${isLeadPts ? 'text-yellow-400' : 'text-white'}`}>
-                            <div className="flex items-center justify-center gap-0.5">{isLeadPts && <span className="text-[10px] leading-none">👑</span>}<span>{s.PTS}</span></div>
+                            <div className="flex items-center justify-center gap-0.5">
+                              {isLeadPts && <span className="text-[8px] leading-none font-black text-yellow-500">TOP</span>}
+                              <span>{s.PTS}</span>
+                            </div>
                           </td>
                         </tr>
                       );

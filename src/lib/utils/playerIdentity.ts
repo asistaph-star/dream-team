@@ -127,3 +127,21 @@ export const getShotIdentityEfficiencyAdjustment = (player: Player, is3PT: boole
   const rating = getTwoPtRating(player);
   return Math.max(-0.055, Math.min(0.055, (rating - 75) * 0.0035));
 };
+
+export function getPlayerDuplicateKey(player: Player): string {
+  if (player.nbaPlayerId) return player.nbaPlayerId;
+  if (player.playerId) return player.playerId;
+  if (player.sourcePlayerId) return player.sourcePlayerId;
+  return player.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+}
+
+export function isCardInstanceActive(
+  card: Player,
+  activeLineup: Player[],
+  activeReserves: Player[]
+): boolean {
+  const inLineup = activeLineup.some(al => al.id === card.id);
+  const inBench = activeReserves.some(ar => ar.id === card.id);
+  return inLineup || inBench;
+}
+

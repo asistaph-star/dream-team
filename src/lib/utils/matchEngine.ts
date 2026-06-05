@@ -7,7 +7,8 @@ import {
   getShotZoneModifier, getMatchupBonus, getShotClockReset,
   getShotClockViolationChance,
   getPlayerMaxStamina,
-  getEffectiveRevertThreshold, isStrategyRevertBlocked
+  getEffectiveRevertThreshold, isStrategyRevertBlocked,
+  translateDefIQBoost
 } from "./matchTypes";
 import { STAMINA_CONFIG } from "../match/staminaConfig";
 import { mockAiTeams } from "../match/mockTeams";
@@ -128,17 +129,9 @@ import { hasSpecialSkillMechanic } from "../skills/skillResolver";
 import { assignBaseSkillsFromStats, assignSpecialSkillsFromStats } from "../skills/assignBaseSkills";
 import { resolveLineupArchetypes } from "../lineup/lineupArchetypeResolver";
 import {
-  DEBT_COLLECTOR_DRAIN,
-  FIVE_MAN_SQUEEZE_BASE,
-  FIVE_MAN_SQUEEZE_BOOSTED,
-  HOOKED_TAX_DRAIN,
-  getContactTaxDrain,
-  getLungBurnerDrain,
   applyAntiSnowballScaling,
-  getPowerDriverDrain,
-  getDefensiveAnchorPressureDrain,
-  getDefensiveAnchorTeamPressureDrain,
-  getLockChainOnBallPressureDrain
+  getSkyWallDrain,
+  getLockChainDrain
 } from "../match/staminaSkillEffects";
 
 // Re-export everything the UI needs
@@ -439,47 +432,11 @@ export function simulateTick(
   };
   const getLowestStaminaPlayer = (lineup: Player[]): Player =>
     extGetLowestStaminaPlayer(lineup, newStamina);
-  const applyDebtCollector = (
-    triggerTeam: Player[],
-    targetTeam: Player[],
-    target: Player,
-    isTriggerUser: boolean
-  ) => {
-    if (!hasMark(newSkillMarks, target.id, "Debt")) return;
-    if (!rollSpecialMechanic(triggerTeam, "GAMEPLAN_DEBT_COLLECTOR", newStamina, (h) => {
-      const debtCollectorIdentity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
-      return 0.90 + (debtCollectorIdentity / 100) * 0.20;
-    })) return;
-    newSkillMarks = consumeMark(newSkillMarks, target.id, "Debt");
-    const splashTargets = [...targetTeam]
-      .filter(p => p.id !== target.id)
-      .sort((a, b) => (newStamina[a.id] ?? 100) - (newStamina[b.id] ?? 100))
-      .slice(0, 2);
-    splashTargets.forEach(p => drainStamina(newStamina, p, targetTeam, DEBT_COLLECTOR_DRAIN));
-    skillLog(`Debt Collector X spreads stamina damage from ${target.name}`, isTriggerUser);
-  };
-  const applyFiveManSqueeze = (
-    triggerTeam: Player[],
-    targetTeam: Player[],
-    isTriggerUser: boolean
-  ) => {
-    if (!rollSpecialMechanic(triggerTeam, "DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE", newStamina, (h) => {
-      const fiveManIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h) + getStealRating(h)) / 3;
-      return 0.90 + (fiveManIdentity / 100) * 0.20;
-    })) return;
-    const markedCount = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id)).length;
-    const amount = markedCount >= 3 ? FIVE_MAN_SQUEEZE_BOOSTED : FIVE_MAN_SQUEEZE_BASE;
-    targetTeam.forEach(p => {
-      const finalDrain = applyAntiSnowballScaling(amount, staminaPct(p));
-      drainStamina(newStamina, p, targetTeam, finalDrain);
-    });
-    skillLog(`Five-Man Squeeze X drains ${amount} stamina from the opposing five`, isTriggerUser);
-  };
   const tryColdTimeout = (team: Player[], isUserTeam: boolean) => {
     const markedPlayers = team.filter(p => (newSkillMarks[p.id] ?? []).length > 0);
     const teamAvgStamina = avgStamina(team, newStamina);
     if (teamAvgStamina >= 65 && markedPlayers.length === 0) return;
-    const useKey = `Cold Timeout X Q${newQuarter}`;
+    const useKey = `Timeout Reset Q${newQuarter}`;
     if (hasTeamSkillUsed(isUserTeam, useKey)) return;
     if (!rollSpecialMechanic(team, "TIMEOUT_RESET_CLEANSE", newStamina, (h) => {
       const coldTimeoutIdentity = (getCalmRating(h) + getStaminaRating(h)) / 2;
@@ -509,7 +466,7 @@ export function simulateTick(
     const recoveryText = recoveryTargets.length > 0 ? `steadies ${recoveryTargets.length} tired player${recoveryTargets.length > 1 ? "s" : ""}` : "";
     const cleanseText = cleansed > 0 ? `cleanses ${cleansed} pressure mark${cleansed !== 1 ? "s" : ""}` : "";
     const joiner = cleanseText && recoveryText ? " and " : "";
-    skillLog(`Cold Timeout X ${cleanseText}${joiner}${recoveryText}`, isUserTeam);
+    skillLog(`Timeout Reset ${cleanseText}${joiner}${recoveryText}`, isUserTeam);
   };
 
   const applyBenchCaptain = (team: Player[], isUserTeam: boolean) => {
@@ -565,12 +522,12 @@ export function simulateTick(
     const useKey = `${teamName} Momentum Swing Q${newQuarter}`;
     if (hasTeamSkillUsed(isUserTeam, useKey)) return;
 
-    if (!rollSpecialMechanic(team, "MOMENTUM_SWING_STABILIZE", newStamina, (h) => {
+    if (!rollSpecialMechanic(team, "MOMENTUM_SWING_RECOVERY", newStamina, (h) => {
       const identity = getMomentumSwingIdentity(h);
       return 0.85 + (identity / 100) * 0.30;
     })) return;
 
-    const holders = team.filter(p => hasSpecialSkillMechanic(p, "MOMENTUM_SWING_STABILIZE"));
+    const holders = team.filter(p => hasSpecialSkillMechanic(p, "MOMENTUM_SWING_RECOVERY"));
     const leader = [...holders].sort((a_p, b_p) => (getCalmRating(b_p) - getCalmRating(a_p)))[0];
     if (!leader) return;
 
@@ -604,100 +561,41 @@ export function simulateTick(
   const applyDefensiveAnchor = (defendingTeam: Player[], attackingTeam: Player[], isDefendingUserTeam: boolean) => {
     if (pace === 'fastbreak') return;
 
-    const teamName = isDefendingUserTeam ? "User" : "AI";
-    const useKey = `${teamName} Defensive Anchor Q${newQuarter}`;
-    if (hasTeamSkillUsed(isDefendingUserTeam, useKey)) return;
+    const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_BOOST"));
+    if (holders.length === 0) return;
 
-    const summary = resolveLineupArchetypes(defendingTeam);
-    const staminaDrainResult = summary.allResults.find(r => r.id === "stamina-drain");
-    const level = staminaDrainResult ? staminaDrainResult.level : 0;
-
-    if (!rollSpecialMechanic(defendingTeam, "DEFENSIVE_ANCHOR_TEAM_PRESSURE", newStamina, (h) => {
-      return calculateDefensiveAnchorTriggerScale(getDefensiveAnchorIdentity(h), level);
-    })) return;
-
-    const holders = defendingTeam.filter(p => hasSpecialSkillMechanic(p, "DEFENSIVE_ANCHOR_TEAM_PRESSURE"));
+    // Defensive Anchor triggers on court but does not stack (select the best holder)
     const leader = [...holders].sort((a_p, b_p) => {
       return getDefensiveAnchorIdentity(b_p) - getDefensiveAnchorIdentity(a_p);
     })[0];
     if (!leader) return;
 
-    markTeamSkillUsed(isDefendingUserTeam, useKey);
+    const defSide = isDefendingUserTeam ? 'user' : 'ai';
+    const leaderIdentity = getDefensiveAnchorIdentity(leader); // Rating between 0 and 100
+    const baseEffectiveDef = isDefendingUserTeam ? userEffRaw.def : aiEffRaw.def;
+    const leaderStamina = newStamina[leader.id] ?? 100;
 
-    const leaderIdentity = getDefensiveAnchorIdentity(leader);
-    const scale = calculateDefensiveAnchorLeaderScale(leaderIdentity);
+    // Scale leader identity to represent IQ points (e.g. up to 1000) for translateDefIQBoost.
+    // translateDefIQBoost scales this by dividing by 7000, so 1000 IQ points yields up to ~14% team defense boost.
+    const iqPoints = leaderIdentity * 10;
+    const defBoost = translateDefIQBoost(iqPoints, baseEffectiveDef, leaderStamina);
 
-    if (level === 0) {
-      const target = extGetPrimaryBallHandler(attackingTeam);
-      if (!target) return;
-
-      const baseAmount = getDefensiveAnchorPressureDrain(scale);
-      const targetResistance = calculateDefensiveAnchorTargetResistance(getStaminaRating(target));
-      let playerDrain = Math.round(baseAmount * (1 - targetResistance));
-
-      playerDrain = applyAntiSnowballScaling(playerDrain, staminaPct(target));
-      playerDrain = Math.max(0, playerDrain);
-      if (playerDrain > 0) {
-        drainStamina(newStamina, target, attackingTeam, playerDrain);
-      }
-
-      skillLog(`${leader.name}'s Defensive Anchor exerts single-target pressure on ${target.name}, draining ${playerDrain} stamina`, isDefendingUserTeam);
-    } else {
-      const baseAmount = getDefensiveAnchorTeamPressureDrain(scale);
-
-      // Team Leadership Resistance (Counter Type B)
-      const counterMechanics: SpecialSkillMechanicId[] = [
-        "BENCH_CAPTAIN_STABILIZE",
-        "COMPOSURE_SHIELD_CANCEL",
-        "TIMEOUT_RESET_CLEANSE"
-      ];
-      const counterLeaders = attackingTeam.filter(p =>
-        counterMechanics.some(mech => hasSpecialSkillMechanic(p, mech))
-      );
-      let leadershipReduction = 0;
-      let counterLeaderName = "";
-      if (counterLeaders.length > 0) {
-        const bestLeader = [...counterLeaders].sort((a, b) => {
-          return getBenchCaptainIdentity(b) - getBenchCaptainIdentity(a);
-        })[0];
-        const counterIdentity = getBenchCaptainIdentity(bestLeader);
-        leadershipReduction = calculateDefensiveAnchorLeadershipReduction(counterIdentity);
-        counterLeaderName = bestLeader.name;
-      }
-
-      const teamDrain = Math.round(baseAmount * (1 - leadershipReduction));
-
-      attackingTeam.forEach(p => {
-        // Player Natural Resistance (Counter Type A)
-        const targetResistance = calculateDefensiveAnchorTargetResistance(getStaminaRating(p));
-        let playerDrain = Math.round(teamDrain * (1 - targetResistance));
-
-        // Anti-Snowball Low-Stamina Reduction (Counter Type C)
-        playerDrain = applyAntiSnowballScaling(playerDrain, staminaPct(p));
-
-        playerDrain = Math.max(0, playerDrain);
-        if (playerDrain > 0) {
-          drainStamina(newStamina, p, attackingTeam, playerDrain);
-        }
-      });
-
-      const leadershipText = counterLeaderName ? ` (countered by ${counterLeaderName}: -${Math.round(leadershipReduction * 100)}%)` : "";
-      skillLog(`${leader.name}'s Defensive Anchor exerts team-wide pressure, draining stamina${leadershipText}`, isDefendingUserTeam);
-    }
+    newTeamSkillBuffs[defSide].defIQ += defBoost;
+    newActiveSkillBuffs[leader.id] = {
+      offIQBoost: 0,
+      defIQBoost: defBoost,
+      staminaDecayMult: 1.0,
+      benchRecoveryBonus: 0
+    };
   };
 
-  const tryDeadAir = (
-    disruptingTeam: Player[],
-    target: Player | undefined,
-    isDisruptingUser: boolean,
-    sourceText: string
-  ): boolean => {
-    if (!target || !rollSpecialMechanic(disruptingTeam, "GAMEPLAN_DEAD_AIR", newStamina, (h) => {
-      const deadAirIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
-      return 0.90 + (deadAirIdentity / 100) * 0.20;
+  const tryGameplanJammer = (defendingTeam: Player[], target: Player, sourceText: string, isDisruptingUser: boolean): boolean => {
+    if (!rollSpecialMechanic(defendingTeam, "GAMEPLAN_JAMMER_STATIC", newStamina, (h) => {
+      const identity = (getOnBallDefenseRating(h) + getStealRating(h)) / 2;
+      return 0.90 + (identity / 100) * 0.20;
     })) return false;
-    newSkillMarks = addMark(newSkillMarks, newMarkImmunity, target.id, "Static", "Dead Air X", 2);
-    skillLog(`Dead Air X blocks ${target.name}'s ${sourceText} in mid-air and applies Static`, isDisruptingUser);
+    newSkillMarks = addMark(newSkillMarks, newMarkImmunity, target.id, "Static", "GAMEPLAN_JAMMER_STATIC", 2);
+    skillLog(`Gameplan Jammer blocks ${target.name}'s ${sourceText} and applies Static`, isDisruptingUser);
     return true;
   };
   const tryShadowGuard = (defendingTeam: Player[], isDefendingUser: boolean): boolean => {
@@ -709,22 +607,6 @@ export function simulateTick(
     if (hasMark(newSkillMarks, player.id, "Pinned")) return false;
     newStamina[player.id] = recoverToMax(player, amount, newStamina);
     return true;
-  };
-  const applyPressureCoach = (sourceTeam: Player[], targetTeam: Player[], isSourceUser: boolean) => {
-    if (!rollSpecialMechanic(sourceTeam, "GAMEPLAN_PRESSURE_COACH", newStamina, (h) => {
-      return calculatePressureCoachScale(getPressureCoachIdentity(h));
-    })) return;
-    const targets = targetTeam.filter(p => hasAnyMark(newSkillMarks, p.id));
-    if (targets.length === 0) return;
-    targets.forEach(p => drainStamina(newStamina, p, targetTeam, 12));
-    skillLog(`Pressure Coach X taxes ${targets.length} marked opponent${targets.length > 1 ? "s" : ""}`, isSourceUser);
-  };
-  const applyHookedTax = (team: Player[], isUserTeam: boolean) => {
-    const hooked = team.filter(p => hasMark(newSkillMarks, p.id, "Hooked"));
-    hooked.forEach(p => {
-      drainStamina(newStamina, p, team, HOOKED_TAX_DRAIN);
-      skillLog(`${p.name} pays the Hooked stamina tax`, isUserTeam);
-    });
   };
   const applyGreenSupport = (team: Player[], isUserTeam: boolean) => {
     team.forEach(p => {
@@ -818,10 +700,6 @@ export function simulateTick(
   }
   tryColdTimeout(userLineup, true);
   tryColdTimeout(aiLineup, false);
-  applyPressureCoach(userLineup, aiLineup, true);
-  applyPressureCoach(aiLineup, userLineup, false);
-  applyHookedTax(userLineup, true);
-  applyHookedTax(aiLineup, false);
   applyGreenSupport(userLineup, true);
   applyGreenSupport(aiLineup, false);
   applyBenchCaptain(userLineup, true);
@@ -829,13 +707,6 @@ export function simulateTick(
   applyMomentumSwing(userLineup, true);
   applyMomentumSwing(aiLineup, false);
 
-  if (currentPossession === "user") {
-    // AI is defending, User is attacking
-    applyDefensiveAnchor(aiLineup, userLineup, false);
-  } else {
-    // User is defending, AI is attacking
-    applyDefensiveAnchor(userLineup, aiLineup, true);
-  }
   [...userLineup, ...aiLineup].forEach(p => {
     const team = userLineup.some(u => u.id === p.id) ? userLineup : aiLineup;
     const isUserTeam = team === userLineup;
@@ -912,11 +783,20 @@ export function simulateTick(
   }
 
   const userEffRaw = computeEffective(userLineup, newStamina, currentOff, currentDef, offMult * strategyOffMultiplier * userCounterMult, strategyDefMultiplier);
+  const aiEffRaw = computeEffective(aiLineup, newStamina, state.aiOffStrategy, state.aiDefStrategy, aiCounterMult);
+
+  if (currentPossession === "user") {
+    // AI is defending, User is attacking
+    applyDefensiveAnchor(aiLineup, userLineup, false);
+  } else {
+    // User is defending, AI is attacking
+    applyDefensiveAnchor(userLineup, aiLineup, true);
+  }
+
   const userEff = {
     off: userEffRaw.off + newTeamSkillBuffs.user.offIQ,
     def: userEffRaw.def + newTeamSkillBuffs.user.defIQ,
   };
-  const aiEffRaw = computeEffective(aiLineup, newStamina, state.aiOffStrategy, state.aiDefStrategy, aiCounterMult);
   const aiEff = {
     off: aiEffRaw.off + newTeamSkillBuffs.ai.offIQ,
     def: aiEffRaw.def + newTeamSkillBuffs.ai.defIQ,
@@ -1144,7 +1024,29 @@ export function simulateTick(
       if (rimWardenTriggered) {
         skillLog(`${candidate.name}'s Rim Warden powers the block`, isDefUser);
       }
-      applyFiveManSqueeze(defLineup, isDefUser ? aiLineup : userLineup, isDefUser);
+      if (rollSpecialMechanic(defLineup, "SKY_WALL_STAMINA_DRAIN", newStamina, (h) => calculateSkyWallScale(getSkyWallIdentity(h)).scale)) {
+        const holders = defLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_STAMINA_DRAIN"));
+        if (holders.length > 0) {
+          const leader = [...holders].sort((a, b) => {
+            const rA = a.skillRarities?.["SKY_WALL"] || 'Common';
+            const rB = b.skillRarities?.["SKY_WALL"] || 'Common';
+            const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+            return (val[rB] ?? 1) - (val[rA] ?? 1);
+          })[0];
+          const rarity = leader.skillRarities?.["SKY_WALL"] || 'Common';
+          const baseDrain = getSkyWallDrain(rarity);
+          const atkLineup = isDefUser ? aiLineup : userLineup;
+          let drainedCount = 0;
+          atkLineup.forEach(p => {
+            const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(p));
+            const drain = drainStamina(newStamina, p, defLineup, finalDrain);
+            if (drain > 0) drainedCount++;
+          });
+          if (drainedCount > 0) {
+             skillLog(`SKY_WALL: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
+          }
+        }
+      }
       eventIndicator = { playerId: candidate.id, type: 'BLK' };
       return true;
     }
@@ -1367,7 +1269,7 @@ export function simulateTick(
         lockChainTOVMod = Math.min(1.06, 1.03 + (bestIdentity / 100) * 0.03);
       }
     }
-    const cageStepPressure = rollSpecialMechanic(aiLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
+    const cageStepPressure = rollSpecialMechanic(aiLineup, "LOCK_CHAIN_HOOKED", newStamina, (h) => {
       const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (cageStepIdentity / 100) * 0.20;
     }) ? 1.12 : 1.0;
@@ -1405,17 +1307,23 @@ export function simulateTick(
     if (isTovRolled) {
       turnoverOccurred = true;
       const committer = committerForRescue!;
-      if (cageStepPressure > 1) {
-        newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
-        skillLog(`Cage Step X hooks ${committer.name}'s handle`, false);
+      if (lockChainActive) {
+        newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "LOCK_CHAIN_HOOKED", 2);
+        skillLog(`Lock Chain hooks ${committer.name}'s handle`, false);
       }
       if (lockChainActive) {
         const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
         if (holders.length > 0) {
-          const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
-          const bestIdentity = Math.max(...identities);
-          const scale = 0.90 + (bestIdentity / 100) * 0.20;
-          const drain = drainStamina(newStamina, committer, userLineup, getLockChainOnBallPressureDrain(scale));
+          const leader = [...holders].sort((a, b) => {
+            const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
+            const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
+            const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+            return (val[rB] ?? 1) - (val[rA] ?? 1);
+          })[0];
+          const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
+          const baseDrain = getLockChainDrain(rarity);
+          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(committer));
+          const drain = drainStamina(newStamina, committer, userLineup, finalDrain);
           skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
         }
       }
@@ -1439,7 +1347,31 @@ export function simulateTick(
         const iso = currentOff === "Isolation (ISO)";
         newEvents.push(makeEvent(newQuarter, newClock, `${pfx}STL: ${stl.name} ${iso ? 'strips ' + committer.name + '. ISO broken down' : 'picks off ' + committer.name}`, false));
         if (handsActivePressure > 1) skillLog(`${stl.name}'s Hands Active forced the steal window`, false);
-        applyFiveManSqueeze(aiLineup, userLineup, false);
+        if (rollSpecialMechanic(aiLineup, "LOCK_CHAIN_STAMINA_DRAIN", newStamina, (h) => {
+          const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+          return 0.90 + (identity / 100) * 0.20;
+        })) {
+          const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_STAMINA_DRAIN"));
+          if (holders.length > 0) {
+            const leader = [...holders].sort((a, b) => {
+              const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+              return (val[rB] ?? 1) - (val[rA] ?? 1);
+            })[0];
+            const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
+            const baseDrain = getLockChainDrain(rarity);
+            let drainedCount = 0;
+            userLineup.forEach(p => {
+              const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(p));
+              const drain = drainStamina(newStamina, p, aiLineup, finalDrain);
+              if (drain > 0) drainedCount++;
+            });
+            if (drainedCount > 0) {
+               skillLog(`LOCK_CHAIN: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, false);
+            }
+          }
+        }
         nextPossessionTeam = 'ai';
         nextLastPlayCategory = 'steal';
       } else {
@@ -1570,11 +1502,11 @@ export function simulateTick(
           const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
           const capLimit = pbLevel === 0 ? 0.015 : 0.020;
 
-          if (rollSpecialMechanic(userLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
+          if (rollSpecialMechanic(userLineup, "COURT_VISION_RHYTHM_BOOST", newStamina, (h) => {
             const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
             return (0.90 + (courtVisionIdentity / 100) * 0.20) * scaleMultiplier;
           })) {
-            const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
+            const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM_BOOST"));
             const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
             if (leader) {
               const scale = getAssistRating(leader) / 100;
@@ -1585,7 +1517,7 @@ export function simulateTick(
           }
         }
         if (is3PT && rollBaseSkill(userLineup, "Arc Pressure", newStamina)) {
-          const jammed = tryDeadAir(aiLineup, scorer, false, "Arc Pressure");
+          const jammed = tryGameplanJammer(aiLineup, scorer, "Arc Pressure", false);
           const shadowed = !jammed && tryShadowGuard(aiLineup, false);
           const focused = !jammed && !shadowed && rollBaseSkill(aiLineup, "Focus Lock", newStamina);
           const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
@@ -1612,7 +1544,7 @@ export function simulateTick(
           const dsSummary = resolveLineupArchetypes(userLineup);
           const dsLevel = dsSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
           const scaleMultiplier = dsLevel === 0 ? 0.85 : dsLevel === 1 ? 1.00 : dsLevel === 2 ? 1.05 : 1.10;
-          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(userLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
+          if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(userLineup, "DEEP_STRIKE_EXPOSE", newStamina, (h) => {
             const redDotIdentity = getThreePtRating(h);
             return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
           })) {
@@ -1621,7 +1553,7 @@ export function simulateTick(
           }
         }
         if (!is3PT && rollBaseSkill(userLineup, "Paint Magnet", newStamina)) {
-          const jammed = tryDeadAir(aiLineup, scorer, false, "Paint Magnet");
+          const jammed = tryGameplanJammer(aiLineup, scorer, "Paint Magnet", false);
           const paintScale = 0.85 + (getFinishingRating(scorer) / 100) * 0.30;
           skillShotBonus += jammed ? 0.005 : 0.03 * paintScale;
           skillLog(`${scorer.name}'s Paint Magnet bends the defense`, true);
@@ -1634,39 +1566,22 @@ export function simulateTick(
           const powerDriverIdentity = (getFinishingRating(scorer) + getStrengthRating(scorer)) / 2;
           const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
           skillShotBonus += 0.02 * powerDriverShotScale;
-          const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
-          const drain = drainStamina(newStamina, primaryDefender, aiLineup, getPowerDriverDrain(powerDriverDrainScale));
-          skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, true);
+          skillLog(`${scorer.name}'s Power Driver pressures the rim`, true);
         }
-        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(userLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
+        if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(userLineup, "POSTER_SPARK_TILT", newStamina, (h) => {
           const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
           return 0.90 + (contactTaxIdentity / 100) * 0.20;
         })) {
-          newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
-          const pbSummary = resolveLineupArchetypes(userLineup);
-          const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-          const baseDrain = getContactTaxDrain(pbLevel);
-
-          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(primaryDefender));
-
-          drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
-          skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, true);
-        }
-        if (is3PT && primaryDefender && rollSpecialMechanic(aiLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
-          const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
-          return 0.90 + (cornerTrapIdentity / 100) * 0.20;
-        })) {
-          newSkillMarks = addMark(newSkillMarks, newMarkImmunity, scorer.id, "Pinned", "Corner Trap X", 2);
-          skillShotBonus -= 0.025;
-          skillLog(`Corner Trap X pins ${scorer.name} on the perimeter`, false);
+          newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Poster Spark", 3);
+          skillLog(`Poster Spark tilts ${primaryDefender.name}`, true);
         }
         if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollBaseSkill(userLineup, "Mismatch Caller", newStamina)) {
-          const jammed = tryDeadAir(aiLineup, scorer, false, "Mismatch Caller");
+          const jammed = tryGameplanJammer(aiLineup, scorer, "Mismatch Caller", false);
           skillShotBonus += jammed ? 0.005 : 0.025;
           skillLog(`${scorer.name}'s Mismatch Caller attacks a marked defender`, true);
         }
         if (rollBaseSkill(userLineup, "Tempo Surgeon", newStamina)) {
-          const jammed = tryDeadAir(aiLineup, scorer, false, "Tempo Surgeon");
+          const jammed = tryGameplanJammer(aiLineup, scorer, "Tempo Surgeon", false);
           const holders = userLineup.filter(p => p.baseSkills?.includes("Tempo Surgeon"));
           const maxTempo = holders.length > 0 ? Math.max(...holders.map(p => Math.round((getHandleRating(p) + getAssistRating(p)) / 2))) : 50;
           const tempoScale = 0.85 + (maxTempo / 100) * 0.30;
@@ -1677,14 +1592,14 @@ export function simulateTick(
           skillShotBonus += 0.025;
           skillLog(`${scorer.name}'s Tempo Switch boosts the early attack`, true);
         }
-        // LOCK_CHAIN perimeter shot pressure
         if (primaryDefender && rollSpecialMechanic([primaryDefender], "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
           const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
           return 0.90 + (identity / 100) * 0.20;
         })) {
-          const identity = (getOnBallDefenseRating(primaryDefender) + getStealRating(primaryDefender) + getStaminaRating(primaryDefender)) / 3;
-          const scale = 0.90 + (identity / 100) * 0.20;
-          const drain = drainStamina(newStamina, scorer, userLineup, getLockChainOnBallPressureDrain(scale));
+          const rarity = primaryDefender.skillRarities?.["LOCK_CHAIN"] || 'Common';
+          const baseDrain = getLockChainDrain(rarity);
+          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(scorer));
+          const drain = drainStamina(newStamina, scorer, userLineup, finalDrain);
           skillLog(`LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
         }
 
@@ -1701,16 +1616,24 @@ export function simulateTick(
           'floater'
         ];
         if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
-          if (rollSpecialMechanic(aiLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
+          if (rollSpecialMechanic(aiLineup, "SKY_WALL_BLOCK_BOOST", newStamina, (h) => {
             return calculateSkyWallScale(getSkyWallIdentity(h)).scale;
           })) {
-            const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
+            const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_BLOCK_BOOST"));
             if (holders.length > 0) {
-              const identities = holders.map(h => getSkyWallIdentity(h));
-              const bestIdentity = Math.max(...identities);
-              const { scale, penalty, baseDrain } = calculateSkyWallScale(bestIdentity);
+              const leader = [...holders].sort((a, b) => {
+                const rA = a.skillRarities?.["SKY_WALL"] || 'Common';
+                const rB = b.skillRarities?.["SKY_WALL"] || 'Common';
+                const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+                return (val[rB] ?? 1) - (val[rA] ?? 1);
+              })[0];
+              const rarity = leader.skillRarities?.["SKY_WALL"] || 'Common';
+              const bestIdentity = getSkyWallIdentity(leader);
+              const { scale, penalty } = calculateSkyWallScale(bestIdentity);
               skillShotBonus -= penalty;
-              const drain = drainStamina(newStamina, scorer, userLineup, baseDrain);
+              const baseDrain = getSkyWallDrain(rarity);
+              const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(scorer));
+              const drain = drainStamina(newStamina, scorer, userLineup, finalDrain);
               skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, false);
             }
           }
@@ -1739,7 +1662,7 @@ export function simulateTick(
             sfChance += 0.035 * foulMagnetScale;
             skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, true);
           }
-          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(userLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
+          if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(userLineup, "FLOP_FOUL_PRESSURE", newStamina, (h) => {
             return calculateFlopIdentityScale(getFoulDrawTendency(h));
           })) {
             const flopBonus = getFlopFoulPressureBonus(scorer);
@@ -1751,16 +1674,16 @@ export function simulateTick(
             });
 
             if (composed) {
-              skillLog(`Composure X cancels the Flop X sell-contact attempt`, false);
+              skillLog(`Composure Shield cancels the Flop sell-contact attempt`, false);
             } else if (cleanContest) {
               sfChance += flopBonus * 0.5;
-              skillLog(`Clean Contest X reduces the Flop X contact pressure`, false);
+              skillLog(`Clean Challenge reduces the Flop contact pressure`, false);
             } else {
               sfChance += flopBonus;
-              skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
+              skillLog(`Flop sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, true);
             }
           }
-          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(userLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
+          if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(userLineup, "DEEP_STRIKE_FOUL_PRESSURE", newStamina, (h) => {
             return calculateFourPointBaitIdentityScale(getThreePtRating(h), getFoulDrawTendency(h));
           })) {
             const composed = rollSpecialMechanic(aiLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
@@ -1771,13 +1694,13 @@ export function simulateTick(
             });
             const disciplineWall = !cleanContest && rollBaseSkill(aiLineup, "Discipline Wall", newStamina);
             if (composed) {
-              skillLog(`Composure X cancels the forced foul pressure`, false);
+              skillLog(`Composure Shield cancels the forced foul pressure`, false);
               skillShotBonus -= 0.02;
             } else if (cleanContest) {
-              skillLog(`Clean Contest X shuts down Four-Point Bait X`, false);
+              skillLog(`Clean Challenge shuts down Deep Strike`, false);
               skillShotBonus -= 0.03;
             } else if (disciplineWall) {
-              skillLog(`Discipline Wall holds off Four-Point Bait X`, false);
+              skillLog(`Discipline Wall holds off Deep Strike`, false);
               const holders = aiLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
               const maxRating = holders.length > 0 ? Math.max(...holders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);
               const disciplineScale = calculateBasketballIQDisciplineScale(maxRating);
@@ -1788,7 +1711,7 @@ export function simulateTick(
               const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
               const baitBoost = calculateFourPointBaitBoost(baitDsLevel, baitFdLevel);
               sfChance += baitBoost;
-              skillLog(`Four-Point Bait X pressures the Exposed defender`, true);
+              skillLog(`Deep Strike pressures the Exposed defender`, true);
             }
           }
           const MAX_SHOOTING_FOUL_CHANCE = 0.28;
@@ -1915,20 +1838,6 @@ export function simulateTick(
               ? clutchScoreText(scorer, shotType, clutchSituation)
               : scoreText(scorer, shotType, currentOff, momentumActive);
             newEvents.push(makeEvent(newQuarter, newClock, evtText, true, pointsScored, scorer.id));
-            if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecialMechanic(userLineup, "POSTER_SPARK_LUNG_BURNER", newStamina, (h) => {
-              const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
-              return 0.90 + (lungBurnerIdentity / 100) * 0.20;
-            })) {
-              const pbSummary = resolveLineupArchetypes(userLineup);
-              const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-              const preSnowballDrain = getLungBurnerDrain(pbLevel, hasMark(newSkillMarks, primaryDefender.id, "Debt"));
-
-              const finalDrain = applyAntiSnowballScaling(preSnowballDrain, staminaPct(primaryDefender));
-
-              const drain = drainStamina(newStamina, primaryDefender, aiLineup, finalDrain);
-              skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, true);
-              applyDebtCollector(userLineup, aiLineup, primaryDefender, true);
-            }
             if (clutchSituation.active) {
               const formBoost = clutchSituation.intensity === 'high' ? 0.04 : 0.02;
               newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + formBoost);
@@ -1955,13 +1864,13 @@ export function simulateTick(
                 userLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                 skillLog(`${a.name}'s Share Rhythm steadies the lineup`, true);
               }
-              if (rollSpecialMechanic(userLineup, "COURT_VISION_CHAIN_PASS", newStamina, (h) => {
+              if (rollSpecialMechanic(userLineup, "COURT_VISION_RHYTHM_BOOST", newStamina, (h) => {
                 const chainPassIdentity = getAssistRating(h);
                 return 0.90 + (chainPassIdentity / 100) * 0.20;
               })) {
                 const debtTarget = getLowestStaminaPlayer(aiLineup);
-                newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Debt", "Chain Pass X", 3);
-                skillLog(`Chain Pass X places Debt on ${debtTarget.name}`, true);
+                newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
+                skillLog(`Court Vision Engine places Debt on ${debtTarget.name}`, true);
               }
             }
             // ═══ ROLL A: AND-1 CHECK ═══
@@ -2184,11 +2093,11 @@ export function simulateTick(
       const scaleMultiplier = pbLevel === 0 ? 0.85 : pbLevel === 1 ? 1.00 : pbLevel === 2 ? 1.05 : 1.10;
       const capLimit = pbLevel === 0 ? 0.015 : 0.020;
 
-      if (rollSpecialMechanic(aiLineup, "COURT_VISION_RHYTHM", newStamina, (h) => {
+      if (rollSpecialMechanic(aiLineup, "COURT_VISION_RHYTHM_BOOST", newStamina, (h) => {
         const courtVisionIdentity = (getAssistRating(h) + getHandleRating(h) + getOffenseRating(h)) / 3;
         return (0.90 + (courtVisionIdentity / 100) * 0.20) * scaleMultiplier;
       })) {
-        const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM"));
+        const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "COURT_VISION_RHYTHM_BOOST"));
         const leader = holders.sort((a_p, b_p) => (getAssistRating(b_p) - getAssistRating(a_p)))[0];
         if (leader) {
           const scale = getAssistRating(leader) / 100;
@@ -2199,7 +2108,7 @@ export function simulateTick(
       }
     }
     if (is3PT && rollBaseSkill(aiLineup, "Arc Pressure", newStamina)) {
-      const jammed = tryDeadAir(userLineup, scorer, true, "Arc Pressure");
+      const jammed = tryGameplanJammer(userLineup, scorer, "Arc Pressure", true);
       const shadowed = !jammed && tryShadowGuard(userLineup, true);
       const focused = !jammed && !shadowed && rollBaseSkill(userLineup, "Focus Lock", newStamina);
       const arcScale = 0.80 + (getThreePtRating(scorer) / 100) * 0.40;
@@ -2226,7 +2135,7 @@ export function simulateTick(
       const dsSummary = resolveLineupArchetypes(aiLineup);
       const dsLevel = dsSummary.allResults.find(r => r.id === "shooting")?.level ?? 0;
       const scaleMultiplier = dsLevel === 0 ? 0.85 : dsLevel === 1 ? 1.00 : dsLevel === 2 ? 1.05 : 1.10;
-      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_EXPOSE_SETUP", newStamina, (h) => {
+      if (!jammed && !shadowed && !focused && primaryDefender && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_EXPOSE", newStamina, (h) => {
         const redDotIdentity = getThreePtRating(h);
         return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
       })) {
@@ -2235,7 +2144,7 @@ export function simulateTick(
       }
     }
     if (!is3PT && rollBaseSkill(aiLineup, "Paint Magnet", newStamina)) {
-      const jammed = tryDeadAir(userLineup, scorer, true, "Paint Magnet");
+      const jammed = tryGameplanJammer(userLineup, scorer, "Paint Magnet", true);
       const paintScale = 0.85 + (getFinishingRating(scorer) / 100) * 0.30;
       aiSkillShotBonus += jammed ? 0.005 : 0.03 * paintScale;
       skillLog(`${scorer.name}'s Paint Magnet bends the defense`, false);
@@ -2248,39 +2157,22 @@ export function simulateTick(
       const powerDriverIdentity = (getFinishingRating(scorer) + getStrengthRating(scorer)) / 2;
       const powerDriverShotScale = 0.85 + (powerDriverIdentity / 100) * 0.30;
       aiSkillShotBonus += 0.02 * powerDriverShotScale;
-      const powerDriverDrainScale = 0.90 + (powerDriverIdentity / 100) * 0.20;
-      const drain = drainStamina(newStamina, primaryDefender, userLineup, getPowerDriverDrain(powerDriverDrainScale));
-      skillLog(`${scorer.name}'s Power Driver drains ${drain} stamina at the rim`, false);
+      skillLog(`${scorer.name}'s Power Driver pressures the rim`, false);
     }
-    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(aiLineup, "POSTER_SPARK_CONTACT_TAX", newStamina, (h) => {
+    if (!is3PT && primaryDefender && staminaPct(primaryDefender) < 65 && rollSpecialMechanic(aiLineup, "POSTER_SPARK_TILT", newStamina, (h) => {
       const contactTaxIdentity = (getFinishingRating(h) + getStrengthRating(h)) / 2;
       return 0.90 + (contactTaxIdentity / 100) * 0.20;
     })) {
-      newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Contact Tax X", 3);
-      const pbSummary = resolveLineupArchetypes(aiLineup);
-      const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-      const baseDrain = getContactTaxDrain(pbLevel);
-
-      const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(primaryDefender));
-
-      drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
-      skillLog(`Contact Tax X tilts and taxes ${primaryDefender.name}`, false);
-    }
-    if (is3PT && primaryDefender && rollSpecialMechanic(userLineup, "DEFENSIVE_ANCHOR_CORNER_TRAP", newStamina, (h) => {
-      const cornerTrapIdentity = (getOnBallDefenseRating(h) + getStaminaRating(h)) / 2;
-      return 0.90 + (cornerTrapIdentity / 100) * 0.20;
-    })) {
-      newSkillMarks = addMark(newSkillMarks, newMarkImmunity, scorer.id, "Pinned", "Corner Trap X", 2);
-      aiSkillShotBonus -= 0.025;
-      skillLog(`Corner Trap X pins ${scorer.name} on the perimeter`, true);
+      newSkillMarks = addMark(newSkillMarks, newMarkImmunity, primaryDefender.id, "Tilted", "Poster Spark", 3);
+      skillLog(`Poster Spark tilts ${primaryDefender.name}`, false);
     }
     if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollBaseSkill(aiLineup, "Mismatch Caller", newStamina)) {
-      const jammed = tryDeadAir(userLineup, scorer, true, "Mismatch Caller");
+      const jammed = tryGameplanJammer(userLineup, scorer, "Mismatch Caller", true);
       aiSkillShotBonus += jammed ? 0.005 : 0.025;
       skillLog(`${scorer.name}'s Mismatch Caller attacks a marked defender`, false);
     }
     if (rollBaseSkill(aiLineup, "Tempo Surgeon", newStamina)) {
-      const jammed = tryDeadAir(userLineup, scorer, true, "Tempo Surgeon");
+      const jammed = tryGameplanJammer(userLineup, scorer, "Tempo Surgeon", true);
       const holders = aiLineup.filter(p => p.baseSkills?.includes("Tempo Surgeon"));
       const maxTempo = holders.length > 0 ? Math.max(...holders.map(p => Math.round((getHandleRating(p) + getAssistRating(p)) / 2))) : 50;
       const tempoScale = 0.85 + (maxTempo / 100) * 0.30;
@@ -2291,14 +2183,14 @@ export function simulateTick(
       aiSkillShotBonus += 0.025;
       skillLog(`${scorer.name}'s Tempo Switch boosts the early attack`, false);
     }
-    // LOCK_CHAIN perimeter shot pressure
     if (primaryDefender && rollSpecialMechanic([primaryDefender], "LOCK_CHAIN_ON_BALL_PRESSURE", newStamina, (h) => {
       const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
       return 0.90 + (identity / 100) * 0.20;
     })) {
-      const identity = (getOnBallDefenseRating(primaryDefender) + getStealRating(primaryDefender) + getStaminaRating(primaryDefender)) / 3;
-      const scale = 0.90 + (identity / 100) * 0.20;
-      const drain = drainStamina(newStamina, scorer, aiLineup, Math.min(12, Math.round(9 * scale)));
+      const rarity = primaryDefender.skillRarities?.["LOCK_CHAIN"] || 'Common';
+      const baseDrain = getLockChainDrain(rarity);
+      const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(scorer));
+      const drain = drainStamina(newStamina, scorer, aiLineup, finalDrain);
       skillLog(`LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, true);
     }
 
@@ -2315,16 +2207,24 @@ export function simulateTick(
       'floater'
     ];
     if (!is3PT && CLOSE_RANGE_SHOTS.includes(shotType)) {
-      if (rollSpecialMechanic(userLineup, "SKY_WALL_RIM_PRESSURE", newStamina, (h) => {
+      if (rollSpecialMechanic(userLineup, "SKY_WALL_BLOCK_BOOST", newStamina, (h) => {
         return calculateSkyWallScale(getSkyWallIdentity(h)).scale;
       })) {
-        const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_RIM_PRESSURE"));
+        const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "SKY_WALL_BLOCK_BOOST"));
         if (holders.length > 0) {
-          const identities = holders.map(h => getSkyWallIdentity(h));
-          const bestIdentity = Math.max(...identities);
-          const { scale, penalty, baseDrain } = calculateSkyWallScale(bestIdentity);
+          const leader = [...holders].sort((a, b) => {
+            const rA = a.skillRarities?.["SKY_WALL"] || 'Common';
+            const rB = b.skillRarities?.["SKY_WALL"] || 'Common';
+            const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+            return (val[rB] ?? 1) - (val[rA] ?? 1);
+          })[0];
+          const rarity = leader.skillRarities?.["SKY_WALL"] || 'Common';
+          const bestIdentity = getSkyWallIdentity(leader);
+          const { scale, penalty } = calculateSkyWallScale(bestIdentity);
           aiSkillShotBonus -= penalty;
-          const drain = drainStamina(newStamina, scorer, aiLineup, baseDrain);
+          const baseDrain = getSkyWallDrain(rarity);
+          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(scorer));
+          const drain = drainStamina(newStamina, scorer, aiLineup, finalDrain);
           skillLog(`SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, true);
         }
       }
@@ -2348,7 +2248,31 @@ export function simulateTick(
         ensureStats(stealer.id);
         newPlayerStats[stealer.id].STL += 1;
         newEvents.push(makeEvent(newQuarter, newClock, `STEAL: ${stealer.name} strips the ball!`, true, 0, stealer.id));
-        applyFiveManSqueeze(userLineup, aiLineup, true);
+        if (rollSpecialMechanic(userLineup, "LOCK_CHAIN_STAMINA_DRAIN", newStamina, (h) => {
+          const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+          return 0.90 + (identity / 100) * 0.20;
+        })) {
+          const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_STAMINA_DRAIN"));
+          if (holders.length > 0) {
+            const leader = [...holders].sort((a, b) => {
+              const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+              return (val[rB] ?? 1) - (val[rA] ?? 1);
+            })[0];
+            const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
+            const baseDrain = getLockChainDrain(rarity);
+            let drainedCount = 0;
+            aiLineup.forEach(p => {
+              const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(p));
+              const drain = drainStamina(newStamina, p, userLineup, finalDrain);
+              if (drain > 0) drainedCount++;
+            });
+            if (drainedCount > 0) {
+               skillLog(`LOCK_CHAIN: The aggressive steal drains stamina from sum{drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
+            }
+          }
+        }
         stealPlayerId = stealer.id;
         eventIndicator = { playerId: stealer.id, type: 'STL' };
         pointsScored = 0;
@@ -2560,7 +2484,7 @@ export function simulateTick(
           userLockChainTOVMod = Math.min(1.06, 1.03 + (bestIdentity / 100) * 0.03);
         }
       }
-      const userCageStepPressure = rollSpecialMechanic(userLineup, "LOCK_CHAIN_CAGE_STEP", newStamina, (h) => {
+      const userCageStepPressure = rollSpecialMechanic(userLineup, "LOCK_CHAIN_HOOKED", newStamina, (h) => {
         const cageStepIdentity = (getOnBallDefenseRating(h) + getStrengthRating(h)) / 2;
         return 0.90 + (cageStepIdentity / 100) * 0.20;
       }) ? 1.12 : 1.0;
@@ -2601,17 +2525,23 @@ export function simulateTick(
       if (isAiTovRolled) {
         turnoverOccurred = true;
         const committer = aiCommitterForRescue!;
-        if (userCageStepPressure > 1) {
-          newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "Cage Step X", 2);
-          skillLog(`Cage Step X hooks ${committer.name}'s handle`, true);
+        if (userLockChainActive) {
+          newSkillMarks = addMark(newSkillMarks, newMarkImmunity, committer.id, "Hooked", "LOCK_CHAIN_HOOKED", 2);
+          skillLog(`Lock Chain hooks ${committer.name}'s handle`, true);
         }
         if (userLockChainActive) {
           const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
           if (holders.length > 0) {
-            const identities = holders.map(h => (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3);
-            const bestIdentity = Math.max(...identities);
-            const scale = 0.90 + (bestIdentity / 100) * 0.20;
-            const drain = drainStamina(newStamina, committer, aiLineup, getLockChainOnBallPressureDrain(scale));
+            const leader = [...holders].sort((a, b) => {
+              const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+              return (val[rB] ?? 1) - (val[rA] ?? 1);
+            })[0];
+            const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
+            const baseDrain = getLockChainDrain(rarity);
+            const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(committer));
+            const drain = drainStamina(newStamina, committer, aiLineup, finalDrain);
             skillLog(`LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, true);
           }
         }
@@ -2634,7 +2564,31 @@ export function simulateTick(
           ensureForm(stl.id); newFormRating[stl.id] = clampForm(newFormRating[stl.id] + 0.04);
           newEvents.push(makeEvent(newQuarter, newClock, `${pfx}STL: ${stl.name} picks off ${committer.name}!`, true));
           if (userHandsActivePressure > 1) skillLog(`${stl.name}'s Hands Active forced the steal window`, true);
-          applyFiveManSqueeze(userLineup, aiLineup, true);
+          if (rollSpecialMechanic(userLineup, "LOCK_CHAIN_STAMINA_DRAIN", newStamina, (h) => {
+            const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
+            return 0.90 + (identity / 100) * 0.20;
+          })) {
+            const holders = userLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_STAMINA_DRAIN"));
+            if (holders.length > 0) {
+              const leader = [...holders].sort((a, b) => {
+                const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
+                const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
+                const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
+                return (val[rB] ?? 1) - (val[rA] ?? 1);
+              })[0];
+              const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
+              const baseDrain = getLockChainDrain(rarity);
+              let drainedCount = 0;
+              aiLineup.forEach(p => {
+                const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(p));
+                const drain = drainStamina(newStamina, p, userLineup, finalDrain);
+                if (drain > 0) drainedCount++;
+              });
+              if (drainedCount > 0) {
+                 skillLog(`LOCK_CHAIN: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
+              }
+            }
+          }
           nextPossessionTeam = 'user';
           nextLastPlayCategory = 'steal';
         } else {
@@ -2726,7 +2680,7 @@ export function simulateTick(
                 sfChance_ai += 0.035 * foulMagnetScale;
                 skillLog(`${scorer.name}'s Foul Magnet pressures a tired defender`, false);
               }
-              if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(aiLineup, "FLOP_SELL_CONTACT", newStamina, (h) => {
+              if (primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Tilted") && rollSpecialMechanic(aiLineup, "FLOP_FOUL_PRESSURE", newStamina, (h) => {
                 return calculateFlopIdentityScale(getFoulDrawTendency(h));
               })) {
                 const flopBonus = getFlopFoulPressureBonus(scorer);
@@ -2738,16 +2692,16 @@ export function simulateTick(
                 });
 
                 if (composed) {
-                  skillLog(`Composure X cancels the Flop X sell-contact attempt`, true);
+                  skillLog(`Composure Shield cancels the Flop sell-contact attempt`, true);
                 } else if (cleanContest) {
                   sfChance_ai += flopBonus * 0.5;
-                  skillLog(`Clean Contest X reduces the Flop X contact pressure`, true);
+                  skillLog(`Clean Challenge reduces the Flop contact pressure`, true);
                 } else {
                   sfChance_ai += flopBonus;
-                  skillLog(`Flop X sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
+                  skillLog(`Flop sells the contact into foul pressure${flopBonus > 0.04 ? " - SGA doubles it" : ""}`, false);
                 }
               }
-              if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_FOUR_POINT_BAIT", newStamina, (h) => {
+              if (is3PT && primaryDefender && hasMark(newSkillMarks, primaryDefender.id, "Exposed") && rollSpecialMechanic(aiLineup, "DEEP_STRIKE_FOUL_PRESSURE", newStamina, (h) => {
                 return calculateFourPointBaitIdentityScale(getThreePtRating(h), getFoulDrawTendency(h));
               })) {
                 const composed = rollSpecialMechanic(userLineup, "COMPOSURE_SHIELD_CANCEL", newStamina, (h) => {
@@ -2758,13 +2712,13 @@ export function simulateTick(
                 });
                 const disciplineWall = !cleanContest && rollBaseSkill(userLineup, "Discipline Wall", newStamina);
                 if (composed) {
-                  skillLog(`Composure X cancels the forced foul pressure`, true);
+                  skillLog(`Composure Shield cancels the forced foul pressure`, true);
                   aiSkillShotBonus -= 0.02;
                 } else if (cleanContest) {
-                  skillLog(`Clean Contest X shuts down Four-Point Bait X`, true);
+                  skillLog(`Clean Challenge shuts down Deep Strike`, true);
                   aiSkillShotBonus -= 0.03;
                 } else if (disciplineWall) {
-                  skillLog(`Discipline Wall holds off Four-Point Bait X`, true);
+                  skillLog(`Discipline Wall holds off Deep Strike`, true);
                   const dwHolders = userLineup.filter(p => hasBaseSkill(p, "Discipline Wall"));
                   const dwMaxRating = dwHolders.length > 0 ? Math.max(...dwHolders.map(p => getBasketballIQRating(p))) : (primaryDefender ? getBasketballIQRating(primaryDefender) : 50);
                   const disciplineScale = calculateBasketballIQDisciplineScale(dwMaxRating);
@@ -2775,7 +2729,7 @@ export function simulateTick(
                   const baitFdLevel = baitSummary.allResults.find(r => r.id === "foul-draw")?.level ?? 0;
                   const baitBoost = calculateFourPointBaitBoost(baitDsLevel, baitFdLevel);
                   sfChance_ai += baitBoost;
-                  skillLog(`Four-Point Bait X pressures the Exposed defender`, false);
+                  skillLog(`Deep Strike pressures the Exposed defender`, false);
                 }
               }
               const MAX_SHOOTING_FOUL_CHANCE = 0.28;
@@ -2884,20 +2838,6 @@ export function simulateTick(
                 if (is3PT) { newPlayerStats[scorer.id].TPM = (newPlayerStats[scorer.id].TPM ?? 0) + 1; newPlayerStats[scorer.id].TPA = (newPlayerStats[scorer.id].TPA ?? 0) + 1; }
                 const aiEvtText = clutchSituation.active ? clutchScoreText(scorer, shotType, clutchSituation) : scoreText(scorer, shotType, state.aiOffStrategy, false);
                 newEvents.push(makeEvent(newQuarter, newClock, aiEvtText, false, pointsScored, scorer.id));
-                if (primaryDefender && hasAnyMark(newSkillMarks, primaryDefender.id) && rollSpecialMechanic(aiLineup, "POSTER_SPARK_LUNG_BURNER", newStamina, (h) => {
-                  const lungBurnerIdentity = (getFinishingRating(h) + getStrengthRating(h) + getStaminaRating(h)) / 3;
-                  return 0.90 + (lungBurnerIdentity / 100) * 0.20;
-                })) {
-                  const pbSummary = resolveLineupArchetypes(aiLineup);
-                  const pbLevel = pbSummary.allResults.find(r => r.id === "paint-bully")?.level ?? 0;
-                  const preSnowballDrain = getLungBurnerDrain(pbLevel, hasMark(newSkillMarks, primaryDefender.id, "Debt"));
-
-                  const finalDrain = applyAntiSnowballScaling(preSnowballDrain, staminaPct(primaryDefender));
-
-                  const drain = drainStamina(newStamina, primaryDefender, userLineup, finalDrain);
-                  skillLog(`Lung Burner X drains ${drain} stamina from ${primaryDefender.name}`, false);
-                  applyDebtCollector(aiLineup, userLineup, primaryDefender, false);
-                }
                 if (clutchSituation.active) { const fb = clutchSituation.intensity === 'high' ? 0.04 : 0.02; newFormRating[scorer.id] = clampForm(newFormRating[scorer.id] + fb); }
                 const tm = aiLineup.filter(p => p.id !== scorer.id);
               if (tm.length > 0) {
@@ -2922,13 +2862,13 @@ export function simulateTick(
                      aiLineup.forEach(p => recoverSkillStamina(p, 8 * shareRhythmScale));
                      skillLog(`${a.name}'s Share Rhythm steadies the lineup`, false);
                    }
-                   if (rollSpecialMechanic(aiLineup, "COURT_VISION_CHAIN_PASS", newStamina, (h) => {
+                   if (rollSpecialMechanic(aiLineup, "COURT_VISION_RHYTHM_BOOST", newStamina, (h) => {
                      const chainPassIdentity = getAssistRating(h);
                      return 0.90 + (chainPassIdentity / 100) * 0.20;
                    })) {
                      const debtTarget = getLowestStaminaPlayer(userLineup);
-                     newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Debt", "Chain Pass X", 3);
-                     skillLog(`Chain Pass X places Debt on ${debtTarget.name}`, false);
+                     newSkillMarks = addMark(newSkillMarks, newMarkImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
+                     skillLog(`Court Vision Engine places Debt on ${debtTarget.name}`, false);
                    }
                 }
               }

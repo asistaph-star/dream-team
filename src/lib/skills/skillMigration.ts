@@ -1,34 +1,17 @@
 import { Player } from "../types/player";
 import { SpecialSkillFamilyId, isSpecialSkillFamilyId } from "./skillFamilies";
 import { getSkillDisplayName } from "./skillDisplay";
+import { LEGACY_X_TO_FAMILY_MAP } from "./skillMechanics";
 
-export const LEGACY_TO_FAMILY_MAP: Record<string, SpecialSkillFamilyId> = {
-  "Red Dot X": "DEEP_STRIKE",
-  "Four-Point Bait X": "DEEP_STRIKE",
-  "Chain Pass X": "COURT_VISION_ENGINE",
-  "Lung Burner X": "POSTER_SPARK",
-  "Contact Tax X": "POSTER_SPARK",
-  "Flop X": "FLOP",
-  "Clean Contest X": "CLEAN_CHALLENGE",
-  "Composure X": "COMPOSURE_SHIELD",
-  "Cold Timeout X": "TIMEOUT_RESET",
-  "Dead Air X": "GAMEPLAN_JAMMER",
-  "Cage Step X": "LOCK_CHAIN",
-  "Corner Trap X": "DEFENSIVE_ANCHOR",
-  "Debt Collector X": "GAMEPLAN_JAMMER",
-  "Five-Man Squeeze X": "DEFENSIVE_ANCHOR",
-  "Pressure Coach X": "BENCH_CAPTAIN",
-};
-
-const LEGACY_SKILL_NAMES = Object.keys(LEGACY_TO_FAMILY_MAP);
+const LEGACY_SKILL_NAMES = Object.keys(LEGACY_X_TO_FAMILY_MAP);
 
 export const isLegacySpecialSkillName = (rawSkill: string): boolean => {
   return LEGACY_SKILL_NAMES.includes(rawSkill);
 };
 
 export const normalizeSpecialSkillId = (rawSkill: string): string => {
-  if (LEGACY_TO_FAMILY_MAP[rawSkill]) {
-    return LEGACY_TO_FAMILY_MAP[rawSkill];
+  if (LEGACY_X_TO_FAMILY_MAP[rawSkill]) {
+    return LEGACY_X_TO_FAMILY_MAP[rawSkill];
   }
   return rawSkill;
 };
@@ -90,7 +73,7 @@ export const resolveSpecialSkillFamily = (rawSkill: string): SpecialSkillFamilyI
   if (isSpecialSkillFamilyId(rawSkill)) {
     return rawSkill as SpecialSkillFamilyId;
   }
-  return LEGACY_TO_FAMILY_MAP[rawSkill] || null;
+  return (LEGACY_X_TO_FAMILY_MAP[rawSkill] as SpecialSkillFamilyId) || null;
 };
 
 export const doesSkillMatchFamily = (rawSkill: string, familyId: SpecialSkillFamilyId): boolean => {

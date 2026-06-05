@@ -27,8 +27,10 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | OVR protection / Star-up separation | Done |
 | Attribute Model Refinement (IQ & Hustle) | Done |
 | Match Engine Wiring (IQ & Hustle Wiring) | Done |
-| matchEngine architecture cleanup | In progress |
+| matchEngine architecture cleanup | Done |
 | Match Realism Calibration | Done (realism verified) |
+| SkillSystemHardReset-FinalLock | Done (15-family hard reset complete) |
+| Validation Suite Status | Done (all 44 tests passing) |
 
 ---
 

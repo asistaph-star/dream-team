@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { Player } from "@/lib/types/player";
 import { lowPolyBg } from "@/lib/constants/visuals";
 import { Shield, Sword, Zap, Activity, X, AlertTriangle, ArrowRight, ChevronsRight, Plus } from "lucide-react";
-import { getDetailedAttributes, applyStarGrowth, getCumulativeStarGrowthGain, getStarGrowthGain } from "@/lib/utils/starGrowth";
+import { getDetailedAttributes, getDerivedOffenseDefense, applyStarGrowth, getCumulativeStarGrowthGain, getStarGrowthGain } from "@/lib/utils/starGrowth";
 import { PlayerCard, getStarTierAndLevel } from "@/components/player/PlayerCard";
+import { buildHexAxes, PlayerAttributeHexChart } from "@/components/player/PlayerAttributeHexChart";
 import { SkillBadge } from "@/components/skills/SkillBadge";
 import { isSkillQuality, SPECIAL_SKILL_RATES, SPECIAL_SKILL_TEXT, BASE_SKILL_TEXT, getSkillQualityRate, BASE_SKILL_RATES } from "@/lib/skills/skillCatalog";
 import { SpecialSkillName, BaseSkillName } from "@/lib/skills/assignBaseSkills";
 import { useGameState } from "@/lib/context/GameStateContext";
 import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
+import { getPlayerDuplicateKey } from "@/lib/utils/playerIdentity";
 import { formatSkillName, getSkillDisplayName } from "../../lib/skills/skillDisplay";
 import { getDefaultSkillTier } from "../../lib/players/playerEra";
 
@@ -50,6 +52,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
   } | null>(null);
   const [isPendingOverlayHidden, setIsPendingOverlayHidden] = useState(false);
   const [isProcessingStarUp, setIsProcessingStarUp] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "attributes" | "skills">("overview");
   const [ascendOutcome, setAscendOutcome] = useState<{ 
     status: 'success' | 'failed', 
     oldStars: number, 
@@ -60,6 +63,20 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
   
   if (!player) return null;
   const details = getDetailedAttributes(player);
+  const derivedRatings = getDerivedOffenseDefense(player);
+  const hexAxes = buildHexAxes(details);
+  const starInfo = getStarTierAndLevel(player.starLevel ?? 0);
+  const tendencyPills = [
+    { label: "3PT", value: player.threePtTendency },
+    { label: "Drive", value: player.driveTendency },
+    { label: "Pull-Up", value: player.pullUpTendency },
+    { label: "Foul Draw", value: player.foulDrawTendency },
+  ].filter((item) => typeof item.value === "number");
+  const profileTabs = [
+    { id: "overview" as const, label: "Overview" },
+    { id: "attributes" as const, label: "Attributes" },
+    { id: "skills" as const, label: "Skills" },
+  ];
   const attributeRows = [
     { label: '3-Pt', val: details.threePt },
     { label: 'Steal', val: details.steal },
@@ -97,21 +114,27 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
       >
       {/* The Floating Box Container */}
       <div 
-        className="w-[1050px] h-[650px] bg-zinc-950 border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.1)] relative pointer-events-auto transform-gpu transition-all duration-300 scale-100" 
+        className="w-[1050px] h-[650px] bg-[#2a2b2f] border border-white/10 rounded-sm flex flex-col overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative pointer-events-auto transform-gpu transition-all duration-300 scale-100" 
         onClick={(e) => e.stopPropagation()}
+        style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: "cover" }}
       >
-        
-        {/* CRT Scanline overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-screen" style={{ backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0) 50%, rgba(255, 255, 255, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
-
         {/* Modal Header */}
-        <div className="h-[50px] border-b border-white/5 flex items-center justify-between px-6 bg-black/40 shrink-0 relative z-20">
-          <div className="flex items-center gap-2">
-            <span className="text-white/80 font-black italic tracking-[0.2em] uppercase text-[14px]">Player Profile</span>
+        <div
+          className="h-[52px] flex items-center justify-between px-5 bg-[#4b555d] shrink-0 relative z-20 border-b border-white/10"
+          style={{ clipPath: "polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%)" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-1 h-5 bg-[#d61e38] shadow-[0_0_8px_rgba(214,30,56,0.8)] skew-x-[-15deg]" />
+            <div className="flex flex-col">
+              <span className="text-white font-black italic tracking-[0.15em] uppercase text-[13px] leading-none">{player.name}</span>
+              <span className="text-[10px] text-gray-300 uppercase tracking-widest mt-1">
+                {player.position} · {player.team ?? "Free Agent"} · {starInfo.tier} Tier
+              </span>
+            </div>
           </div>
           <button 
             onClick={onClose} 
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-sm hover:bg-white/10 text-white/50 hover:text-white transition-colors cursor-pointer mr-1"
           >
             <X size={18} strokeWidth={3} />
           </button>
@@ -175,149 +198,239 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             </div>
           </div>
 
-          {/* Right: Attributes, Skills & Actions */}
-          <div className="flex-1 h-full relative flex flex-col p-8 z-10">
-            
-            {/* Top Attributes Panel */}
-            <div className="mb-4 grid grid-cols-2 gap-x-8">
-              {/* Left Column: Core Attributes */}
-              <div>
-                <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
-                  <Activity className="text-cyan-400 w-4 h-4" />
-                  <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  {attributeRows.map(stat => (
-                    <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
-                      <span className="w-20 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
-                      <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                        <div className="h-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                      </div>
-                      <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Column: Detailed & Physicals */}
-              <div>
-                <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
-                  <Activity className="text-emerald-400 w-4 h-4" />
-                  <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Detailed & Physicals</h3>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  {secondaryRows.map(stat => (
-                    <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
-                      <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
-                      <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                        <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                      </div>
-                      <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
-                    </div>
-                  ))}
-                </div>
+          {/* Right: Tabbed profile, skills & actions */}
+          <div className="flex-1 h-full relative flex flex-col z-10">
+            <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-black/20">
+              <div className="flex gap-2">
+                {profileTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2 text-[11px] font-black uppercase tracking-[0.2em] italic transition-all rounded-sm border ${
+                      activeTab === tab.id
+                        ? "bg-[#d61e38]/20 border-[#d61e38]/60 text-white shadow-[0_0_12px_rgba(214,30,56,0.25)]"
+                        : "bg-black/30 border-white/5 text-gray-400 hover:text-white hover:border-white/15"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* 5-Box Skill System */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-1 h-3 bg-[#d61e38] shadow-[0_0_8px_rgba(214,30,56,0.8)] skew-x-[-15deg]" />
-                <h3 className="text-[12px] font-black text-white/80 uppercase tracking-[0.25em] italic">Player Skills</h3>
-                {player.starLevel && player.starLevel >= 1 ? (
-                  pendingSkillTraining && pendingSkillTraining.playerId === player.id ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsPendingOverlayHidden(false);
-                      }}
-                      className="ml-auto px-4 py-1.5 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
-                    >
-                      <span className="text-[11px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
-                      <div className="text-[10px]  font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowTrainConfirm({ show: true });
-                      }}
-                      className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
-                    >
-                      <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
-                      <div className="text-[10px]  font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
-                    </button>
-                  )
-                ) : null}
-              </div>
-              
-              <div className="flex gap-6 pl-2 pt-2">
-                {/* 3 Base Skills */}
-                {baseSkills.map((skill, idx) => (
-                  <div key={`base-${idx}`} className="transform scale-[1.35] origin-center">
-                    <SkillBadge 
-                      name={skill} 
-                      color={idx === 0 ? "red" : idx === 1 ? "blue" : "green"} 
-                      locked={idx === 2 && player.ovr < 85} 
-                      onClick={() => setShowSkillInfo({
-                        name: skill,
-                        quality: "Common",
-                        isSpecial: false,
-                        locked: idx === 2 && player.ovr < 85,
-                        unlockStar: 0
-                      })}
-                      actionLabel="View Details"
-                    />
-                  </div>
-                ))}
-
-
-                {/* Result Modal */}
-                <div className="w-[1px] h-[50px] bg-white/10 mx-3" />
-
-                {/* 2 Special/Learnable Skills */}
-                {specialSkills.map((skill, idx) => {
-                  const unlockStar = idx === 0 ? 1 : 5;
-                  const isStarLocked = (player.starLevel || 0) < unlockStar;
-                  const skillName = skill ?? "Learn";
-                  const locked = isStarLocked;
-                  const savedQuality = player.skillRarities?.[skillName];
-                  const quality = isSkillQuality(savedQuality) ? savedQuality : "Common";
-                  const hasLearnedSkill = Boolean(skill);
-                  const maxRate = hasLearnedSkill ? SPECIAL_SKILL_RATES[skillName as SpecialSkillName] : undefined;
-                  const skillTapeCount = inventory.materials.skill_tape ?? 0;
-
-                  return (
-                    <div key={`spec-${idx}`} className="transform scale-[1.35] origin-center">
-                      <SkillBadge
-                        name={skillName}
-                        color="special"
-                        locked={locked}
-                        unlockText={`Star ${unlockStar}`}
-                        quality={quality}
-                        maxRate={maxRate}
-                        onClick={() => setShowSkillInfo({
-                          name: skillName,
-                          quality: quality,
-                          maxRate: maxRate,
-                          isSpecial: true,
-                          locked: locked,
-                          unlockStar: unlockStar,
-                          hasLearnedSkill: hasLearnedSkill
-                        })}
-                        actionLabel="View Details"
-                      />
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {activeTab === "overview" && (
+                <div className="grid grid-cols-[1fr_220px] gap-6 h-full">
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-black/35 border border-white/5 rounded-sm p-4">
+                      <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
+                        <div className="w-1 h-3 bg-violet-400 skew-x-[-15deg]" />
+                        <h3 className="text-xs font-black text-white/80 uppercase tracking-[0.2em]">Attribute Profile</h3>
+                      </div>
+                      <div className="flex justify-center py-2">
+                        <PlayerAttributeHexChart axes={hexAxes} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
+
+                    {tendencyPills.length > 0 && (
+                      <div className="bg-black/35 border border-white/5 rounded-sm p-4">
+                        <div className="flex items-center gap-3 mb-3 border-b border-white/5 pb-2">
+                          <div className="w-1 h-3 bg-amber-400 skew-x-[-15deg]" />
+                          <h3 className="text-xs font-black text-white/80 uppercase tracking-[0.2em]">Tendencies</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {tendencyPills.map((pill) => (
+                            <div
+                              key={pill.label}
+                              className="px-3 py-1.5 bg-black/40 border border-white/10 rounded-sm flex items-center gap-2"
+                            >
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{pill.label}</span>
+                              <span className="text-[11px] font-mono font-bold text-white">{pill.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <div className="bg-black/35 border border-white/5 rounded-sm p-4 flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Offense</span>
+                        <span className="text-2xl font-black text-red-400 font-mono">{derivedRatings.offense}</span>
+                      </div>
+                      <div className="h-[1px] bg-white/5" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Defense</span>
+                        <span className="text-2xl font-black text-cyan-400 font-mono">{derivedRatings.defense}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/35 border border-white/5 rounded-sm p-4 flex flex-col gap-2 text-[11px]">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 uppercase tracking-widest font-bold">Salary</span>
+                        <span className="text-white font-mono font-bold">${player.salary ?? player.baseSalary ?? 500}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 uppercase tracking-widest font-bold">Stamina</span>
+                        <span className="text-emerald-400 font-mono font-bold">{player.stamina ?? 100}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 uppercase tracking-widest font-bold">Basketball IQ</span>
+                        <span className="text-violet-300 font-mono font-bold">{details.basketballIQ}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500 uppercase tracking-widest font-bold">Hustle</span>
+                        <span className="text-emerald-300 font-mono font-bold">{details.hustle}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {hexAxes.slice(0, 4).map((axis) => (
+                        <div key={axis.short} className="bg-black/30 border border-white/5 rounded-sm px-2 py-2 text-center">
+                          <div className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">{axis.label}</div>
+                          <div className="text-sm font-black text-white font-mono">{axis.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "attributes" && (
+                <div className="grid grid-cols-2 gap-x-8">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                      <div className="w-1 h-3 bg-cyan-400 skew-x-[-15deg]" />
+                      <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {attributeRows.map(stat => (
+                        <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
+                          <span className="w-20 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
+                          <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                            <div className="h-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                          </div>
+                          <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                      <div className="w-1 h-3 bg-emerald-400 skew-x-[-15deg]" />
+                      <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Detailed & Physicals</h3>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      {secondaryRows.map(stat => (
+                        <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
+                          <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
+                          <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                            <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                          </div>
+                          <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "skills" && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-1 h-3 bg-[#d61e38] shadow-[0_0_8px_rgba(214,30,56,0.8)] skew-x-[-15deg]" />
+                    <h3 className="text-[12px] font-black text-white/80 uppercase tracking-[0.25em] italic">Player Skills</h3>
+                    {player.starLevel && player.starLevel >= 1 ? (
+                      pendingSkillTraining && pendingSkillTraining.playerId === player.id ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsPendingOverlayHidden(false);
+                          }}
+                          className="ml-auto px-4 py-1.5 bg-[#d61e38]/20 hover:bg-[#d61e38]/40 border border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
+                        >
+                          <span className="text-[11px] font-black text-white uppercase tracking-widest italic">Resume Skill Training</span>
+                          <div className="text-[10px] font-bold text-[#d61e38] bg-black/50 px-2 py-0.5 rounded-[2px] border border-[#d61e38]/30">Pending</div>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowTrainConfirm({ show: true });
+                          }}
+                          className="ml-auto px-4 py-1.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex items-center gap-3 transition-colors cursor-pointer group"
+                        >
+                          <span className="text-[11px] font-black text-gray-300 uppercase tracking-widest group-hover:text-white italic">Train Signature Skill</span>
+                          <div className="text-[10px] font-bold text-gray-400 bg-black/50 px-2 py-0.5 rounded-[2px] border border-white/5 group-hover:border-[#d61e38]/30 group-hover:text-amber-400">Cost: 1 Tape</div>
+                        </button>
+                      )
+                    ) : null}
+                  </div>
+
+                  <div className="bg-black/30 border border-white/5 rounded-sm p-6 flex items-center justify-center gap-8 min-h-[180px]">
+                    {baseSkills.map((skill, idx) => (
+                      <div key={`base-${idx}`} className="transform scale-[1.35] origin-center">
+                        <SkillBadge 
+                          name={skill} 
+                          color={idx === 0 ? "red" : idx === 1 ? "blue" : "green"} 
+                          locked={idx === 2 && player.ovr < 85} 
+                          onClick={() => setShowSkillInfo({
+                            name: skill,
+                            quality: "Common",
+                            isSpecial: false,
+                            locked: idx === 2 && player.ovr < 85,
+                            unlockStar: 0
+                          })}
+                          actionLabel="View Details"
+                        />
+                      </div>
+                    ))}
+
+                    <div className="w-[1px] h-[50px] bg-white/10" />
+
+                    {specialSkills.map((skill, idx) => {
+                      const unlockStar = idx === 0 ? 1 : 5;
+                      const isStarLocked = (player.starLevel || 0) < unlockStar;
+                      const skillName = skill ?? "Learn";
+                      const locked = isStarLocked;
+                      const savedQuality = player.skillRarities?.[skillName];
+                      const quality = isSkillQuality(savedQuality) ? savedQuality : "Common";
+                      const hasLearnedSkill = Boolean(skill);
+                      const maxRate = hasLearnedSkill ? SPECIAL_SKILL_RATES[skillName as SpecialSkillName] : undefined;
+
+                      return (
+                        <div key={`spec-${idx}`} className="transform scale-[1.35] origin-center">
+                          <SkillBadge
+                            name={skillName}
+                            color="special"
+                            locked={locked}
+                            unlockText={`Star ${unlockStar}`}
+                            quality={quality}
+                            maxRate={maxRate}
+                            onClick={() => setShowSkillInfo({
+                              name: skillName,
+                              quality: quality,
+                              maxRate: maxRate,
+                              isSpecial: true,
+                              locked: locked,
+                              unlockStar: unlockStar,
+                              hasLearnedSkill: hasLearnedSkill
+                            })}
+                            actionLabel="View Details"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Hexagonal Button Cluster */}
-            <div className="mt-auto relative pointer-events-auto">
-              <div className="flex items-end justify-end gap-5 relative z-10 pr-2">
+            <div className="mt-auto relative pointer-events-auto px-6 pb-5 pt-3 border-t border-white/5 bg-black/25">
+              <div className="flex items-end justify-end gap-5 relative z-10">
                 
                 {/* Enhance Hex */}
                 <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50">

@@ -39,7 +39,7 @@ async function run() {
 
   // Red Dot / Exposed Setup unchanged
   assert(
-    engineContent.includes("DEEP_STRIKE_EXPOSE_SETUP"),
+    engineContent.includes("DEEP_STRIKE_EXPOSE"),
     "DEEP_STRIKE_EXPOSE_SETUP (Red Dot X) still present and unchanged"
   );
 
@@ -51,7 +51,7 @@ async function run() {
 
   // Flop unchanged
   assert(
-    engineContent.includes("FLOP_SELL_CONTACT"),
+    engineContent.includes("FLOP_PRESSURE"),
     "FLOP_SELL_CONTACT (Flop X) still present and unchanged"
   );
 

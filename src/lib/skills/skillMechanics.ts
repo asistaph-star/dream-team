@@ -1,80 +1,71 @@
 import { Player } from "../types/player";
+import { SpecialSkillName } from "./assignBaseSkills";
 
 export type SpecialSkillMechanicId =
-  | "DEEP_STRIKE_EXPOSE_SETUP"
-  | "DEEP_STRIKE_FOUR_POINT_BAIT"
-  | "POSTER_SPARK_LUNG_BURNER"
-  | "POSTER_SPARK_CONTACT_TAX"
-  | "COURT_VISION_CHAIN_PASS"
-  | "FLOP_SELL_CONTACT"
-  | "GAMEPLAN_DEAD_AIR"
-  | "GAMEPLAN_DEBT_COLLECTOR"
-  | "GAMEPLAN_PRESSURE_COACH"
-  | "LOCK_CHAIN_CAGE_STEP"
-  | "DEFENSIVE_ANCHOR_CORNER_TRAP"
-  | "DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE"
-  | "CLEAN_CHALLENGE_CONTEST"
-  | "COMPOSURE_SHIELD_CANCEL"
-  | "TIMEOUT_RESET_CLEANSE"
-  | "COURT_VISION_RHYTHM"
-  | "BENCH_CAPTAIN_STABILIZE"
+  | "DEEP_STRIKE_SHOT_BOOST"
+  | "DEEP_STRIKE_EXPOSE"
+  | "DEEP_STRIKE_FOUL_PRESSURE"
+  | "COURT_VISION_RHYTHM_BOOST"
+  | "POSTER_SPARK_FINISH_BOOST"
+  | "POSTER_SPARK_TILT"
+  | "FLOP_FOUL_PRESSURE"
+  | "BROKEN_PLAY_RESCUE_SAVE"
+  | "SKY_WALL_BLOCK_BOOST"
+  | "SKY_WALL_STAMINA_DRAIN"
   | "LOCK_CHAIN_ON_BALL_PRESSURE"
-  | "SKY_WALL_RIM_PRESSURE"
-  | "DEFENSIVE_ANCHOR_TEAM_PRESSURE"
+  | "LOCK_CHAIN_HOOKED"
+  | "LOCK_CHAIN_STAMINA_DRAIN"
+  | "DEFENSIVE_ANCHOR_TEAM_BOOST"
+  | "CLEAN_CHALLENGE_CONTEST"
   | "GLASS_STRIKE_REBOUND"
-  | "MOMENTUM_SWING_STABILIZE"
-  | "BROKEN_PLAY_RESCUE_SAVE";
+  | "BENCH_CAPTAIN_RECOVERY"
+  | "BENCH_CAPTAIN_STABILIZE"
+  | "MOMENTUM_SWING_RECOVERY"
+  | "COMPOSURE_SHIELD_CANCEL"
+  | "GAMEPLAN_JAMMER_STATIC"
+  | "TIMEOUT_RESET_CLEANSE";
 
-export const LEGACY_TO_MECHANIC_MAP: Record<string, SpecialSkillMechanicId[]> = {
-  // Family Skills (Official)
-  "DEEP_STRIKE": ["DEEP_STRIKE_EXPOSE_SETUP", "DEEP_STRIKE_FOUR_POINT_BAIT"],
-  "POSTER_SPARK": ["POSTER_SPARK_LUNG_BURNER", "POSTER_SPARK_CONTACT_TAX"],
-  "FLOP": ["FLOP_SELL_CONTACT"],
-  "SKY_WALL": ["SKY_WALL_RIM_PRESSURE"],
-  "LOCK_CHAIN": ["LOCK_CHAIN_ON_BALL_PRESSURE", "LOCK_CHAIN_CAGE_STEP"],
-  "DEFENSIVE_ANCHOR": ["DEFENSIVE_ANCHOR_TEAM_PRESSURE", "DEFENSIVE_ANCHOR_CORNER_TRAP", "DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE"],
+export const FAMILY_TO_MECHANIC_MAP: Record<SpecialSkillName, SpecialSkillMechanicId[]> = {
+  "DEEP_STRIKE": ["DEEP_STRIKE_SHOT_BOOST", "DEEP_STRIKE_EXPOSE", "DEEP_STRIKE_FOUL_PRESSURE"],
+  "COURT_VISION_ENGINE": ["COURT_VISION_RHYTHM_BOOST"],
+  "POSTER_SPARK": ["POSTER_SPARK_FINISH_BOOST", "POSTER_SPARK_TILT"],
+  "FLOP": ["FLOP_FOUL_PRESSURE"],
+  "BROKEN_PLAY_RESCUE": ["BROKEN_PLAY_RESCUE_SAVE"],
+  "SKY_WALL": ["SKY_WALL_BLOCK_BOOST", "SKY_WALL_STAMINA_DRAIN"],
+  "LOCK_CHAIN": ["LOCK_CHAIN_ON_BALL_PRESSURE", "LOCK_CHAIN_HOOKED", "LOCK_CHAIN_STAMINA_DRAIN"],
+  "DEFENSIVE_ANCHOR": ["DEFENSIVE_ANCHOR_TEAM_BOOST"],
   "CLEAN_CHALLENGE": ["CLEAN_CHALLENGE_CONTEST"],
   "GLASS_STRIKE": ["GLASS_STRIKE_REBOUND"],
-  "COURT_VISION_ENGINE": ["COURT_VISION_RHYTHM", "COURT_VISION_CHAIN_PASS"],
-  "BENCH_CAPTAIN": ["BENCH_CAPTAIN_STABILIZE", "GAMEPLAN_PRESSURE_COACH"],
+  "BENCH_CAPTAIN": ["BENCH_CAPTAIN_RECOVERY", "BENCH_CAPTAIN_STABILIZE"],
+  "MOMENTUM_SWING": ["MOMENTUM_SWING_RECOVERY"],
   "COMPOSURE_SHIELD": ["COMPOSURE_SHIELD_CANCEL"],
-  "GAMEPLAN_JAMMER": ["GAMEPLAN_DEAD_AIR", "GAMEPLAN_DEBT_COLLECTOR"],
+  "GAMEPLAN_JAMMER": ["GAMEPLAN_JAMMER_STATIC"],
   "TIMEOUT_RESET": ["TIMEOUT_RESET_CLEANSE"],
-  "MOMENTUM_SWING": ["MOMENTUM_SWING_STABILIZE"],
-  "BROKEN_PLAY_RESCUE": ["BROKEN_PLAY_RESCUE_SAVE"],
-
-  // Legacy Skills (Compatibility Lookup)
-  "Red Dot X": ["DEEP_STRIKE_EXPOSE_SETUP"],
-  "Four-Point Bait X": ["DEEP_STRIKE_FOUR_POINT_BAIT"],
-  "Lung Burner X": ["POSTER_SPARK_LUNG_BURNER"],
-  "Contact Tax X": ["POSTER_SPARK_CONTACT_TAX"],
-  "Chain Pass X": ["COURT_VISION_CHAIN_PASS"],
-  "Flop X": ["FLOP_SELL_CONTACT"],
-  "Dead Air X": ["GAMEPLAN_DEAD_AIR"],
-  "Debt Collector X": ["GAMEPLAN_DEBT_COLLECTOR"],
-  "Pressure Coach X": ["GAMEPLAN_PRESSURE_COACH"],
-  "Cage Step X": ["LOCK_CHAIN_CAGE_STEP"],
-  "Corner Trap X": ["DEFENSIVE_ANCHOR_CORNER_TRAP"],
-  "Five-Man Squeeze X": ["DEFENSIVE_ANCHOR_FIVE_MAN_SQUEEZE"],
-  "Clean Contest X": ["CLEAN_CHALLENGE_CONTEST"],
-  "Composure X": ["COMPOSURE_SHIELD_CANCEL"],
-  "Cold Timeout X": ["TIMEOUT_RESET_CLEANSE"],
 };
 
-export const resolveSpecialSkillMechanics = (rawSkill: string): SpecialSkillMechanicId[] => {
-  // Legacy exact mappings
-  const mapped = LEGACY_TO_MECHANIC_MAP[rawSkill];
-  if (mapped) {
-    return [...mapped];
-  }
-  
-  // Future family IDs should not automatically inherit all legacy mechanics,
-  // so for now we explicitly return empty unless intentionally supported later.
-  return [];
+export const LEGACY_X_TO_FAMILY_MAP: Record<string, SpecialSkillName> = {
+  "Red Dot X": "DEEP_STRIKE",
+  "Four-Point Bait X": "DEEP_STRIKE",
+  "Lung Burner X": "POSTER_SPARK",
+  "Contact Tax X": "POSTER_SPARK",
+  "Chain Pass X": "COURT_VISION_ENGINE",
+  "Flop X": "FLOP",
+  "Dead Air X": "GAMEPLAN_JAMMER",
+  "Debt Collector X": "GAMEPLAN_JAMMER",
+  "Pressure Coach X": "BENCH_CAPTAIN",
+  "Cage Step X": "LOCK_CHAIN",
+  "Corner Trap X": "DEFENSIVE_ANCHOR",
+  "Five-Man Squeeze X": "DEFENSIVE_ANCHOR",
+  "Clean Contest X": "CLEAN_CHALLENGE",
+  "Composure X": "COMPOSURE_SHIELD",
+  "Cold Timeout X": "TIMEOUT_RESET",
 };
 
-export const doesSkillMatchMechanic = (rawSkill: string, mechanicId: SpecialSkillMechanicId): boolean => {
-  const mechanics = resolveSpecialSkillMechanics(rawSkill);
+export const resolveSpecialSkillMechanics = (familySkill: SpecialSkillName): SpecialSkillMechanicId[] => {
+  return FAMILY_TO_MECHANIC_MAP[familySkill] || [];
+};
+
+export const doesSkillMatchMechanic = (familySkill: SpecialSkillName, mechanicId: SpecialSkillMechanicId): boolean => {
+  const mechanics = resolveSpecialSkillMechanics(familySkill);
   return mechanics.includes(mechanicId);
 };
-
