@@ -3,7 +3,7 @@ import { deriveAttributesFromNbaStats } from "@/lib/utils/nbaAttributeMapper";
 
 export type DetailedAttributes = Required<Pick<
   Player,
-  "threePt" | "twoPt" | "freeThrow" | "finishing" | "handle" | "assist" | "steal" | "block" | "rebound" | "onBall" | "calm"
+  "threePt" | "twoPt" | "freeThrow" | "finishing" | "handle" | "assist" | "steal" | "block" | "rebound" | "onBall" | "calm" | "basketballIQ" | "hustle"
 >>;
 
 type StarTier = "None" | "Silver" | "Blue" | "Violet" | "Orange" | "Red";
@@ -39,6 +39,8 @@ export const getDetailedAttributes = (player: Player): DetailedAttributes => {
     rebound: capDetailed(player.rebound ?? nbaBaseline.rebound ?? ((scaled(strength) * 0.58) + (scaled(defense) * 0.42))),
     onBall: capDetailed(player.onBall ?? nbaBaseline.onBall ?? ((scaled(defense) * 0.70) + (scaled(speed) * 0.30))),
     calm: capDetailed(player.calm ?? nbaBaseline.calm ?? ((scaled(playmaking) * 0.45) + (scaled(player.ovr) * 0.35) + (scaled(shooting) * 0.20))),
+    basketballIQ: capDetailed(player.basketballIQ ?? nbaBaseline.basketballIQ ?? ((scaled(playmaking) * 0.40) + (scaled(player.ovr) * 0.35) + (scaled(defense) * 0.25))),
+    hustle: capDetailed(player.hustle ?? nbaBaseline.hustle ?? ((scaled(speed) * 0.55) + (scaled((player.stamina ?? 100)) * 0.45))),
   };
 };
 
@@ -125,6 +127,8 @@ export const applyStarGrowth = (player: Player, targetStarLevel: number): Player
   const staminaGain = targetTotalGrowth.staminaGain - currentTotalGrowth.staminaGain;
   const current = getDetailedAttributes(player);
 
+  const iqGain = Math.floor(attributeGain / 2);
+
   const next: DetailedAttributes = {
     threePt: capDetailed(current.threePt + attributeGain),
     twoPt: capDetailed(current.twoPt + attributeGain),
@@ -137,6 +141,8 @@ export const applyStarGrowth = (player: Player, targetStarLevel: number): Player
     rebound: capDetailed(current.rebound + attributeGain),
     onBall: capDetailed(current.onBall + attributeGain),
     calm: capDetailed(current.calm + attributeGain),
+    basketballIQ: capDetailed(current.basketballIQ + iqGain),
+    hustle: capDetailed(current.hustle + attributeGain),
   };
   const derived = deriveOffenseDefenseFromAttributes(next);
 
@@ -186,6 +192,8 @@ export const repairStarGrowth = (player: Player, baseline?: Player): Player => {
         rebound: baseline.rebound,
         onBall: baseline.onBall,
         calm: baseline.calm,
+        basketballIQ: baseline.basketballIQ,
+        hustle: baseline.hustle,
         stamina: baseline.stamina ?? 100,
         starGrowthAppliedLevel: 0,
       }

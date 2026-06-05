@@ -81,6 +81,8 @@ export interface Player {
   rebound?: number;
   onBall?: number;
   calm?: number;
+  basketballIQ?: number;
+  hustle?: number;
   // Tendencies (Phase Scoring-3B)
   threePtTendency?: number;
   driveTendency?: number;

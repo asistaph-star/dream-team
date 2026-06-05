@@ -850,6 +850,8 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
           rebound: nbaAttributes.rebound,
           onBall: nbaAttributes.onBall,
           calm: nbaAttributes.calm,
+          basketballIQ: nbaAttributes.basketballIQ,
+          hustle: nbaAttributes.hustle,
           offense: derivedCore!.offense,
           defense: derivedCore!.defense,
         }
@@ -877,6 +879,8 @@ export const mockPlayers: Player[] = baseMockPlayers.map(p => {
             rebound: nbaAttributes.rebound,
             onBall: nbaAttributes.onBall,
             calm: nbaAttributes.calm,
+            basketballIQ: nbaAttributes.basketballIQ,
+            hustle: nbaAttributes.hustle,
             offense: derivedCore!.offense,
             defense: derivedCore!.defense,
           }

@@ -68,6 +68,14 @@ export const getCalmRating = (player: Player): number => {
   return player.calm ?? player.playmaking;
 };
 
+export const getBasketballIQRating = (player: Player): number => {
+  return player.basketballIQ ?? player.calm ?? player.playmaking;
+};
+
+export const getHustleRating = (player: Player): number => {
+  return player.hustle ?? Math.round(((player.speed ?? 75) * 0.55 + (player.stamina ?? 100) * 0.45));
+};
+
 // -----------------------------------------------------------------------------
 // Tendency Helpers (Behavior Weights [0.0 - 1.0])
 // -----------------------------------------------------------------------------

@@ -31,6 +31,8 @@ export type NbaDerivedAttributes = {
   rebound: number;
   onBall: number;
   calm: number;
+  basketballIQ: number;
+  hustle: number;
   source: NbaAttributeSource;
 };
 
@@ -132,6 +134,19 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
     rebound: rebounding,
     onBall: clamp(blend([activityDefense, 0.45], [foulControl, 0.25], [rating(mpg, 36, 45, 170), 0.30])),
     calm: clamp(blend([playSecurity, 0.40], [rating(ftPct, 92, 45, 180), 0.25], [rating(tsPct, 67, 45, 180), 0.20], [foulControl, 0.15])),
+    basketballIQ: clamp(blend(
+      [playSecurity, 0.35],
+      [rating(tsPct, 67, 45, 180), 0.25],
+      [foulControl, 0.20],
+      [rating(contests * 0.3 + deflections * 0.25, 4.0, 45, 170), 0.20]
+    )),
+    hustle: clamp(blend(
+      [rating(looseBalls, 2.0, 40, 180), 0.25],
+      [rating(contests, 8.0, 40, 180), 0.25],
+      [rating(deflections, 4.0, 40, 180), 0.25],
+      [rating((stats.chargesDrawn ?? 0) / Math.max(1, stats.gamesPlayed ?? 60), 0.15, 40, 170), 0.10],
+      [rating(fastBreak, 6, 40, 170), 0.15]
+    )),
     source: {
       season: stats.season,
       seasonType: stats.seasonType ?? "Regular Season",
@@ -146,7 +161,7 @@ export const deriveAttributesFromNbaStats = (player: Player): NbaDerivedAttribut
       fieldsUsed: [
         "PTS", "REB", "AST", "STL", "BLK", "TOV", "PF", "FGM", "FGA", "FG%", "2P%", "3P%", "3PM", "3PA", "FT%",
         "USG%", "TS%", "OREB%", "DREB%", "Paint PTS", "2nd Chance PTS", "Fast Break PTS",
-        "Deflections", "Contested Shots", "Loose Balls Recovered",
+        "Deflections", "Contested Shots", "Loose Balls Recovered", "Charges Drawn",
       ],
     },
   };

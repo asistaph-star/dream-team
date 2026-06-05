@@ -41,7 +41,7 @@ async function run() {
     const upgraded = applyStarGrowth(testPlayer, 5);
     const allowedKeys = new Set([
       "threePt", "twoPt", "freeThrow", "finishing", "handle", "assist", "steal",
-      "block", "rebound", "onBall", "calm", "offense", "defense",
+      "block", "rebound", "onBall", "calm", "basketballIQ", "hustle", "offense", "defense",
       "shooting", "playmaking", "speed", "strength", "stamina",
       "starLevel", "starGrowthAppliedLevel"
     ]);

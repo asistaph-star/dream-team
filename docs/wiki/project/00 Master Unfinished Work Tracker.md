@@ -104,7 +104,32 @@ This document provides a comprehensive verification log and completion tracker f
 * **What Code Does**: Locks card upgrade safety and duplicate count requirements. Upgrade success rate starts at 100% (Silver ★1) and bottoms at 5% (Red ★5). Materials are consumed on failure but card and duplicates remain safe. Star growth is repaired on reload. Fully integrates the finishing sub-attribute into both star growth and NBA stats derivation mapping.
 * **Tests**: [test_upgrade_system_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_upgrade_system_final_lock.ts) and [test_player_attribute_integrity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_player_attribute_integrity.ts) pass.
 * **Risk Level**: SAFE
-* **Recommended Next Step**: Proceed to NBADataPipelineFinalLock.
+* **Recommended Next Step**: Maintain as-is.
+
+### 10. NBA Data Pipeline Lock
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [test_nba_data_pipeline_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_nba_data_pipeline_final_lock.ts) (data validation test)
+  * [lineupValidation.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/lineupValidation.ts) (lineup validation helpers)
+  * [player.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/types/player.ts) (InjuryStatus type definitions)
+  * [mockPlayers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/data/mockPlayers.ts) (injury availability mapping)
+* **What Code Does**: Guarantees players are parsed correctly from players_update.json data source, verifies OVR ranking brackets, delta caps, salary formulas, season transition stats fallbacks, pre-match injury availability, and enforces that no random in-match injuries exist.
+* **Tests**: [test_nba_data_pipeline_final_lock.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_nba_data_pipeline_final_lock.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
+### 11. Attribute Model Refinement (IQ & Hustle)
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [player.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/types/player.ts) (Player interface detailed attributes)
+  * [nbaAttributeMapper.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/nbaAttributeMapper.ts) (NbaDerivedAttributes and deriveAttributesFromNbaStats formula mapping)
+  * [starGrowth.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/starGrowth.ts) (DetailedAttributes, getDetailedAttributes, applyStarGrowth growth rates, repairStarGrowth baseline resets)
+  * [playerIdentity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/utils/playerIdentity.ts) (getBasketballIQRating, getHustleRating helpers)
+  * [mockPlayers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/data/mockPlayers.ts) (mapped basketballIQ and hustle)
+* **What Code Does**: Integrates basketballIQ and hustle gameplay attributes with derivation formulas from NBA stats, implements half-rate star-up growth for basketballIQ, full-rate for hustle, protects existing card face rating derivation, and handles backwards compatibility fallbacks.
+* **Tests**: [test_attribute_model_refinement.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_attribute_model_refinement.ts) and [test_player_attribute_integrity.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_player_attribute_integrity.ts) pass.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Proceed to matchEngine wiring phase.
 
 ---
 
@@ -222,9 +247,11 @@ All core special skill family implementations are complete:
 - Phase PlayerAttributeFinalAudit: Completed and verified.
 - Phase BaseSkillRealDataLock: Completed and verified.
 - Phase UpgradeSystemFinalLock: Completed and verified.
+- Phase NBADataPipelineFinalLock: Completed and verified.
+- Phase AttributeModelRefinement: Completed and verified.
 
 Next phases:
-1. **Phase NBADataPipelineFinalLock**: Lock down sync:players pipeline and verification of real rosters season transition.
+1. **Phase MatchEngineWiring**: Integration of basketballIQ and hustle attributes into the match simulation loop formulas.
 
 
 
