@@ -7,6 +7,7 @@ import { mockMaterials } from "@/lib/data/mockItems";
 import { getTierRating, getTierColor } from "@/lib/data/mockPlayers";
 import { Player } from "@/lib/types/player";
 import { mockAiTeams, Difficulty, MatchState, MatchEvent, PlayerMatchStats, createInitialMatchState, simulateTick, computeTeamScore, computeEffective, avgStamina, getStaminaMod, getPlayerMaxStamina, getStaminaPercent, OFFENSIVE_STRATEGIES, DEFENSIVE_STRATEGIES, emptyStats, generatePreMatchInjuries, calibrateLineupForInjuries } from "@/lib/utils/matchEngine";
+import { Swords, Flame, Snowflake } from "lucide-react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { SeasonMap } from "@/components/season/SeasonMap";
 import { ViewState } from "@/features/match/types";
@@ -1083,12 +1084,11 @@ export default function MatchPage() {
                   getDisplayStats={getDisplayStats}
                   logEndRef={logEndRef}
                   roster={roster}
-                  userOffStrategy={matchState.userOffStrategy}
-                  userDefStrategy={matchState.userDefStrategy}
                 />
                 
                 {/* BOTTOM HUD - ACTION BAR Container */}
                 <div className="flex gap-2 items-end shrink-0">
+                    
                     <MatchActionBar
                       openModal={openModal}
                       handleTimeout={handleTimeout}

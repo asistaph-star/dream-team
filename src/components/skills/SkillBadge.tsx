@@ -83,16 +83,13 @@ export function SkillBadge({
   const artSrc = getSkillArtSrc(shortName, color, locked, activeQuality);
   const lockLabel = unlockText ? `Unlocks at ${unlockText}` : "Locked 85+";
   const unlockedStyle = color === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[color];
+  const isLearnSlot = color === "special" && shortName === "Learn";
+  const showFlameAura = color === "special" && !locked;
+  const flameTier = isLearnSlot ? "learn" : activeQuality.toLowerCase();
 
-  return (
+  const badgeFace = (
     <div
-      className={`group/skill relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br shadow-[0_0_16px_var(--tw-shadow-color)] transition-transform duration-150 hover:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-black/30" : unlockedStyle
-        } ${!locked && color === "special" && (activeQuality === "Epic" || activeQuality === "Legendary") ? "skill-fire-aura" : ""} ${!locked && color === "special" && activeQuality === "Legendary" ? "skill-fire-aura-legendary" : ""}`}
-      title={locked ? `${displayName} ${lockLabel}` : `${displayName}${color === "special" ? ` (${activeQuality})` : ""}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (!locked && onClick) onClick();
-      }}
+      className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br transition-transform duration-150 group-hover/skill:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-[0_0_10px_rgba(0,0,0,0.45)]" : `${unlockedStyle} ${showFlameAura ? "shadow-[0_0_6px_rgba(0,0,0,0.55)]" : "shadow-[0_0_16px_var(--tw-shadow-color)]"}`}`}
     >
       <img
         src={artSrc}
@@ -101,6 +98,29 @@ export function SkillBadge({
         draggable={false}
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.12),transparent_30%,rgba(0,0,0,0.2)_100%)]" />
+    </div>
+  );
+
+  return (
+    <div
+      className={`group/skill relative h-10 w-10 shrink-0 ${showFlameAura ? "skill-badge-shell" : ""}`}
+      title={locked ? `${displayName} ${lockLabel}` : `${displayName}${color === "special" ? ` (${activeQuality})` : ""}`}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (!locked && onClick) onClick();
+      }}
+    >
+      {showFlameAura && (
+        <div className={`skill-flame-aura skill-flame-aura--${flameTier}`} aria-hidden>
+          <span className="skill-flame-base" />
+          <span className="skill-flame-tongue skill-flame-tongue-1" />
+          <span className="skill-flame-tongue skill-flame-tongue-2" />
+          <span className="skill-flame-tongue skill-flame-tongue-3" />
+          <span className="skill-flame-tongue skill-flame-tongue-4" />
+          <span className="skill-flame-ember" />
+        </div>
+      )}
+      {badgeFace}
       <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-32 -translate-x-1/2 rounded border border-white/10 bg-black/95 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow-xl group-hover/skill:block">
         <div className="whitespace-nowrap">{locked ? lockLabel : displayName}</div>
         {!locked && color === "special" && maxRate && (

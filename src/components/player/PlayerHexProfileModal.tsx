@@ -228,7 +228,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         <h3 className="text-xs font-black text-white/80 uppercase tracking-[0.2em]">Attribute Profile</h3>
                       </div>
                       <div className="flex justify-center py-2">
-                        <PlayerAttributeHexChart axes={hexAxes} />
+                        <PlayerAttributeHexChart axes={hexAxes} scaleMax={attributeVisualMax} />
                       </div>
                     </div>
 

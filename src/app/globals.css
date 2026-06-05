@@ -147,101 +147,231 @@ body {
   }
 }
 
-@keyframes skillBurn {
-  0%,
-  100% {
-    box-shadow:
-      0 0 8px rgba(251, 146, 60, 0.45),
-      0 0 16px rgba(239, 68, 68, 0.28),
-      inset 0 0 8px rgba(255, 255, 255, 0.12);
-    filter: brightness(1) saturate(1.05);
-  }
-
-  50% {
-    box-shadow:
-      0 0 14px rgba(251, 191, 36, 0.85),
-      0 0 26px rgba(249, 115, 22, 0.65),
-      0 0 38px rgba(239, 68, 68, 0.45),
-      inset 0 0 12px rgba(255, 255, 255, 0.22);
-    filter: brightness(1.16) saturate(1.28);
-  }
-}
-
-.skill-fire-aura {
+/* Special skill badge — tiered aura flame */
+.skill-badge-shell {
   overflow: visible;
   isolation: isolate;
 }
 
-.skill-fire-aura::before,
-.skill-fire-aura::after {
-  content: "";
+.skill-flame-aura {
+  --flame-hot: #ff5a12;
+  --flame-mid: #ffb020;
+  --flame-tip: #fff4a8;
+  --flame-glow: rgba(255, 120, 24, 0.72);
+  --flame-scale: 1;
+  --flame-opacity: 0.92;
+
   position: absolute;
-  inset: -7px;
-  border-radius: 12px;
+  inset: -10px -8px -14px;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
+  filter: saturate(1.2);
 }
 
-.skill-fire-aura::before {
-  background:
-    radial-gradient(ellipse at 12% 95%, rgba(255, 213, 74, 0.95) 0 8%, rgba(255, 111, 31, 0.72) 13%, transparent 27%),
-    radial-gradient(ellipse at 34% 105%, rgba(255, 236, 126, 0.95) 0 9%, rgba(255, 120, 25, 0.78) 15%, transparent 31%),
-    radial-gradient(ellipse at 58% 96%, rgba(255, 196, 48, 0.95) 0 8%, rgba(255, 87, 20, 0.76) 16%, transparent 31%),
-    radial-gradient(ellipse at 82% 104%, rgba(255, 230, 110, 0.92) 0 8%, rgba(255, 118, 28, 0.74) 15%, transparent 30%),
-    conic-gradient(from 20deg, transparent, rgba(255, 145, 28, 0.86), transparent 34%, rgba(255, 222, 89, 0.72), transparent 68%, rgba(255, 91, 23, 0.78), transparent);
-  filter: blur(2px) saturate(1.25);
-  animation: skill-flame-rise 0.82s ease-in-out infinite alternate;
+.skill-flame-aura--common {
+  --flame-hot: #ff6a1f;
+  --flame-mid: #8dff9f;
+  --flame-tip: #e8fff0;
+  --flame-glow: rgba(72, 255, 132, 0.55);
+  --flame-scale: 0.88;
+  --flame-opacity: 0.78;
 }
 
-.skill-fire-aura::after {
-  inset: -11px;
-  background:
-    radial-gradient(ellipse at 18% 100%, rgba(255, 95, 31, 0.72), transparent 28%),
-    radial-gradient(ellipse at 48% 106%, rgba(255, 219, 77, 0.64), transparent 30%),
-    radial-gradient(ellipse at 76% 101%, rgba(255, 69, 20, 0.68), transparent 28%);
-  filter: blur(5px);
-  opacity: 0.72;
-  animation: skill-flame-flicker 0.55s ease-in-out infinite alternate;
+.skill-flame-aura--rare {
+  --flame-hot: #ff5f18;
+  --flame-mid: #38c8ff;
+  --flame-tip: #d8f6ff;
+  --flame-glow: rgba(56, 200, 255, 0.58);
+  --flame-scale: 0.94;
+  --flame-opacity: 0.84;
 }
 
-.skill-fire-aura-legendary::before {
-  background:
-    radial-gradient(ellipse at 10% 95%, rgba(255, 244, 160, 1) 0 9%, rgba(255, 35, 35, 0.9) 16%, transparent 32%),
-    radial-gradient(ellipse at 32% 106%, rgba(255, 213, 74, 1) 0 10%, rgba(255, 63, 23, 0.92) 17%, transparent 35%),
-    radial-gradient(ellipse at 58% 96%, rgba(255, 243, 150, 1) 0 9%, rgba(239, 28, 28, 0.95) 18%, transparent 34%),
-    radial-gradient(ellipse at 85% 104%, rgba(255, 224, 102, 1) 0 9%, rgba(255, 48, 20, 0.94) 16%, transparent 33%),
-    conic-gradient(from 35deg, transparent, rgba(255, 20, 20, 0.96), rgba(255, 194, 46, 0.82), transparent 36%, rgba(255, 70, 20, 0.92), transparent 70%, rgba(255, 229, 91, 0.86), transparent);
-  filter: blur(1.5px) saturate(1.55) brightness(1.1);
-  animation-duration: 0.58s;
+.skill-flame-aura--elite {
+  --flame-hot: #ff4a10;
+  --flame-mid: #d070ff;
+  --flame-tip: #f7e6ff;
+  --flame-glow: rgba(208, 112, 255, 0.62);
+  --flame-scale: 1;
+  --flame-opacity: 0.9;
 }
 
-.skill-fire-aura-legendary::after {
-  opacity: 0.92;
-  filter: blur(6px) saturate(1.4);
-  animation-duration: 0.42s;
+.skill-flame-aura--epic {
+  --flame-hot: #ff3b0f;
+  --flame-mid: #ffc234;
+  --flame-tip: #fff6b8;
+  --flame-glow: rgba(255, 170, 32, 0.78);
+  --flame-scale: 1.08;
+  --flame-opacity: 0.96;
 }
 
-@keyframes skill-flame-rise {
+.skill-flame-aura--legendary {
+  --flame-hot: #ff1a1a;
+  --flame-mid: #ff8f18;
+  --flame-tip: #fff8c8;
+  --flame-glow: rgba(255, 48, 24, 0.92);
+  --flame-scale: 1.16;
+  --flame-opacity: 1;
+}
+
+.skill-flame-aura--learn {
+  --flame-hot: #ff4d12;
+  --flame-mid: #ffd84a;
+  --flame-tip: #fffce0;
+  --flame-glow: rgba(255, 196, 48, 0.88);
+  --flame-scale: 1.12;
+  --flame-opacity: 1;
+}
+
+.skill-flame-base,
+.skill-flame-tongue,
+.skill-flame-ember {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  pointer-events: none;
+  transform-origin: center bottom;
+}
+
+.skill-flame-base {
+  width: calc(34px * var(--flame-scale));
+  height: calc(14px * var(--flame-scale));
+  margin-left: calc(-17px * var(--flame-scale));
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, var(--flame-glow) 0%, transparent 72%);
+  opacity: calc(var(--flame-opacity) * 0.85);
+  animation: skill-flame-base-pulse 0.9s ease-in-out infinite alternate;
+}
+
+.skill-flame-tongue {
+  width: calc(10px * var(--flame-scale));
+  height: calc(18px * var(--flame-scale));
+  margin-left: calc(-5px * var(--flame-scale));
+  border-radius: 50% 50% 42% 42% / 68% 68% 32% 32%;
+  background: linear-gradient(
+    to top,
+    var(--flame-hot) 0%,
+    var(--flame-mid) 42%,
+    var(--flame-tip) 78%,
+    transparent 100%
+  );
+  opacity: var(--flame-opacity);
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 4px var(--flame-glow));
+}
+
+.skill-flame-tongue-1 {
+  left: 24%;
+  animation: skill-flame-lick-a 0.42s ease-in-out infinite alternate;
+}
+
+.skill-flame-tongue-2 {
+  left: 40%;
+  width: calc(12px * var(--flame-scale));
+  height: calc(24px * var(--flame-scale));
+  margin-left: calc(-6px * var(--flame-scale));
+  animation: skill-flame-lick-b 0.34s ease-in-out infinite alternate-reverse;
+}
+
+.skill-flame-tongue-3 {
+  left: 58%;
+  animation: skill-flame-lick-c 0.38s ease-in-out infinite alternate;
+}
+
+.skill-flame-tongue-4 {
+  left: 74%;
+  width: calc(9px * var(--flame-scale));
+  height: calc(16px * var(--flame-scale));
+  margin-left: calc(-4.5px * var(--flame-scale));
+  animation: skill-flame-lick-d 0.46s ease-in-out infinite alternate-reverse;
+}
+
+.skill-flame-ember {
+  inset: auto;
+  top: -2px;
+  bottom: auto;
+  width: calc(28px * var(--flame-scale));
+  height: calc(10px * var(--flame-scale));
+  margin-left: calc(-14px * var(--flame-scale));
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 170, 0.55) 0%, transparent 72%);
+  opacity: calc(var(--flame-opacity) * 0.65);
+  animation: skill-flame-ember-rise 1.1s ease-in-out infinite;
+}
+
+@keyframes skill-flame-base-pulse {
   0% {
-    transform: translateY(3px) scaleX(0.96) scaleY(0.9) rotate(-2deg);
-    opacity: 0.72;
+    transform: scaleX(0.92) scaleY(0.88);
+    opacity: calc(var(--flame-opacity) * 0.55);
   }
 
   100% {
-    transform: translateY(-4px) scaleX(1.04) scaleY(1.12) rotate(2deg);
-    opacity: 1;
+    transform: scaleX(1.08) scaleY(1.05);
+    opacity: calc(var(--flame-opacity) * 0.9);
   }
 }
 
-@keyframes skill-flame-flicker {
+@keyframes skill-flame-lick-a {
   0% {
-    transform: translate(-2px, 3px) scale(0.95);
-    opacity: 0.55;
+    transform: translate(-1px, 4px) scaleX(0.82) scaleY(0.72) rotate(-10deg);
+    opacity: calc(var(--flame-opacity) * 0.55);
   }
 
   100% {
-    transform: translate(2px, -3px) scale(1.08);
-    opacity: 0.95;
+    transform: translate(1px, -7px) scaleX(1.05) scaleY(1.18) rotate(8deg);
+    opacity: var(--flame-opacity);
+  }
+}
+
+@keyframes skill-flame-lick-b {
+  0% {
+    transform: translate(0, 5px) scaleX(0.9) scaleY(0.78) rotate(4deg);
+    opacity: calc(var(--flame-opacity) * 0.62);
+  }
+
+  100% {
+    transform: translate(0, -10px) scaleX(1.08) scaleY(1.28) rotate(-6deg);
+    opacity: var(--flame-opacity);
+  }
+}
+
+@keyframes skill-flame-lick-c {
+  0% {
+    transform: translate(1px, 4px) scaleX(0.84) scaleY(0.74) rotate(12deg);
+    opacity: calc(var(--flame-opacity) * 0.58);
+  }
+
+  100% {
+    transform: translate(-1px, -8px) scaleX(1.02) scaleY(1.2) rotate(-9deg);
+    opacity: var(--flame-opacity);
+  }
+}
+
+@keyframes skill-flame-lick-d {
+  0% {
+    transform: translate(-1px, 3px) scaleX(0.8) scaleY(0.7) rotate(-14deg);
+    opacity: calc(var(--flame-opacity) * 0.5);
+  }
+
+  100% {
+    transform: translate(2px, -6px) scaleX(0.98) scaleY(1.12) rotate(11deg);
+    opacity: calc(var(--flame-opacity) * 0.92);
+  }
+}
+
+@keyframes skill-flame-ember-rise {
+  0%,
+  100% {
+    transform: translateY(6px) scale(0.7);
+    opacity: 0;
+  }
+
+  35% {
+    opacity: calc(var(--flame-opacity) * 0.45);
+  }
+
+  70% {
+    transform: translateY(-8px) scale(1.05);
+    opacity: calc(var(--flame-opacity) * 0.2);
   }
 }
 

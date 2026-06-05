@@ -93,9 +93,6 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
   shotMeterStatus,
   shotMeterFeedback,
 }) => {
-  const staminaPct = Math.max(0, Math.min(100, (stam / Math.max(staminaMax, 1)) * 100));
-  const ringColor = staminaPct > 60 ? "#22c55e" : staminaPct > 30 ? "#eab308" : "#ef4444";
-
   return (
     <div
       key={p.id}
@@ -128,14 +125,7 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
         />
       )}
 
-      <div
-        className="relative pointer-events-none flex flex-col items-center justify-center w-full z-30 rounded-lg p-[3px]"
-        style={{
-          transform: "scale(1.05)",
-          background: `conic-gradient(${ringColor} ${staminaPct * 3.6}deg, rgba(255,255,255,0.08) 0deg)`,
-        }}
-      >
-        <div className="relative flex flex-col items-center justify-center w-full rounded-[6px] bg-black/35">
+      <div className="relative pointer-events-none flex flex-col items-center justify-center w-full z-30" style={{ transform: 'scale(1.05)' }}>
         <ClutchFrame show={showClutchFrame} />
 
         <PlayerCard
@@ -150,7 +140,6 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
           isOutOfPosition={isOutOfPosition}
           isFouledOut={isFouledOut}
         />
-        </div>
       </div>
 
       {/* FOUL PIPS */}

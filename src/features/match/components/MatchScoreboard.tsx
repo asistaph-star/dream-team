@@ -145,10 +145,8 @@ export function MatchScoreboard({
           {/* User IGN Pill with neon glow & victory status signifiers */}
           <div className="w-[230px] h-[28px] bg-gradient-to-t from-[#0c0c0e]/95 to-cyan-950/60 border-t border-x border-cyan-500/30 rounded-t-lg flex items-center justify-between px-3 shadow-[0_-5px_15px_rgba(6,182,212,0.1)]">
             <div className="flex items-center gap-1.5 truncate">
-              <span className="text-[8px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 rounded px-1 tracking-widest">
-                H
-              </span>
-              <span className="text-[10px] font-black tracking-widest text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.85)] truncate uppercase">
+              <span className="text-[10px] text-yellow-400">👑</span>
+              <span className="text-[10px] font-black tracking-widest text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.85)] truncate  uppercase">
                 nfrignaciostudent
               </span>
             </div>
@@ -177,9 +175,7 @@ export function MatchScoreboard({
             {/* Big Digital Score */}
             <div className="flex-1 flex justify-end items-center pr-1 gap-2">
               {matchState.possessionTeam === 'user' && (
-                <span className="text-[7px] font-black bg-orange-500 text-black px-1.5 py-0.5 rounded-sm tracking-widest animate-pulse select-none">
-                  POS
-                </span>
+                <span className="text-[11px] filter drop-shadow-[0_0_5px_rgba(249,115,22,1)] animate-pulse select-none">🏀</span>
               )}
               <span className="text-3xl font-black  tracking-tight text-white tabular-nums drop-shadow-[0_0_10px_rgba(255,255,255,0.25)]">
                 {displayUserScore}
@@ -233,12 +229,9 @@ export function MatchScoreboard({
                   </span>
                   {/* Shot Clock (Possession Clock) */}
                   {displayPossClock < displayClock && displayClock > 0 ? (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[7px] font-black text-gray-500 tracking-widest">SCK</span>
-                      <span className={`text-[10px] font-black px-1 rounded tabular-nums ${displayPossClock <= 5 ? 'text-red-500 bg-red-500/10 border border-red-500/30 animate-pulse font-extrabold shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'text-amber-400 font-bold'}`}>
-                        {Math.ceil(displayPossClock)}
-                      </span>
-                    </div>
+                    <span className={`text-[10px] font-black  px-1 rounded tabular-nums ${displayPossClock <= 5 ? 'text-red-500 bg-red-500/10 border border-red-500/30 animate-pulse font-extrabold shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'text-amber-400 font-bold'}`}>
+                      {Math.ceil(displayPossClock)}
+                    </span>
                   ) : (
                     <span className="w-[12px] h-[16px] inline-block" />
                   )}
@@ -255,9 +248,7 @@ export function MatchScoreboard({
                 {displayAiScore}
               </span>
               {matchState.possessionTeam === 'ai' && (
-                <span className="text-[7px] font-black bg-orange-500 text-black px-1.5 py-0.5 rounded-sm tracking-widest animate-pulse select-none">
-                  POS
-                </span>
+                <span className="text-[11px] filter drop-shadow-[0_0_5px_rgba(249,115,22,1)] animate-pulse select-none">🏀</span>
               )}
             </div>
 
