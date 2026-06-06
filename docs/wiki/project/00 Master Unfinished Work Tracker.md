@@ -221,10 +221,10 @@ This document provides a comprehensive verification log and completion tracker f
 ### 20. Skill UI and Storage UI Cleanup
 * **Status**: DONE
 * **Evidence File Paths**:
-  * [SkillBadge.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/skills/SkillBadge.tsx) (Updated skillArtMap and getSkillArtSrc to load cropped transparent PNGs with quality suffixes)
-  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Audited and verified clean non-toxic descriptions)
-  * `public/skills/special/` (Contains sliced transparent card graphics for all 15 special skills)
-* **What Code Does**: Crops the 15 official special skill graphics from the user's grid image, removes the checkerboard backgrounds, and overwrites the active special skill image paths. Updates the badge component to map the 15 family IDs to their correct card files.
+  * [SkillBadge.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/skills/SkillBadge.tsx) (Updated skillArtMap and getSkillArtSrc to load clean family assets without quality suffixes)
+  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Verified clean, non-toxic, non-legacy descriptions)
+  * `public/skills/family/` (Contains the 15 official family skill PNG files)
+* **What Code Does**: Replaces legacy visual asset references with clean family-level assets under a dedicated folder. Maps both the official family IDs and the legacy names to the new family folder paths. Drops all quality suffixes from the family skill paths (shares a single clean icon per family) while keeping UI border/frame/color to show rarity.
 * **Tests**: [test_skill_ui_storage_cleanup.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_ui_storage_cleanup.ts) passes.
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.

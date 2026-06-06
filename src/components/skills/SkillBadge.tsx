@@ -35,28 +35,85 @@ const skillArtMap: Record<string, string> = {
   "discipline wall": "discipline-wall",
   "connector hub": "connector-hub",
 
-  // 15 Special Skill Families (New Visuals)
-  "deep_strike": "red-dot-x",
-  "court_vision_engine": "chain-pass-x",
-  "poster_spark": "lung-burner-x",
-  "flop": "flop-x",
-  "broken_play_rescue": "false-whistle-x",
+  // Official Family Names (IDs and display formats)
+  "deep_strike": "deep-strike",
+  "deep strike": "deep-strike",
+  "court_vision_engine": "court-vision-engine",
+  "court vision engine": "court-vision-engine",
+  "poster_spark": "poster-spark",
+  "poster spark": "poster-spark",
+  "flop": "flop",
+  "broken_play_rescue": "broken-play-rescue",
+  "broken play rescue": "broken-play-rescue",
   "sky_wall": "sky-wall",
-  "lock_chain": "cage-step-x",
-  "defensive_anchor": "corner-trap-x",
-  "clean_challenge": "clean-contest-x",
+  "sky wall": "sky-wall",
+  "lock_chain": "lock-chain",
+  "lock chain": "lock-chain",
+  "defensive_anchor": "defensive-anchor",
+  "defensive anchor": "defensive-anchor",
+  "clean_challenge": "clean-challenge",
+  "clean challenge": "clean-challenge",
   "glass_strike": "glass-strike",
-  "bench_captain": "pressure-coach-x",
+  "glass strike": "glass-strike",
+  "bench_captain": "bench-captain",
+  "bench captain": "bench-captain",
   "momentum_swing": "momentum-swing",
-  "composure_shield": "composure-x",
-  "gameplan_jammer": "dead-air-x",
-  "timeout_reset": "cold-timeout-x",
+  "momentum swing": "momentum-swing",
+  "composure_shield": "composure-shield",
+  "composure shield": "composure-shield",
+  "gameplan_jammer": "gameplan-jammer",
+  "gameplan jammer": "gameplan-jammer",
+  "timeout_reset": "timeout-reset",
+  "timeout reset": "timeout-reset",
+
+  // Legacy Input Compatibility (resolved internally to clean paths)
+  "red dot x": "deep-strike",
+  "four-point bait x": "deep-strike",
+  "chain pass x": "court-vision-engine",
+  "lung burner x": "poster-spark",
+  "contact tax x": "poster-spark",
+  "flop x": "flop",
+  "false-whistle-x": "broken-play-rescue",
+  "false whistle x": "broken-play-rescue",
+  "cage step x": "lock-chain",
+  "corner trap x": "defensive-anchor",
+  "five-man squeeze x": "defensive-anchor",
+  "five man squeeze x": "defensive-anchor",
+  "clean contest x": "clean-challenge",
+  "pressure coach x": "bench-captain",
+  "composure x": "composure-shield",
+  "dead air x": "gameplan-jammer",
+  "debt collector x": "gameplan-jammer",
+  "cold timeout x": "timeout-reset",
 };
+
+const familySkillSlugs = new Set([
+  "deep-strike",
+  "court-vision-engine",
+  "poster-spark",
+  "flop",
+  "broken-play-rescue",
+  "sky-wall",
+  "lock-chain",
+  "defensive-anchor",
+  "clean-challenge",
+  "glass-strike",
+  "bench-captain",
+  "momentum-swing",
+  "composure-shield",
+  "gameplan-jammer",
+  "timeout-reset"
+]);
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {
   if (locked) return "/skills/locked-85.png";
   if (color === "special" && name === "Learn") return "/skills/learn-slot.png";
   const slug = skillArtMap[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  
+  if (familySkillSlugs.has(slug)) {
+    return `/skills/family/${slug}.png`;
+  }
+  
   if (color === "special") return `/skills/special/${slug}-${quality.toLowerCase()}.png`;
   return `/skills/${slug}.png`;
 }
