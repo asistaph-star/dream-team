@@ -229,6 +229,18 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 21. RPG-Style Status Marks Integration
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [MatchPlayerUnit.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/features/match/components/MatchPlayerUnit.tsx) (activeMarks rendering)
+  * [PlayerTooltip.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/features/match/components/PlayerTooltip.tsx) (tooltip activeMarks preview)
+  * [page.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/app/match/page.tsx) (passes activeMarks prop)
+  * `public/marks/` (Contains sliced transparent icons for exposed, tilted, hooked, pinned, and static marks)
+* **What Code Does**: Slices 5 mark icons from the user's uploaded image, transparentizes their backgrounds, squares and resizes them to 128x128. Renders these marks as small status badges (with counters) at the top of player cards during matches, and lists their details on details hover.
+* **Tests**: `npx tsc --noEmit` and `test_stamina_risk_regression.ts` pass cleanly.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
