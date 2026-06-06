@@ -263,6 +263,21 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 24. Match Skill Event UI Final QA
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [aiPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/aiPossessionResolver.ts) (Title Case skill display names and Deep Strike reference)
+  * [userPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/userPossessionResolver.ts) (Title Case skill display names and Deep Strike reference)
+  * [possessionHelpers.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/possessionHelpers.ts) (Replaced SKY_WALL: prefix with Sky Wall:)
+  * [shotPossessionResolver.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/shotPossessionResolver.ts) (Rewrote Court Vision Engine Debt wording to builds passing rhythm)
+  * [matchTick.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/match/engine/matchTick.ts) (Replaced SKY_WALL: prefix with Sky Wall:)
+  * [PlayerTooltip.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/features/match/components/PlayerTooltip.tsx) (Added Exposed, Tilted, Hooked, Pinned, Static mark descriptions)
+  * [test_match_skill_event_ui_final_qa.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_match_skill_event_ui_final_qa.ts) (Automated validation test)
+* **What Code Does**: Audits and polishes player-facing match skill popups, event logs, commentary, and mark labels. Ensures no legacy X suffixes appear in match UI text, maps all raw official ID prefixes to Title Case, rewrote Court Vision Engine event messages to builds passing rhythm without altering underlying marks/logic, restricts opponent stamina drain references to Sky Wall and Lock Chain, and adds clean description text to all active marks in PlayerTooltip.
+* **Tests**: [test_match_skill_event_ui_final_qa.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_match_skill_event_ui_final_qa.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression

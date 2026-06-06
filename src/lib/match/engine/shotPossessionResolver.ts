@@ -221,7 +221,7 @@ export function resolveUserShotAttempt(
         })) {
           const debtTarget = [...aiLineup].sort((a_p, b_p) => (draft.playerStamina[a_p.id] ?? 100) - (draft.playerStamina[b_p.id] ?? 100))[0];
           draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
-          ctx.draft.events.push(makeEvent(newQuarter, newClock, `Court Vision Engine places Debt on ${debtTarget.name}`, true));
+          ctx.draft.events.push(makeEvent(newQuarter, newClock, "Court Vision Engine builds passing rhythm.", true));
         }
       }
       // ROLL A: AND-1 CHECK
@@ -415,7 +415,7 @@ export function resolveAiShotAttempt(
           })) {
             const debtTarget = [...userLineup].sort((a_p, b_p) => (draft.playerStamina[a_p.id] ?? 100) - (draft.playerStamina[b_p.id] ?? 100))[0];
             draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
-            ctx.draft.events.push(makeEvent(newQuarter, newClock, `Court Vision Engine places Debt on ${debtTarget.name}`, false));
+            ctx.draft.events.push(makeEvent(newQuarter, newClock, "Court Vision Engine builds passing rhythm.", false));
           }
         }
       }

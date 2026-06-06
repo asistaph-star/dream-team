@@ -221,7 +221,7 @@ export const tryBlock = (
           if (drain > 0) drainedCount++;
         });
         if (drainedCount > 0) {
-          skillLog(ctx, `SKY_WALL: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
+          skillLog(ctx, `Sky Wall: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
         }
       }
     }

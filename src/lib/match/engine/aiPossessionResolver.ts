@@ -244,8 +244,8 @@ export function resolveAiPossession(ctx: PossessionContext) {
         const redDotIdentity = getThreePtRating(h);
         return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
       })) {
-        draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
-        skillLog(ctx, "Red Dot X marks " + primaryDefender.name + " as Exposed", false);
+        draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, primaryDefender.id, "Exposed", "Deep Strike", 3);
+        skillLog(ctx, "Deep Strike marks " + primaryDefender.name + " as Exposed", false);
       }
     }
     if (!is3PT && rollBaseSkill(aiLineup, "Paint Magnet", draft.playerStamina)) {
@@ -296,7 +296,7 @@ export function resolveAiPossession(ctx: PossessionContext) {
       const baseDrain = getLockChainDrain(rarity);
       const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, scorer));
       const drain = drainStamina(draft.playerStamina, scorer, aiLineup, finalDrain);
-      skillLog(ctx, `LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, true);
+      skillLog(ctx, `Lock Chain: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, true);
     }
 
     // SKY_WALL rim protection
@@ -322,7 +322,7 @@ export function resolveAiPossession(ctx: PossessionContext) {
           const baseDrain = getSkyWallDrain(rarity);
           const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, scorer));
           const drain = drainStamina(draft.playerStamina, scorer, aiLineup, finalDrain);
-          skillLog(ctx, `SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, true);
+          skillLog(ctx, `Sky Wall: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, true);
         }
       }
     }
@@ -366,7 +366,7 @@ export function resolveAiPossession(ctx: PossessionContext) {
               if (drain > 0) drainedCount++;
             });
             if (drainedCount > 0) {
-              skillLog(ctx, `LOCK_CHAIN: The aggressive steal drains stamina from sum{drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
+              skillLog(ctx, `Lock Chain: The aggressive steal drains stamina from sum{drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
             }
           }
         }
@@ -509,7 +509,7 @@ export function resolveAiPossession(ctx: PossessionContext) {
             const baseDrain = getLockChainDrain(rarity);
             const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, committer));
             const drain = drainStamina(draft.playerStamina, committer, aiLineup, finalDrain);
-            skillLog(ctx, `LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, true);
+            skillLog(ctx, `Lock Chain: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, true);
           }
         }
         ctx.activePlayerId = committer.id;
@@ -552,7 +552,7 @@ export function resolveAiPossession(ctx: PossessionContext) {
                 if (drain > 0) drainedCount++;
               });
               if (drainedCount > 0) {
-                skillLog(ctx, `LOCK_CHAIN: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
+                skillLog(ctx, `Lock Chain: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, true);
               }
             }
           }

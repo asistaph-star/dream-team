@@ -34,7 +34,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | Skill UI / Storage UI Cleanup | Done (visual assets + badge mapping + exact storage verified) |
 | PlayerStorageVisualQA | Done (visual QA, card badge layouts, skill badge color category, and warning formats polished) |
 | SkillDescriptionFinalQA | Done (skill descriptions, tooltips, catalog text, category labels audited and cleaned) |
-| Validation Suite Status | Done (all 47 tests passing) |
+| MatchSkillEventUIFinalQA | Done (verified match screen wording, cleaned legacy prefixes, added mark descriptions to tooltip, ensured Court Vision Engine has rhythm-based wording) |
+| Validation Suite Status | Done (all 48 tests passing) |
 
 ---
 

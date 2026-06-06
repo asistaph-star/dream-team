@@ -25,6 +25,14 @@ interface PlayerTooltipProps {
   activeMarks?: { mark: string; possessionsLeft: number }[];
 }
 
+const MARK_DESCRIPTIONS: Record<string, string> = {
+  Exposed: 'perimeter pressure',
+  Tilted: 'mental/foul discipline pressure',
+  Hooked: 'drive/pass pressure',
+  Pinned: 'positioning pressure',
+  Static: 'tactical disruption',
+};
+
 export const PlayerTooltip: React.FC<PlayerTooltipProps> = ({
   player: p,
   stamina: stam,
@@ -63,18 +71,28 @@ export const PlayerTooltip: React.FC<PlayerTooltipProps> = ({
       {activeMarks.length > 0 && (
         <div className="mt-1.5 pt-1.5 border-t border-white/10 px-3 pb-1.5 flex flex-col gap-1">
           <div className="text-[9px] uppercase font-black tracking-wider text-red-400/90">Active Marks</div>
-          <div className="flex flex-col gap-1">
-            {activeMarks.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 text-[10px] text-gray-300">
-                <img
-                  src={`/marks/${m.mark.toLowerCase()}.png`}
-                  alt=""
-                  className="w-3.5 h-3.5 object-contain"
-                />
-                <span className="font-bold text-white">{m.mark}</span>
-                <span className="text-gray-400">({m.possessionsLeft} pos left)</span>
-              </div>
-            ))}
+          <div className="flex flex-col gap-1.5">
+            {activeMarks.map((m, idx) => {
+              const desc = MARK_DESCRIPTIONS[m.mark] || '';
+              return (
+                <div key={idx} className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
+                    <img
+                      src={`/marks/${m.mark.toLowerCase()}.png`}
+                      alt=""
+                      className="w-3.5 h-3.5 object-contain"
+                    />
+                    <span className="font-bold text-white">{m.mark}</span>
+                    <span className="text-gray-400">({m.possessionsLeft} pos left)</span>
+                  </div>
+                  {desc && (
+                    <div className="text-[9px] text-gray-400 pl-5 italic">
+                      {desc}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

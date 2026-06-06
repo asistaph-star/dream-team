@@ -57,6 +57,7 @@ All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run be
 | `test_playmaking_regression.ts` | Light Bulb / Playmaking, Court Vision, Bench Captain |
 | `test_stamina_decay_helpers.ts` | staminaDecay.ts pure helper unit tests (17/17) |
 | `test_match_realism_calibration.ts` | Match Realism Calibration, baseline scores, IQ/Hustle impact, and symmetry |
+| `test_match_skill_event_ui_final_qa.ts` | Match skill event wording, clean prefixes, and active mark descriptions |
 | *(more — see `src/scripts/validation/` for full list)* | |
 
 ---

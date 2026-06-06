@@ -222,7 +222,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
           const baseDrain = getLockChainDrain(rarity);
           const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, committer));
           const drain = drainStamina(draft.playerStamina, committer, userLineup, finalDrain);
-          skillLog(ctx, `LOCK_CHAIN: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
+          skillLog(ctx, `Lock Chain: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
         }
       }
       ctx.activePlayerId = committer.id;
@@ -268,7 +268,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
               if (drain > 0) drainedCount++;
             });
             if (drainedCount > 0) {
-              skillLog(ctx, `LOCK_CHAIN: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, false);
+              skillLog(ctx, `Lock Chain: The aggressive steal drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, false);
             }
           }
         }
@@ -446,8 +446,8 @@ export function resolveUserPossession(ctx: PossessionContext) {
               const redDotIdentity = getThreePtRating(h);
               return (0.90 + (redDotIdentity / 100) * 0.20) * scaleMultiplier;
             })) {
-              draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, primaryDefender.id, "Exposed", "Red Dot X", 3);
-              skillLog(ctx, "Red Dot X marks " + primaryDefender.name + " as Exposed", true);
+              draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, primaryDefender.id, "Exposed", "Deep Strike", 3);
+              skillLog(ctx, "Deep Strike marks " + primaryDefender.name + " as Exposed", true);
             }
           }
           if (!is3PT && rollBaseSkill(userLineup, "Paint Magnet", draft.playerStamina)) {
@@ -498,7 +498,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
             const baseDrain = getLockChainDrain(rarity);
             const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, scorer));
             const drain = drainStamina(draft.playerStamina, scorer, userLineup, finalDrain);
-            skillLog(ctx, `LOCK_CHAIN: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
+            skillLog(ctx, `Lock Chain: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
           }
 
           // SKY_WALL rim protection
@@ -524,7 +524,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
                 const baseDrain = getSkyWallDrain(rarity);
                 const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, scorer));
                 const drain = drainStamina(draft.playerStamina, scorer, userLineup, finalDrain);
-                skillLog(ctx, `SKY_WALL: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, false);
+                skillLog(ctx, `Sky Wall: Rim protection reduces shot quality by ${(penalty * 100).toFixed(3)}% and drains ${drain} stamina from ${scorer.name}`, false);
               }
             }
           }

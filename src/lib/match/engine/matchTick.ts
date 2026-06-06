@@ -845,7 +845,7 @@ export function simulateTick(
             if (drain > 0) drainedCount++;
           });
           if (drainedCount > 0) {
-             skillLog(`SKY_WALL: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
+             skillLog(`Sky Wall: The emphatic block drains stamina from ${drainedCount} opponent${drainedCount > 1 ? 's' : ''}`, isDefUser);
           }
         }
       }
