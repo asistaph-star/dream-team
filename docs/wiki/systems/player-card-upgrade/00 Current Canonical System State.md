@@ -68,7 +68,7 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 
 - **Active Rolling Pool:** All 15 active families are fully active, rollable, and integrated in the match engine.
 - **Saved Data:** Roster slots and `skillRarities`/`skillTiers` keys store family IDs (loaded old saves are migrated in-place during roster normalization).
-- **UI Display:** Badges, tooltips, and profile headers display clean family names (e.g., "Deep Strike", "Bench Captain", "Flop"). Legacy X names encountered from old data map to their target family names.
+- **UI Display:** Badges, tooltips, and profile headers display clean family names (e.g., "Deep Strike", "Bench Captain", "Flop"). Legacy X names encountered from old data map to their target family names. Category labels display strictly as "Offense", "Defense", or "Comprehensive". All toxic effect descriptions and legacy "X" suffixes are removed from player-facing descriptions, and opponent stamina drain mentions are restricted strictly to Sky Wall and Lock Chain.
 - **Skill Art Mappings (Phase SkillUIStorageCleanup):** Special skill icons resolve directly to `/skills/family/${slug}.png` with no quality suffixes (sharing a single clean icon per family) from a dedicated assets folder. Legacy compatibility input names resolve internally to these clean family paths.
 - **Trigger Rate & Quality:** Rarity/quality values (Common to Legendary) and base trigger rates are fully preserved.
 - **OVR and star-up:** Completely untouched and separate.

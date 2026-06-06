@@ -13,6 +13,7 @@ import { getRequiredDuplicateCount } from "@/lib/utils/starRequirements";
 import { getPlayerDuplicateKey, getAscensionCandidates } from "@/lib/utils/playerCardIdentity";
 import { formatSkillName, getSkillDisplayName } from "../../lib/skills/skillDisplay";
 import { getDefaultSkillTier } from "../../lib/players/playerEra";
+import { getSpecialSkillFamilyDefinition } from "@/lib/skills/skillFamilies";
 
 interface PlayerHexProfileModalProps {
   player: Player;
@@ -1096,7 +1097,13 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               <div className="flex flex-col flex-1 pl-2 relative z-10">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="px-1.5 py-0.5 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-sm">New</div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Skill Discovered</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                    {(() => {
+                      const familyDef = getSpecialSkillFamilyDefinition(pendingSkillTraining.newSkill);
+                      const cat = familyDef?.category;
+                      return cat === "OFFENSE" ? "Offense Skill Discovered" : cat === "DEFENSE" ? "Defense Skill Discovered" : cat === "COMPREHENSIVE" ? "Comprehensive Skill Discovered" : "Skill Discovered";
+                    })()}
+                  </div>
                 </div>
                 <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(pendingSkillTraining.newSkill)}</h2>
                 <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
@@ -1349,6 +1356,11 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     <div className="flex items-center gap-2 mb-1">
                       <div className={`text-[10px] font-bold uppercase tracking-widest ${showSkillInfo.isSpecial ? 'text-emerald-400' : 'text-blue-400'}`}>
                         {showSkillInfo.quality} {showSkillInfo.isSpecial ? "Signature" : "Base"} Skill
+                        {showSkillInfo.isSpecial && (() => {
+                          const familyDef = getSpecialSkillFamilyDefinition(showSkillInfo.name);
+                          const cat = familyDef?.category;
+                          return cat === "OFFENSE" ? " | Offense" : cat === "DEFENSE" ? " | Defense" : cat === "COMPREHENSIVE" ? " | Comprehensive" : "";
+                        })()}
                       </div>
                     </div>
                     <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(showSkillInfo.name)}</h2>

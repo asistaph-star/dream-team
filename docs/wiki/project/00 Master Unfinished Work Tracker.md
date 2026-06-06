@@ -252,6 +252,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 23. Skill Description Final QA
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Verified clean, non-toxic, non-legacy descriptions)
+  * [PlayerHexProfileModal.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/player/PlayerHexProfileModal.tsx) (Category labels display strictly as Offense, Defense, or Comprehensive using getSpecialSkillFamilyDefinition)
+  * [test_skill_description_final_qa.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_description_final_qa.ts) (Automated description and category label audit validation test)
+* **What Code Does**: Audits and polishes player-facing skill descriptions, tooltips, catalog text, modal text, and category labels. Category labels display strictly as "Offense", "Defense", or "Comprehensive". Opponent stamina drain mentions are restricted to Sky Wall and Lock Chain, and toxic wording or legacy "X" suffixes are completely eliminated from player-facing UI text.
+* **Tests**: [test_skill_description_final_qa.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_description_final_qa.ts) passes.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression

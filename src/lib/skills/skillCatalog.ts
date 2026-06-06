@@ -63,21 +63,21 @@ export const BASE_SKILL_TEXT: Record<BaseSkillName, string> = {
 
 export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   // Family Skills (Official)
-  "DEEP_STRIKE": "Gives a small 3PT shot-quality boost on attempts. On trigger, applies Exposed to the primary defender for 2 possessions. If the defender is already Exposed, adds small 3PT foul pressure.",
-  "COURT_VISION_ENGINE": "Assisted shots receive a small shot-quality boost. Clean passes reduce bad-shot penalty slightly. Can improve team rhythm after assists.",
-  "POSTER_SPARK": "Gives a small finish boost on drives, dunks, and contact finishes. Can apply Tilted to the defender for 2 possessions on strong paint attacks.",
-  "FLOP": "Adds small foul pressure on contact shots, drives, or contested jumpers.",
-  "BROKEN_PLAY_RESCUE": "Rarely cancels a near-turnover, forcing a difficult 2PT rescue shot. Costs the rescuer stamina.",
-  "SKY_WALL": "Boosts block and paint contest pressure. After a successful block, all opponents lose a small amount of stamina.",
-  "LOCK_CHAIN": "Slightly increases ball-handler pressure and turnover pressure. Can apply Hooked. After a successful steal, all opponents lose a small amount of stamina.",
-  "DEFENSIVE_ANCHOR": "Gives a small team contest and rotation boost while active. Helps reduce opponent rhythm and improves team defensive positioning.",
-  "CLEAN_CHALLENGE": "Reduces foul-bait effects, lowers bad foul chance, and counters Flop and Deep Strike foul pressure.",
-  "GLASS_STRIKE": "Improves offensive rebound timing and gives a controlled putback chance after offensive rebounds.",
-  "BENCH_CAPTAIN": "Speeds up bench stamina recovery and stabilizes form for tired teammates.",
-  "MOMENTUM_SWING": "After a block, steal, or forced turnover, gives small momentum recovery and slightly helps the lowest-stamina teammate.",
-  "COMPOSURE_SHIELD": "Protects team from Tilted marks, foul-bait pressure, and momentum collapse. Can cancel some foul-bait triggers.",
-  "GAMEPLAN_JAMMER": "Temporarily weakens one opponent special-skill trigger. Can apply Static for 2 possessions.",
-  "TIMEOUT_RESET": "Triggers when team stamina is low or negative marks are stacking. Clears limited marks from teammates and gives small recovery to tired players.",
+  "DEEP_STRIKE": "Provides perimeter pressure and 3PT gravity. On trigger, applies Exposed setup on the primary defender. If the defender is already Exposed, adds small 3PT foul pressure.",
+  "COURT_VISION_ENGINE": "Improves passing rhythm and assisted shot quality, fostering clean-pass offense.",
+  "POSTER_SPARK": "Increases rim pressure and contact finishing. Can apply Tilted pressure to the primary defender on strong interior attempts.",
+  "FLOP": "Employs contact-selling and foul pressure on drives or contested attempts.",
+  "BROKEN_PLAY_RESCUE": "Rarely saves a turnover and forces a difficult 2PT rescue shot. Costs self stamina.",
+  "SKY_WALL": "Boosts rim protection and block pressure. After a successful block, triggers a small all-opponent stamina drain.",
+  "LOCK_CHAIN": "Enhances on-ball pressure and steal pressure. Can apply Hooked to increase pass and drive pressure on the handler. After a successful steal, triggers a small all-opponent stamina drain.",
+  "DEFENSIVE_ANCHOR": "Strengthens team defensive structure, providing a rotation boost and defensive IQ boost. No team drain.",
+  "CLEAN_CHALLENGE": "Ensures clean contests and acts as a disciplined defense foul-bait counter.",
+  "GLASS_STRIKE": "Improves rebound timing, applies offensive board pressure, and grants a controlled putback chance.",
+  "BENCH_CAPTAIN": "Speeds up bench recovery, maintains rotation stability, and provides form support.",
+  "MOMENTUM_SWING": "Ensures momentum recovery after stops and shifts energy to provide lowest-stamina teammate support.",
+  "COMPOSURE_SHIELD": "Provides anti-tilt and anti-foul-bait protection, maintaining mental stability.",
+  "GAMEPLAN_JAMMER": "Applies tactical disruption by applying Static to weaken one opponent trigger.",
+  "TIMEOUT_RESET": "Triggers a cooldown-based reset on low team stamina, offering limited cleanse and small recovery.",
 };
 
 // All 15 official Special Skill Families are active.
