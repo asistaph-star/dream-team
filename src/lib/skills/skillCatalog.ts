@@ -67,17 +67,17 @@ export const SPECIAL_SKILL_TEXT: Record<SpecialSkillName, string> = {
   "COURT_VISION_ENGINE": "Improves passing rhythm and assisted shot quality, fostering clean-pass offense.",
   "POSTER_SPARK": "Increases rim pressure and contact finishing. Can apply Tilted pressure to the primary defender on strong interior attempts.",
   "FLOP": "Employs contact-selling and foul pressure on drives or contested attempts.",
-  "BROKEN_PLAY_RESCUE": "Rarely saves a turnover and forces a difficult 2PT rescue shot. Costs self stamina.",
-  "SKY_WALL": "Boosts rim protection and block pressure. After a successful block, triggers a small all-opponent stamina drain.",
-  "LOCK_CHAIN": "Enhances on-ball pressure and steal pressure. Can apply Hooked to increase pass and drive pressure on the handler. After a successful steal, triggers a small all-opponent stamina drain.",
+  "BROKEN_PLAY_RESCUE": "Rarely saves a turnover and forces a difficult 2PT rescue shot. Costs 12-25 self stamina depending on capability score (increased by 25% when tired).",
+  "SKY_WALL": "Boosts rim protection and block pressure. After a successful block, triggers a team-wide opponent stamina drain (drains 3/5/7/9 stamina from all active opponents depending on quality: Common/Rare/Elite/Epic).",
+  "LOCK_CHAIN": "Enhances on-ball pressure and steal pressure. Can apply Hooked to increase pass and drive pressure on the handler. After a successful steal, triggers a team-wide opponent stamina drain (drains 2/4/6/8 stamina from all active opponents depending on quality: Common/Rare/Elite/Epic).",
   "DEFENSIVE_ANCHOR": "Strengthens team defensive structure, providing a rotation boost and defensive IQ boost. No team drain.",
   "CLEAN_CHALLENGE": "Ensures clean contests and acts as a disciplined defense foul-bait counter.",
   "GLASS_STRIKE": "Improves rebound timing, applies offensive board pressure, and grants a controlled putback chance.",
-  "BENCH_CAPTAIN": "Speeds up bench recovery, maintains rotation stability, and provides form support.",
-  "MOMENTUM_SWING": "Ensures momentum recovery after stops and shifts energy to provide lowest-stamina teammate support.",
+  "BENCH_CAPTAIN": "Speeds up benched teammate recovery (recovers 5-8 stamina once per quarter) and maintains rotation stability.",
+  "MOMENTUM_SWING": "Ensures momentum recovery after stops, recovering 5-8 stamina and +0.010 to +0.016 form for the lowest-stamina teammate.",
   "COMPOSURE_SHIELD": "Provides anti-tilt and anti-foul-bait protection, maintaining mental stability.",
   "GAMEPLAN_JAMMER": "Applies tactical disruption by applying Static to weaken one opponent trigger.",
-  "TIMEOUT_RESET": "Triggers a cooldown-based reset on low team stamina, offering limited cleanse and small recovery.",
+  "TIMEOUT_RESET": "Triggers a cooldown-based reset on low team stamina once per quarter, cleansing 1 mark and recovering 12 stamina for 1-2 tired players.",
 };
 
 // All 15 official Special Skill Families are active.
