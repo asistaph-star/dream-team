@@ -106,17 +106,17 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
       <PlayerStatusIcons isHot={isHot} isCold={isCold} />
 
       {activeMarks.length > 0 && (
-        <div className="absolute top-[-14px] left-[-8px] flex gap-1 z-55 pointer-events-none select-none">
+        <div className="absolute top-[8px] left-[-42px] flex flex-col gap-1.5 z-55 pointer-events-none select-none">
           {activeMarks.map((m, idx) => (
-            <div key={idx} className="relative w-5 h-5 flex items-center justify-center bg-neutral-950/90 rounded-md border border-neutral-800/80 p-0.5 shadow-md">
+            <div key={idx} className="relative w-7 h-7 flex items-center justify-center bg-neutral-950/95 rounded-md border border-neutral-700/90 p-0.5 shadow-xl">
               <img
                 src={`/marks/${m.mark.toLowerCase()}.png`}
                 alt={m.mark}
-                className="w-full h-full object-contain filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
               />
               <span
-                className="absolute bottom-[-3px] right-[-3px] bg-neutral-950 border border-neutral-700/85 text-[7px] font-extrabold text-white leading-none px-[2px] py-[0.5px] rounded-sm scale-[0.8]"
-                style={{ textShadow: '0 1px 1px rgba(0,0,0,0.9)' }}
+                className="absolute bottom-[-4px] right-[-4px] bg-neutral-950 border border-neutral-600/90 text-[8px] font-black text-white leading-none px-[3px] py-[1px] rounded-sm"
+                style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}
               >
                 {m.possessionsLeft}
               </span>
