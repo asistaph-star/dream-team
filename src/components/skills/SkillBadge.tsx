@@ -5,18 +5,18 @@ import { getSkillDisplayName } from "@/lib/skills/skillDisplay";
 export type SkillBadgeColor = "red" | "blue" | "green" | "special";
 
 export const skillBadgeStyles: Record<SkillBadgeColor, string> = {
-  red: "from-[#ff4b5f] via-[#a70f26] to-[#27040a] border-[#ff8b96] text-white shadow-red-500/30",
-  blue: "from-[#39b8ff] via-[#1163d8] to-[#061b48] border-[#8fd7ff] text-white shadow-blue-500/30",
-  green: "from-[#53f28c] via-[#10994b] to-[#062b18] border-[#a3ffc2] text-white shadow-emerald-500/30",
-  special: "from-[#ffd45c] via-[#e04435] to-[#351006] border-[#ffe597] text-white shadow-amber-500/30",
+  red: "bg-neutral-950/80 border-[#ff8b96] text-white shadow-red-500/30",
+  blue: "bg-neutral-950/80 border-[#8fd7ff] text-white shadow-blue-500/30",
+  green: "bg-neutral-950/80 border-[#a3ffc2] text-white shadow-emerald-500/30",
+  special: "bg-neutral-950/80 border-[#ffe597] text-white shadow-amber-500/30",
 };
 
 export const skillQualityStyles: Record<SkillQuality, string> = {
-  Common: "from-[#40e36f] via-[#11863d] to-[#041c0d] border-[#9dffb7] text-white shadow-emerald-500/30",
-  Rare: "from-[#3fc8ff] via-[#1465e8] to-[#061842] border-[#95dcff] text-white shadow-blue-500/30",
-  Elite: "from-[#d263ff] via-[#7c28d6] to-[#23053e] border-[#efb6ff] text-white shadow-purple-500/30",
-  Epic: "from-[#ffd35b] via-[#ee7a1f] to-[#341101] border-[#ffe59a] text-white shadow-orange-500/30",
-  Legendary: "from-[#ff5368] via-[#d61022] to-[#310407] border-[#ffa2ad] text-white shadow-red-500/30",
+  Common: "bg-neutral-950/80 border-[#9dffb7] text-white shadow-emerald-500/30",
+  Rare: "bg-neutral-950/80 border-[#95dcff] text-white shadow-blue-500/30",
+  Elite: "bg-neutral-950/80 border-[#efb6ff] text-white shadow-purple-500/30",
+  Epic: "bg-neutral-950/80 border-[#ffe59a] text-white shadow-orange-500/30",
+  Legendary: "bg-neutral-950/80 border-[#ffa2ad] text-white shadow-red-500/30",
 };
 
 const skillArtMap: Record<string, string> = {
@@ -96,7 +96,11 @@ export function SkillBadge({
 
   const badgeFace = (
     <div
-      className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br transition-transform duration-150 group-hover/skill:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-[0_0_10px_rgba(0,0,0,0.45)]" : `${unlockedStyle} ${showFlameAura ? "shadow-[0_0_6px_rgba(0,0,0,0.55)]" : "shadow-[0_0_16px_var(--tw-shadow-color)]"}`}`}
+      className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 transition-transform duration-150 group-hover/skill:scale-110 ${
+        locked 
+          ? "bg-gradient-to-br from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-[0_0_10px_rgba(0,0,0,0.45)]" 
+          : `${unlockedStyle} ${showFlameAura ? "shadow-[0_0_6px_rgba(0,0,0,0.55)]" : "shadow-[0_0_16px_var(--tw-shadow-color)]"}`
+      }`}
     >
       <img
         src={`${artSrc}?v=5`}
