@@ -964,6 +964,7 @@ export default function MatchPage() {
         shotMeterProgress={shotMeterProgress}
         shotMeterStatus={shotMeterStatus}
         shotMeterFeedback={shotMeterFeedback}
+        activeMarks={matchState.skillMarks[p.id] ?? []}
       />
     );
   };

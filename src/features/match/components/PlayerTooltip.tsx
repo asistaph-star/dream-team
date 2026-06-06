@@ -22,6 +22,7 @@ interface PlayerTooltipProps {
   tierColor: string;
   playerStats: PlayerStats;
   formRating?: number;
+  activeMarks?: { mark: string; possessionsLeft: number }[];
 }
 
 export const PlayerTooltip: React.FC<PlayerTooltipProps> = ({
@@ -31,6 +32,7 @@ export const PlayerTooltip: React.FC<PlayerTooltipProps> = ({
   tierColor,
   playerStats: pStats,
   formRating = 1.0,
+  activeMarks = [],
 }) => {
   return (
     <div className="player-tooltip">
@@ -58,6 +60,24 @@ export const PlayerTooltip: React.FC<PlayerTooltipProps> = ({
         <span><b>{pStats.FTM ?? 0}/{pStats.FTA ?? 0}</b> FT</span>
         <span><b>{pStats.FOL ?? 0}</b>/5 FOL</span>
       </div>
+      {activeMarks.length > 0 && (
+        <div className="mt-1.5 pt-1.5 border-t border-white/10 px-3 pb-1.5 flex flex-col gap-1">
+          <div className="text-[9px] uppercase font-black tracking-wider text-red-400/90">Active Marks</div>
+          <div className="flex flex-col gap-1">
+            {activeMarks.map((m, idx) => (
+              <div key={idx} className="flex items-center gap-1.5 text-[10px] text-gray-300">
+                <img
+                  src={`/marks/${m.mark.toLowerCase()}.png`}
+                  alt=""
+                  className="w-3.5 h-3.5 object-contain"
+                />
+                <span className="font-bold text-white">{m.mark}</span>
+                <span className="text-gray-400">({m.possessionsLeft} pos left)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {(() => {
         if (formRating >= 1.10) return <div className="tt-hot">On Fire - Carrying the game!</div>;
         if (formRating >= 1.05) return <div style={{ textAlign: 'center', fontSize: 10, color: '#22c55e', padding: 4, background: 'rgba(34,197,94,0.1)', fontWeight: 'bold' }}>Hot Streak</div>;

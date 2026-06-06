@@ -55,6 +55,7 @@ export interface MatchPlayerUnitProps {
   shotMeterProgress: number;
   shotMeterStatus: 'idle' | 'filling' | 'holding' | 'release' | 'done';
   shotMeterFeedback: string;
+  activeMarks?: { mark: string; possessionsLeft: number }[];
 }
 
 export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
@@ -92,6 +93,7 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
   shotMeterProgress,
   shotMeterStatus,
   shotMeterFeedback,
+  activeMarks = [],
 }) => {
   return (
     <div
@@ -102,6 +104,26 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
       onPointerDown={onPointerDown}
     >
       <PlayerStatusIcons isHot={isHot} isCold={isCold} />
+
+      {activeMarks.length > 0 && (
+        <div className="absolute top-[-14px] left-[-8px] flex gap-1 z-55 pointer-events-none select-none">
+          {activeMarks.map((m, idx) => (
+            <div key={idx} className="relative w-5 h-5 flex items-center justify-center bg-neutral-950/90 rounded-md border border-neutral-800/80 p-0.5 shadow-md">
+              <img
+                src={`/marks/${m.mark.toLowerCase()}.png`}
+                alt={m.mark}
+                className="w-full h-full object-contain filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]"
+              />
+              <span
+                className="absolute bottom-[-3px] right-[-3px] bg-neutral-950 border border-neutral-700/85 text-[7px] font-extrabold text-white leading-none px-[2px] py-[0.5px] rounded-sm scale-[0.8]"
+                style={{ textShadow: '0 1px 1px rgba(0,0,0,0.9)' }}
+              >
+                {m.possessionsLeft}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* ═══ PREMIUM SLANTED BANNERS ═══ */}
       <PlayerEventBanner
@@ -153,6 +175,7 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
         tierColor={tierColor}
         playerStats={pStats}
         formRating={formRating}
+        activeMarks={activeMarks}
       />
 
       {/* ═══ NBA 2K-STYLE SHOT METER OVERLAY ═══ */}
