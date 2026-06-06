@@ -99,7 +99,7 @@ export function SkillBadge({
       className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 bg-gradient-to-br transition-transform duration-150 group-hover/skill:scale-110 ${locked ? "from-zinc-700 via-zinc-900 to-black border-zinc-500/60 text-zinc-400 opacity-80 shadow-[0_0_10px_rgba(0,0,0,0.45)]" : `${unlockedStyle} ${showFlameAura ? "shadow-[0_0_6px_rgba(0,0,0,0.55)]" : "shadow-[0_0_16px_var(--tw-shadow-color)]"}`}`}
     >
       <img
-        src={`${artSrc}?v=4`}
+        src={`${artSrc}?v=5`}
         alt={locked ? "Locked skill" : displayName}
         className="absolute inset-0 h-full w-full object-contain p-[3px] contrast-[1.08] saturate-[1.14] drop-shadow-[0_2px_3px_rgba(0,0,0,0.85)]"
         draggable={false}
