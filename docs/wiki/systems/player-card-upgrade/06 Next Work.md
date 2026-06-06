@@ -32,6 +32,7 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | SkillSystemHardReset-FinalLock | Done (15-family hard reset complete) |
 | Storage duplicate final audit | Done (helpers + context execution path verified) |
 | Skill UI / Storage UI Cleanup | Done (visual assets + badge mapping + exact storage verified) |
+| PlayerStorageVisualQA | Done (visual QA, card badge layouts, skill badge color category, and warning formats polished) |
 | Validation Suite Status | Done (all 46 tests passing) |
 
 ---

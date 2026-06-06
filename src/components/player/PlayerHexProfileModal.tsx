@@ -776,7 +776,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       </div>
                       <div className="p-6 flex flex-col gap-4">
                         <p className="text-zinc-300 text-sm leading-relaxed">
-                          This upgrade will sacrifice duplicate card(s) that have <span className="text-emerald-400 font-bold">Learned X Skills</span>. If the upgrade succeeds, those skills will be lost forever.
+                          This upgrade will sacrifice duplicate card(s) that have <span className="text-emerald-400 font-bold">Learned Special Skills</span>. If the upgrade succeeds, those skills will be lost forever.
                         </p>
                         
                         <div className="bg-black/50 border border-white/5 rounded-lg p-3 max-h-[150px] overflow-y-auto">
@@ -784,7 +784,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                             <div key={idx} className="flex items-center gap-3 mb-2 last:mb-0 border-b border-white/5 pb-2 last:border-0 last:pb-0">
                               <div className="flex-1">
                                 <div className="text-white text-xs font-bold">{s.playerName} <span className="text-zinc-500  text-[9px] font-normal">(Slot {s.slotNumber})</span></div>
-                                <div className="text-emerald-400 text-sm font-black italic tracking-wide">{s.skillName}</div>
+                                <div className="text-emerald-400 text-sm font-black italic tracking-wide">{getSkillDisplayName(s.skillName)}</div>
                               </div>
                               <div className="text-xs font-bold uppercase tracking-widest text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
                                 {s.rarity}

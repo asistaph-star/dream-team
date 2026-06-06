@@ -170,21 +170,19 @@ export function PlayerCard({
         style={{ transform: `scale(${scale})` }}
       >
         {/* 1. TOP-LEFT OVR & POSITION (Crisp & Clean Match Style) */}
-        <div className="absolute top-1 left-1 z-[60] flex flex-col items-center select-none font-sans">
+        <div className="absolute top-1 left-1 z-[60] flex flex-col items-center select-none font-sans gap-[2px]">
           <span className="text-white text-[16px] font-extrabold leading-none tracking-tighter drop-shadow-[0_1.5px_3px_rgba(0,0,0,0.8)] mb-[1px]">
             {player.ovr}
           </span>
-          <span className={`bg-gradient-to-b ${posBadgeGradients[player.rarity]} text-white text-[8px] font-bold px-[4px] py-[0.5px] rounded-[1px] shadow-[0_1px_2px_rgba(0,0,0,0.6)] leading-none select-none`}>
+          <span className={`bg-gradient-to-b ${posBadgeGradients[player.rarity]} text-white text-[8px] font-bold px-[4px] py-[0.5px] rounded-[1px] shadow-[0_1px_2px_rgba(0,0,0,0.6)] leading-none select-none mb-[2px]`}>
             {player.position}
           </span>
+          {player.isInjured && (
+            <span className="bg-rose-600/90 border border-red-400 text-white text-[7px] font-black px-1.5 py-0.5 rounded shadow-[0_1px_4px_rgba(220,38,38,0.6)] animate-pulse select-none uppercase tracking-wider leading-none">
+              OUT
+            </span>
+          )}
         </div>
-
-        {/* 2. FROSTED INJURY OVERLAY (OUT Indicator) */}
-        {player.isInjured && (
-          <div className="absolute top-1 right-1 z-[60] bg-rose-600/90 border border-red-400 text-white text-[7.5px] font-black px-1.5 py-0.5 rounded shadow-[0_1px_4px_rgba(220,38,38,0.6)] animate-pulse select-none uppercase tracking-wider">
-            ⚠️ OUT
-          </div>
-        )}
 
         {/* 3. DYNAMIC HEADSHOT (using match gameplay's robust backgroundImage masking) */}
         <div

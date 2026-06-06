@@ -161,14 +161,75 @@ export function SkillBadge({
   const shortName = name.replace(/\s+/g, " ").trim();
   const displayName = getSkillDisplayName(shortName);
   const activeQuality = quality ?? "Common";
+
+  let resolvedColor = color;
+  if (color === "special" && shortName !== "Learn") {
+    const nameLower = shortName.toLowerCase();
+    if (
+      nameLower === "deep_strike" ||
+      nameLower === "deep strike" ||
+      nameLower === "red dot x" ||
+      nameLower === "four-point bait x" ||
+      nameLower === "court_vision_engine" ||
+      nameLower === "court vision engine" ||
+      nameLower === "chain pass x" ||
+      nameLower === "poster_spark" ||
+      nameLower === "poster spark" ||
+      nameLower === "lung burner x" ||
+      nameLower === "contact tax x" ||
+      nameLower === "flop" ||
+      nameLower === "flop x" ||
+      nameLower === "broken_play_rescue" ||
+      nameLower === "broken play rescue"
+    ) {
+      resolvedColor = "red";
+    } else if (
+      nameLower === "sky_wall" ||
+      nameLower === "sky wall" ||
+      nameLower === "lock_chain" ||
+      nameLower === "lock chain" ||
+      nameLower === "cage step x" ||
+      nameLower === "defensive_anchor" ||
+      nameLower === "defensive anchor" ||
+      nameLower === "corner trap x" ||
+      nameLower === "five-man squeeze x" ||
+      nameLower === "five man squeeze x" ||
+      nameLower === "clean_challenge" ||
+      nameLower === "clean challenge" ||
+      nameLower === "clean contest x" ||
+      nameLower === "glass_strike" ||
+      nameLower === "glass strike"
+    ) {
+      resolvedColor = "blue";
+    } else if (
+      nameLower === "bench_captain" ||
+      nameLower === "bench captain" ||
+      nameLower === "pressure coach x" ||
+      nameLower === "momentum_swing" ||
+      nameLower === "momentum swing" ||
+      nameLower === "composure_shield" ||
+      nameLower === "composure shield" ||
+      nameLower === "composure x" ||
+      nameLower === "gameplan_jammer" ||
+      nameLower === "gameplan jammer" ||
+      nameLower === "dead air x" ||
+      nameLower === "debt collector x" ||
+      nameLower === "timeout_reset" ||
+      nameLower === "timeout reset" ||
+      nameLower === "cold timeout x"
+    ) {
+      resolvedColor = "green";
+    }
+  }
+
   const artSrc = getSkillArtSrc(shortName, color, locked, activeQuality);
   const lockLabel = unlockText ? `Unlocks at ${unlockText}` : "Locked 85+";
-  const unlockedStyle = color === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[color];
+  const unlockedStyle = resolvedColor === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[resolvedColor];
   const isLearnSlot = color === "special" && shortName === "Learn";
   const showFlameAura = color === "special" && !locked;
   const flameTier = isLearnSlot ? "learn" : activeQuality.toLowerCase();
 
-  const glowColor = getBacklightGlow(color, activeQuality);
+  const glowColor = getBacklightGlow(resolvedColor, activeQuality);
   const badgeFace = (
     <div
       className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 transition-transform duration-150 group-hover/skill:scale-110 ${

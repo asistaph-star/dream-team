@@ -241,6 +241,17 @@ This document provides a comprehensive verification log and completion tracker f
 * **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
+### 22. Player Storage Visual QA
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [PlayerCard.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/player/PlayerCard.tsx) (Repositioned injury OUT badge to top-left container under OVR and Position to resolve layout clashing)
+  * [SkillBadge.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/skills/SkillBadge.tsx) (Auto-resolves signature skill category color highlights for Offense, Defense, and Comprehensive)
+  * [PlayerHexProfileModal.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/player/PlayerHexProfileModal.tsx) (Polished duplicate sacrifice warning to render clean, readable display names using getSkillDisplayName)
+* **What Code Does**: Audits, aligns, and polishes player storage, lineup, bench, and duplicate card layouts. Resolves badge overlap issues on player cards and formats learned special skill warnings on ascension upgrade previews.
+* **Tests**: `npx tsc --noEmit` and all 4 validation test scripts compile and pass successfully.
+* **Risk Level**: SAFE
+* **Recommended Next Step**: Maintain as-is.
+
 ---
 
 ## Section 2: Done but Needs Continued Regression
