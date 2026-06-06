@@ -61,6 +61,23 @@ export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: bo
   return `/skills/${slug}.png`;
 }
 
+export function getBacklightGlow(color: SkillBadgeColor, quality: SkillQuality = "Common"): string {
+  if (color !== "special") {
+    if (color === "red") return "rgba(255, 75, 95, 0.35)";
+    if (color === "blue") return "rgba(57, 184, 255, 0.35)";
+    if (color === "green") return "rgba(83, 242, 140, 0.35)";
+    return "rgba(255, 255, 255, 0.15)";
+  }
+  const qualityGlows: Record<SkillQuality, string> = {
+    Common: "rgba(64, 227, 111, 0.25)",
+    Rare: "rgba(63, 200, 255, 0.35)",
+    Elite: "rgba(210, 99, 255, 0.4)",
+    Epic: "rgba(255, 211, 91, 0.4)",
+    Legendary: "rgba(255, 83, 104, 0.45)",
+  };
+  return qualityGlows[quality] || "rgba(255, 255, 255, 0.15)";
+}
+
 export interface SkillBadgeProps {
   name: string;
   color: SkillBadgeColor;
@@ -94,6 +111,7 @@ export function SkillBadge({
   const showFlameAura = color === "special" && !locked;
   const flameTier = isLearnSlot ? "learn" : activeQuality.toLowerCase();
 
+  const glowColor = getBacklightGlow(color, activeQuality);
   const badgeFace = (
     <div
       className={`relative z-[1] flex h-10 w-10 items-center justify-center overflow-hidden rounded-[8px] border-2 transition-transform duration-150 group-hover/skill:scale-110 ${
@@ -102,13 +120,21 @@ export function SkillBadge({
           : `${unlockedStyle} ${showFlameAura ? "shadow-[0_0_6px_rgba(0,0,0,0.55)]" : "shadow-[0_0_16px_var(--tw-shadow-color)]"}`
       }`}
     >
+      {!locked && (
+        <div 
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: `radial-gradient(circle at center, ${glowColor} 0%, transparent 70%)`
+          }}
+        />
+      )}
       <img
-        src={`${artSrc}?v=5`}
+        src={`${artSrc}?v=6`}
         alt={locked ? "Locked skill" : displayName}
-        className="absolute inset-0 h-full w-full object-contain p-[3px] contrast-[1.08] saturate-[1.14] drop-shadow-[0_2px_3px_rgba(0,0,0,0.85)]"
+        className="absolute inset-0 h-full w-full object-contain p-[3px] contrast-[1.08] saturate-[1.14] drop-shadow-[0_2px_3px_rgba(0,0,0,0.85)] z-[1]"
         draggable={false}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.12),transparent_30%,rgba(0,0,0,0.2)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.16),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.12),transparent_30%,rgba(0,0,0,0.2)_100%)] z-[2]" />
     </div>
   );
 
