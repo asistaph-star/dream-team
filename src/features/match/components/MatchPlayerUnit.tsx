@@ -108,14 +108,14 @@ export const MatchPlayerUnit: React.FC<MatchPlayerUnitProps> = ({
       {activeMarks.length > 0 && (
         <div className="absolute top-[8px] left-[-42px] flex flex-col gap-1.5 z-55 pointer-events-none select-none">
           {activeMarks.map((m, idx) => (
-            <div key={idx} className="relative w-7 h-7 flex items-center justify-center bg-neutral-950/95 rounded-md border border-neutral-700/90 p-0.5 shadow-xl">
+            <div key={idx} className="relative w-7 h-7 flex items-center justify-center">
               <img
                 src={`/marks/${m.mark.toLowerCase()}.png`}
                 alt={m.mark}
-                className="w-full h-full object-contain filter drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_1.5px_2.5px_rgba(0,0,0,0.95)] drop-shadow-[0_0_2px_rgba(0,0,0,0.85)]"
               />
               <span
-                className="absolute bottom-[-4px] right-[-4px] bg-neutral-950 border border-neutral-600/90 text-[8px] font-black text-white leading-none px-[3px] py-[1px] rounded-sm"
+                className="absolute bottom-[-3px] right-[-3px] bg-neutral-950/95 border border-neutral-700/80 text-[8px] font-black text-white leading-none px-[3.5px] py-[1.5px] rounded-sm shadow-md"
                 style={{ textShadow: '0 1px 2px rgba(0,0,0,1)' }}
               >
                 {m.possessionsLeft}
