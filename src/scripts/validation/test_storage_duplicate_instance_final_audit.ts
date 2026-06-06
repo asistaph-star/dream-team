@@ -204,13 +204,13 @@ function run() {
 
   // Candidate selection and prioritization
   const candidatesLineup = getAscensionCandidates(curry1, [curry1, curry2], [curry2], []);
-  assert(!candidatesLineup.some(c => c.id === curry2.id), "candidate selection excludes active starting lineup duplicates");
+  assert(!candidatesLineup.some((c: Player) => c.id === curry2.id), "candidate selection excludes active starting lineup duplicates");
 
   const candidatesReserves = getAscensionCandidates(curry1, [curry1, curry2], [], [curry2]);
-  assert(!candidatesReserves.some(c => c.id === curry2.id), "candidate selection excludes active reserves bench duplicates");
+  assert(!candidatesReserves.some((c: Player) => c.id === curry2.id), "candidate selection excludes active reserves bench duplicates");
 
   const candidatesSelf = getAscensionCandidates(curry1, [curry1, curry2], [], []);
-  assert(!candidatesSelf.some(c => c.id === curry1.id), "candidate selection excludes base card self");
+  assert(!candidatesSelf.some((c: Player) => c.id === curry1.id), "candidate selection excludes base card self");
 
   const cleanDup = createMockPlayer("clean_dup", "Stephen Curry", { specialSkillSlots: [null, null] });
   const trainedDup = createMockPlayer("trained_dup", "Stephen Curry", { specialSkillSlots: ["DEEP_STRIKE", null] });

@@ -31,7 +31,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | Match Realism Calibration | Done (realism verified) |
 | SkillSystemHardReset-FinalLock | Done (15-family hard reset complete) |
 | Storage duplicate final audit | Done (helpers + context execution path verified) |
-| Validation Suite Status | Done (all 45 tests passing) |
+| Skill UI / Storage UI Cleanup | Done (visual assets + badge mapping + exact storage verified) |
+| Validation Suite Status | Done (all 46 tests passing) |
 
 ---
 
@@ -98,11 +99,9 @@ All 15 legacy X skills are fully retired from the rolling pool and marked as mig
 ---
 
 ## Next Starting Phase
-**Skill UI / Storage UI Cleanup**
+**Lobby and Match Gameplay Enhancements**
 
 ### Focus
-* Update skill descriptions to match the new 15-family effects.
-* Remove old X wording from visible UI.
-* Verify skill icons, names, and categories.
-* Clean storage badges if needed.
-* Verify duplicate card visuals in storage, bench, and lineup.
+* Review match engine comments and commentary systems.
+* Integrate additional lobby profile visual details.
+* Review draft and player market visuals.

@@ -218,6 +218,15 @@ This document provides a comprehensive verification log and completion tracker f
 * **What Code Does**: Centralizes player card duplication checks and filters. Restricts card consumption during upgrades to exact owned instance IDs. Protects starting 5 active lineup and reserves bench cards from accidental sacrifice. Corrects the UI preview to reflect identical logic as the state upgrade execution, preventing display/execution candidates mismatch. Supports robust active checks across sets, arrays, maps, and slot configurations.
 * **Tests**: [test_storage_duplicate_instance_final_audit.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_storage_duplicate_instance_final_audit.ts) passes.
 * **Risk Level**: SAFE
+### 20. Skill UI and Storage UI Cleanup
+* **Status**: DONE
+* **Evidence File Paths**:
+  * [SkillBadge.tsx](file:///c:/Users/Nhico/Documents/School/dream-team/src/components/skills/SkillBadge.tsx) (Updated skillArtMap and getSkillArtSrc to load cropped transparent PNGs with quality suffixes)
+  * [skillCatalog.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/lib/skills/skillCatalog.ts) (Audited and verified clean non-toxic descriptions)
+  * `public/skills/special/` (Contains sliced transparent card graphics for all 15 special skills)
+* **What Code Does**: Crops the 15 official special skill graphics from the user's grid image, removes the checkerboard backgrounds, and overwrites the active special skill image paths. Updates the badge component to map the 15 family IDs to their correct card files.
+* **Tests**: [test_skill_ui_storage_cleanup.ts](file:///c:/Users/Nhico/Documents/School/dream-team/src/scripts/validation/test_skill_ui_storage_cleanup.ts) passes.
+* **Risk Level**: SAFE
 * **Recommended Next Step**: Maintain as-is.
 
 ---

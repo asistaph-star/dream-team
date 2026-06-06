@@ -34,23 +34,30 @@ const skillArtMap: Record<string, string> = {
   "glass touch": "glass-touch",
   "discipline wall": "discipline-wall",
   "connector hub": "connector-hub",
-  "debt collector x": "debt-collector-x",
-  "clean_challenge": "clean-contest-x",
-  "composure_shield": "composure-x",
-  "timeout_reset": "cold-timeout-x",
+
+  // 15 Special Skill Families (New Visuals)
+  "deep_strike": "red-dot-x",
   "court_vision_engine": "chain-pass-x",
-  "bench_captain": "pressure-coach-x",
+  "poster_spark": "lung-burner-x",
+  "flop": "flop-x",
+  "broken_play_rescue": "false-whistle-x",
+  "sky_wall": "sky-wall",
   "lock_chain": "cage-step-x",
-  "sky_wall": "rim-warden",
   "defensive_anchor": "corner-trap-x",
-  "glass_strike": "glass-touch",
+  "clean_challenge": "clean-contest-x",
+  "glass_strike": "glass-strike",
+  "bench_captain": "pressure-coach-x",
+  "momentum_swing": "momentum-swing",
+  "composure_shield": "composure-x",
+  "gameplan_jammer": "dead-air-x",
+  "timeout_reset": "cold-timeout-x",
 };
 
 export function getSkillArtSrc(name: string, color: SkillBadgeColor, locked?: boolean, quality: SkillQuality = "Common"): string {
   if (locked) return "/skills/locked-85.png";
   if (color === "special" && name === "Learn") return "/skills/learn-slot.png";
   const slug = skillArtMap[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (color === "special") return `/skills/special-art/${slug}.png`;
+  if (color === "special") return `/skills/special/${slug}-${quality.toLowerCase()}.png`;
   return `/skills/${slug}.png`;
 }
 
