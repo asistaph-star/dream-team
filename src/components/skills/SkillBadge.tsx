@@ -224,7 +224,7 @@ export function SkillBadge({
 
   const artSrc = getSkillArtSrc(shortName, color, locked, activeQuality);
   const lockLabel = unlockText ? `Unlocks at ${unlockText}` : "Locked 85+";
-  const unlockedStyle = resolvedColor === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[resolvedColor];
+  const unlockedStyle = color === "special" ? skillQualityStyles[activeQuality] : skillBadgeStyles[resolvedColor];
   const isLearnSlot = color === "special" && shortName === "Learn";
   const showFlameAura = color === "special" && !locked;
   const flameTier = isLearnSlot ? "learn" : activeQuality.toLowerCase();
