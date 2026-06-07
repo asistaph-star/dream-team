@@ -1013,7 +1013,15 @@ export default function MatchPage() {
     return (
       <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
         {/* Blurred stadium background to replace black letterbox bars */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" style={{ backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")' }} />
+        <div 
+          className="absolute inset-0 bg-cover bg-center pointer-events-none" 
+          style={{ 
+            backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")',
+            filter: 'blur(12px)',
+            transform: 'scale(1.08)',
+            zIndex: 0
+          }} 
+        />
         
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
@@ -1021,7 +1029,6 @@ export default function MatchPage() {
           <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
         )}
         
-        {/* Global Ghost Drag Image */}
         {/* Unified scaled container wrapping stadium and all UI overlays */}
         <div
           ref={stadiumWrapperRef}
@@ -1031,6 +1038,7 @@ export default function MatchPage() {
             height: '800px',
             transform: `scale(${matchScale})`,
             transformOrigin: 'center center',
+            zIndex: 1
           }}
         >
           {/* Global Ghost Drag Image */}
