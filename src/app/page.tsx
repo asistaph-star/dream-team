@@ -51,6 +51,17 @@ export default function AuthenticLobby() {
   const [showCoachModal, setShowCoachModal] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
   const [benchSelectSlot, setBenchSelectSlot] = useState<string | null>(null);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  const [showReservesDrawer, setShowReservesDrawer] = useState(false);
+  const [showChatDrawer, setShowChatDrawer] = useState(false);
+
+  // Track narrow viewport for drawer behavior
+  useEffect(() => {
+    const checkWidth = () => setIsNarrowViewport(window.innerWidth < 900);
+    checkWidth();
+    window.addEventListener('resize', checkWidth);
+    return () => window.removeEventListener('resize', checkWidth);
+  }, []);
   
   // Drag & Drop States
   const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
@@ -489,13 +500,25 @@ export default function AuthenticLobby() {
         />
 
 
+        {/* Chat drawer toggle on narrow screens */}
+        {isNarrowViewport && (
+          <button
+            onClick={() => setShowChatDrawer(!showChatDrawer)}
+            className="absolute bottom-[10px] left-[8px] z-30 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-lg px-2.5 py-2 shadow-lg flex items-center gap-1.5 hover:bg-white/10 transition-all"
+          >
+            <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase">{showChatDrawer ? 'CLOSE' : 'CHAT'}</span>
+          </button>
+        )}
+
         {/* --- Global Chat Box (NBA 2K STYLE - SHARP HD FIX) --- */}
-        <LobbyChat 
-          messages={chatMessages} 
-          chatInput={chatInput} 
-          setChatInput={setChatInput} 
-          onSendMessage={handleSendChat} 
-        />
+        <div className={`transition-all duration-300 ${isNarrowViewport && !showChatDrawer ? '-translate-x-[400px] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
+          <LobbyChat 
+            messages={chatMessages} 
+            chatInput={chatInput} 
+            setChatInput={setChatInput} 
+            onSendMessage={handleSendChat} 
+          />
+        </div>
 
         {/* --- Lineup Archetypes Panel (NBA 2K STYLE - SHARP HD FIX) --- */}
         <LineupArchetypePanel startingLineup={starting5} />
@@ -564,8 +587,19 @@ export default function AuthenticLobby() {
         {renderSlot('SG')}
         {renderSlot('PG')}
 
+        {/* --- RESERVES DRAWER TOGGLE (visible only on narrow screens) --- */}
+        {isNarrowViewport && (
+          <button
+            onClick={() => setShowReservesDrawer(!showReservesDrawer)}
+            className="absolute top-[200px] right-[8px] z-30 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-lg px-2.5 py-2 shadow-lg flex items-center gap-1.5 hover:bg-white/10 transition-all"
+          >
+            <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase">{showReservesDrawer ? 'CLOSE' : 'BENCH'}</span>
+            <span className="text-white font-bold text-[9px] bg-white/10 border border-white/20 px-1.5 py-[2px] rounded">{activeReserves.length}</span>
+          </button>
+        )}
+
         {/* --- BENCH PLAYERS (PREMIUM 2K BINDER CARD STORAGE) --- */}
-        <div className="absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible">
+        <div className={`absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible transition-all duration-300 ${isNarrowViewport && !showReservesDrawer ? 'translate-x-[240px] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
           {/* Low Poly / Glass Facets Texture for the entire panel */}
           <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-white/[0.02]" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}></div>

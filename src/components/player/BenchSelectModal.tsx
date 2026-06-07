@@ -89,11 +89,11 @@ export function BenchSelectModal({
       </div>
 
       {/* Main Content Area (Sidebar + Grid) */}
-      <div className="relative z-10 flex flex-1 overflow-hidden">
+      <div className="relative z-10 flex flex-col md:flex-row flex-1 overflow-hidden">
         
-        {/* ── Left Sidebar ── */}
+        {/* Vertical Sidebar: hidden on narrow screens */}
         <div 
-          className="w-[180px] bg-[#2a2b2f] flex flex-col shrink-0 relative pt-7"
+          className="w-[180px] bg-[#2a2b2f] flex-col shrink-0 relative pt-7 hidden md:flex"
           style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: '100% 400px' }}
         >
           {/* Fading Right Border */}
@@ -128,6 +128,21 @@ export function BenchSelectModal({
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Horizontal tab bar: visible on narrow screens only */}
+        <div className="flex md:hidden w-full shrink-0 bg-[#2a2b2f] border-b border-white/10 overflow-x-auto no-scrollbar relative z-10">
+          {(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 min-w-0 px-2 py-3 text-[10px] font-bold tracking-wide text-center transition-all whitespace-nowrap ${
+                activeTab === tab ? 'text-white border-b-2 border-[#ff7300] bg-white/5' : 'text-gray-500 hover:text-white'
+              }`}
+            >
+              {tab === 'STARTING LINEUP' ? 'START' : tab}
+            </button>
+          ))}
         </div>
 
         {/* ── Right Content Grid ── */}

@@ -30,7 +30,7 @@ export const StrategyModal: React.FC<StrategyModalProps> = ({
 
   return (
     <div className="absolute inset-0 bg-black/45 backdrop-blur-md z-[200] flex items-center justify-center transition-all">
-      <div className="bg-[#1a2332] border-2 border-yellow-500/60 rounded-xl w-[900px] max-h-[700px] overflow-y-auto p-6 shadow-[0_0_40px_rgba(234,179,8,0.3)]">
+      <div className="bg-[#1a2332] border-2 border-yellow-500/60 rounded-xl w-[calc(100%-2rem)] max-w-[900px] max-h-[85vh] overflow-y-auto p-4 sm:p-6 shadow-[0_0_40px_rgba(234,179,8,0.3)]">
           <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-black text-white tracking-widest">STRATEGY</h2>
               <button onClick={onClose} className="text-white text-2xl hover:text-red-400 cursor-pointer">✕</button>

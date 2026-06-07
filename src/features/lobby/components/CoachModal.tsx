@@ -36,7 +36,7 @@ export function CoachModal({
     <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
       <style>{`#global-bottom-nav { display: none !important; }`}</style>
       {/* Standard non-skewed container for absolute pixel-perfect HD clarity */}
-      <div className="w-[850px] h-[590px] rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter">
+      <div className="w-[calc(100%-2rem)] max-w-[850px] max-h-[85vh] rounded-2xl p-4 sm:p-6 flex flex-col relative overflow-hidden animate-page-enter">
         
         {/* Modal Background Pattern (Unified with Player Filter) */}
         <div className="absolute inset-0 pointer-events-none flex overflow-hidden rounded-2xl bg-[#30333b] shadow-2xl border border-white/10 z-0">
