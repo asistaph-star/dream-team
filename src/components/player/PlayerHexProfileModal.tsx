@@ -425,7 +425,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                                 <span className="text-[11px] font-semibold text-zinc-300 capitalize">{stat.label.toLowerCase()}</span>
                                 <span className="text-[12px] font-bold text-white font-mono leading-none">{stat.val}</span>
                               </div>
-                              <div className="w-full h-[3px] bg-white/10 rounded-sm overflow-hidden transform-gpu">
+                              <div className="w-full h-1 bg-white/10 overflow-hidden transform-gpu">
                                 <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
                             </div>
@@ -449,7 +449,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                                 <span className="text-[11px] font-semibold text-zinc-300 capitalize">{stat.label.toLowerCase()}</span>
                                 <span className="text-[12px] font-bold text-white font-mono leading-none">{stat.val}</span>
                               </div>
-                              <div className="w-full h-[3px] bg-white/10 rounded-sm overflow-hidden transform-gpu">
+                              <div className="w-full h-1 bg-white/10 overflow-hidden transform-gpu">
                                 <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
                             </div>
@@ -473,7 +473,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                                 <span className="text-[11px] font-semibold text-zinc-300 capitalize">{stat.label.toLowerCase()}</span>
                                 <span className="text-[12px] font-bold text-white font-mono leading-none">{stat.val}</span>
                               </div>
-                              <div className="w-full h-[3px] bg-white/10 rounded-sm overflow-hidden transform-gpu">
+                              <div className="w-full h-1 bg-white/10 overflow-hidden transform-gpu">
                                 <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
                             </div>
