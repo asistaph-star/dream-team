@@ -383,7 +383,7 @@ export default function MatchPage() {
     const compute = () => {
       const scaleW = window.innerWidth / STADIUM_W;
       const scaleH = window.innerHeight / STADIUM_H;
-      setMatchScale(Math.min(scaleW, scaleH));
+      setMatchScale(Math.max(scaleW, scaleH));
     };
     compute();
     window.addEventListener('resize', compute);
@@ -1012,16 +1012,6 @@ export default function MatchPage() {
   if (viewState === 'SIMULATING' || viewState === 'HALFTIME') {
     return (
       <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
-        {/* Blurred stadium background to replace black letterbox bars */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center pointer-events-none" 
-          style={{ 
-            backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")',
-            filter: 'blur(12px)',
-            transform: 'scale(1.08)',
-            zIndex: 0
-          }} 
-        />
         
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
