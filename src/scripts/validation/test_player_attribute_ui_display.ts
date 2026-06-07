@@ -35,7 +35,7 @@ function run() {
 
   // 2. PlayerHexProfileModal splits/secondary attributes checks
   console.log("--- 2. PlayerHexProfileModal Secondary Panel Checks ---");
-  assert(hexModalContent.includes("Detailed & Physicals"), "PlayerHexProfileModal contains Detailed & Physicals panel title");
+  assert(hexModalContent.includes("Physical / Effort"), "PlayerHexProfileModal contains Physical / Effort panel title");
   assert(hexModalContent.includes("Basketball IQ"), "PlayerHexProfileModal contains Basketball IQ in detailed attributes list");
   assert(hexModalContent.includes("Hustle"), "PlayerHexProfileModal contains Hustle in detailed attributes list");
   assert(hexModalContent.includes("Finishing"), "PlayerHexProfileModal contains Finishing in detailed attributes list");

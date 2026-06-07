@@ -158,6 +158,59 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
   ];
   const attributeVisualMax = Math.max(180, ...attributeRows.map(stat => stat.val), ...secondaryRows.map(stat => stat.val));
 
+  const groupedAttributes = [
+    {
+      title: "Core",
+      color: "bg-cyan-400",
+      stats: [
+        { label: 'Offense', val: derivedRatings.offense },
+        { label: 'Defense', val: derivedRatings.defense },
+        { label: 'Stamina', val: player.stamina ?? 100 },
+      ]
+    },
+    {
+      title: "Shooting",
+      color: "bg-amber-400",
+      stats: [
+        { label: '3PT', val: details.threePt },
+        { label: '2PT', val: details.twoPt },
+        { label: 'Free Throw', val: details.freeThrow },
+        { label: 'Finishing', val: details.finishing },
+      ]
+    },
+    {
+      title: "Playmaking",
+      color: "bg-violet-400",
+      stats: [
+        { label: 'Handle', val: details.handle },
+        { label: 'Assist', val: details.assist },
+        { label: 'Basketball IQ', val: details.basketballIQ },
+        { label: 'Calm', val: details.calm },
+      ]
+    },
+    {
+      title: "Defense",
+      color: "bg-[#d61e38]",
+      stats: [
+        { label: 'On-Ball', val: details.onBall },
+        { label: 'Steal', val: details.steal },
+        { label: 'Block', val: details.block },
+        { label: 'Rebound', val: details.rebound },
+      ]
+    },
+    {
+      title: "Physical / Effort",
+      color: "bg-emerald-400",
+      stats: [
+        { label: 'Speed', val: player.speed },
+        { label: 'Strength', val: player.strength },
+        { label: 'Hustle', val: details.hustle },
+        { label: 'Stamina', val: player.stamina ?? 100 },
+      ]
+    }
+  ];
+
+
   // Extract skills (fallback to placeholders if undefined in mock data)
   const baseSkills = player.baseSkills || ['Shoot', 'Pass', 'Defend'];
   const specialSkills = player.specialSkillSlots || [null, null];
@@ -173,7 +226,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
       >
       {/* The Floating Box Container */}
       <div 
-        className="w-[1050px] h-[650px] bg-[#2a2b2f] border border-white/10 rounded-sm flex flex-col overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative pointer-events-auto transform-gpu transition-all duration-300 scale-100" 
+        className="w-[1050px] max-w-[95vw] h-[650px] max-h-[90vh] bg-[#2a2b2f] border border-white/10 rounded-sm flex flex-col overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative pointer-events-auto transform-gpu transition-all duration-300 scale-100" 
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundImage: `url('${lowPolyBg}')`, backgroundSize: "cover" }}
       >
@@ -357,41 +410,49 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               )}
 
               {activeTab === "attributes" && (
-                <div className="grid grid-cols-2 gap-x-8">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
-                      <div className="w-1 h-3 bg-cyan-400 skew-x-[-15deg]" />
-                      <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Core Attributes</h3>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {attributeRows.map(stat => (
-                        <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
-                          <span className="w-20 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
-                          <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                            <div className="h-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                          </div>
-                          <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6 pb-4">
+                  <div className="flex flex-col gap-6">
+                    {groupedAttributes.slice(0, 3).map(group => (
+                      <div key={group.title}>
+                        <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                          <div className={`w-1 h-3 ${group.color} skew-x-[-15deg]`} />
+                          <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex flex-col gap-1.5">
+                          {group.stats.map(stat => (
+                            <div key={stat.label} className="flex items-center gap-2 text-[10px]">
+                              <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
+                              <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                              </div>
+                              <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
-                      <div className="w-1 h-3 bg-emerald-400 skew-x-[-15deg]" />
-                      <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">Detailed & Physicals</h3>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {secondaryRows.map(stat => (
-                        <div key={stat.label} className="flex items-center gap-2 text-[10px] py-0.5">
-                          <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0">{stat.label}</span>
-                          <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
-                            <div className="h-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-all duration-1000 ease-out" style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
-                          </div>
-                          <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                  <div className="flex flex-col gap-6">
+                    {groupedAttributes.slice(3).map(group => (
+                      <div key={group.title}>
+                        <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                          <div className={`w-1 h-3 ${group.color} skew-x-[-15deg]`} />
+                          <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex flex-col gap-1.5">
+                          {group.stats.map(stat => (
+                            <div key={stat.label} className="flex items-center gap-2 text-[10px]">
+                              <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
+                              <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                              </div>
+                              <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -522,7 +583,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   </div>
                   
                   <Zap className={`relative text-white w-5 h-5 mb-1 z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] ${isAscending ? 'animate-bounce' : 'group-hover:animate-pulse'}`} />
-                  <span className="relative text-[9px] font-black text-white uppercase tracking-widest z-10 drop-shadow-[0_2px_4px_black]">
+                  <span className="relative text-[9px] font-black text-white uppercase tracking-wider z-10 drop-shadow-[0_2px_4px_black] text-center w-full px-1">
                     {isAscending ? 'Upgrading' : ((player.starLevel ?? 0) >= 25 ? 'Max Star' : 'Star Up')}
                   </span>
                 </button>
@@ -638,7 +699,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           }
 
                           return (
-                            <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-2">
+                            <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6 flex flex-col gap-2">
                               <div className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Gameplay Upgrades</div>
                               
                               {skillUnlockRow}
@@ -742,7 +803,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       </div>
 
                       {/* Material Boxes */}
-                      <div className="bg-black/40 border border-white/5 rounded-lg flex justify-center gap-10 p-5 shadow-inner">
+                      <div className="bg-black/40 border border-white/5 rounded-lg flex justify-center gap-6 p-4 shadow-inner">
                         
                         {/* MAT Box */}
                         <div className="flex flex-col items-center w-[100px]">
