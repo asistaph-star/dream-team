@@ -422,7 +422,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           {group.stats.map(stat => (
                             <div key={stat.label} className="flex items-center gap-2 text-[10px]">
                               <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
-                              <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                              <div className="flex-1 h-[6px] min-h-[6px] bg-zinc-900 rounded-full overflow-hidden relative">
                                 <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
                               <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
@@ -444,7 +444,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                           {group.stats.map(stat => (
                             <div key={stat.label} className="flex items-center gap-2 text-[10px]">
                               <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
-                              <div className="flex-1 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                              <div className="flex-1 h-[6px] min-h-[6px] bg-zinc-900 rounded-full overflow-hidden relative">
                                 <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
                               <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
