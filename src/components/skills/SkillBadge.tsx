@@ -135,6 +135,14 @@ export function getBacklightGlow(color: SkillBadgeColor, quality: SkillQuality =
   return qualityGlows[quality] || "rgba(255, 255, 255, 0.15)";
 }
 
+const QUALITY_COLORS: Record<SkillQuality, string> = {
+  Common: "#40e36f",
+  Rare: "#3fc8ff",
+  Elite: "#d263ff",
+  Epic: "#ffd35b",
+  Legendary: "#ff5368",
+};
+
 export interface SkillBadgeProps {
   name: string;
   color: SkillBadgeColor;
@@ -145,6 +153,7 @@ export interface SkillBadgeProps {
   tapeCount?: number;
   onClick?: () => void;
   actionLabel?: string;
+  tooltipPosition?: "top" | "bottom";
 }
 
 export function SkillBadge({
@@ -157,6 +166,7 @@ export function SkillBadge({
   tapeCount,
   onClick,
   actionLabel,
+  tooltipPosition = "top",
 }: SkillBadgeProps) {
   const shortName = name.replace(/\s+/g, " ").trim();
   const displayName = getSkillDisplayName(shortName);
@@ -256,6 +266,8 @@ export function SkillBadge({
     </div>
   );
 
+  const qColor = color === "special" ? QUALITY_COLORS[activeQuality] : (resolvedColor === "red" ? "#ff4b5f" : resolvedColor === "blue" ? "#39b8ff" : "#53f28c");
+
   return (
     <div
       className={`group/skill relative h-10 w-10 shrink-0 ${showFlameAura ? "skill-badge-shell" : ""}`}
@@ -276,29 +288,104 @@ export function SkillBadge({
         </div>
       )}
       {badgeFace}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 hidden min-w-32 -translate-x-1/2 rounded border border-white/10 bg-black/95 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow-xl group-hover/skill:block">
-        <div className="whitespace-nowrap">{locked ? lockLabel : displayName}</div>
-        {!locked && color === "special" && maxRate && (
-          <div className="mt-1 grid gap-0.5 text-left  text-[7px] normal-case tracking-normal">
-            {SKILL_QUALITY_ORDER.map((tier) => (
-              <div
-                key={tier}
-                className={`flex justify-between gap-2 ${tier === activeQuality ? "text-yellow-300" : "text-zinc-300"}`}
+      
+      <div
+        className={`pointer-events-none absolute ${
+          tooltipPosition === "bottom" ? "top-full mt-2.5" : "bottom-full mb-2.5"
+        } left-1/2 z-50 hidden min-w-[170px] -translate-x-1/2 rounded-md border border-white/10 bg-neutral-950/95 p-3 text-white shadow-[0_8px_32px_rgba(0,0,0,0.9)] backdrop-blur-md group-hover/skill:block`}
+        style={{
+          borderTop: `2px solid ${qColor}`
+        }}
+      >
+        <div className="flex flex-col gap-1.5 text-left">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
+            <span className="text-[10px] font-black uppercase tracking-wider text-white whitespace-nowrap overflow-hidden text-ellipsis max-w-[110px]">
+              {locked ? lockLabel : displayName}
+            </span>
+            {!locked && color === "special" && (
+              <span
+                className="text-[7px] font-black uppercase px-1 py-0.5 rounded-[2px] leading-none shrink-0"
+                style={{
+                  backgroundColor: `${qColor}22`,
+                  color: qColor,
+                  border: `1px solid ${qColor}44`
+                }}
               >
-                <span>{tier}</span>
-                <span>{getSkillQualityRate(maxRate, tier)}</span>
+                {activeQuality}
+              </span>
+            )}
+          </div>
+
+          {!locked && color === "special" && maxRate && (
+            <div className="flex flex-col gap-0.5 text-[8px] tracking-wide text-zinc-300">
+              {SKILL_QUALITY_ORDER.map((tier) => {
+                const isActive = tier === activeQuality;
+                const tierColor = QUALITY_COLORS[tier];
+                return (
+                  <div
+                    key={tier}
+                    className={`flex justify-between items-center py-0.5 px-1.5 rounded-sm transition-colors ${
+                      isActive ? "bg-white/10 font-bold text-white shadow-inner shadow-white/5" : "text-zinc-400"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shadow-sm"
+                        style={{ backgroundColor: tierColor }}
+                      />
+                      {tier}
+                    </span>
+                    <span style={{ color: isActive ? "#ffd35b" : undefined }}>
+                      {getSkillQualityRate(maxRate, tier)}
+                    </span>
+                  </div>
+                );
+              })}
+              
+              <div className="mt-1.5 border-t border-white/10 pt-1.5 flex flex-col gap-1 text-[7px] text-zinc-400">
+                <div className="flex justify-between px-0.5">
+                  <span>Skill Tape Cost:</span>
+                  <span className="font-bold text-white">{tapeCount ?? 0}</span>
+                </div>
+                <div
+                  className="text-center font-black uppercase tracking-wider py-1 rounded-sm shadow-sm"
+                  style={{
+                    backgroundColor: `${qColor}18`,
+                    color: qColor,
+                    border: `1px solid ${qColor}22`
+                  }}
+                >
+                  {actionLabel ?? "Click Reroll"}
+                </div>
               </div>
-            ))}
-            <div className="mt-1 border-t border-white/10 pt-1 text-[7px] text-red-200">
-              Skill Tape: {tapeCount ?? 0} | {actionLabel ?? "Click reroll"}
             </div>
-          </div>
-        )}
-        {!locked && color === "special" && !maxRate && (
-          <div className="mt-1 border-t border-white/10 pt-1 text-[7px] text-red-200">
-            Skill Tape: {tapeCount ?? 0} | {actionLabel ?? "Click learn"}
-          </div>
-        )}
+          )}
+
+          {!locked && color === "special" && !maxRate && (
+            <div className="mt-1 border-t border-white/10 pt-1.5 flex flex-col gap-1 text-[7px] text-zinc-400">
+              <div className="flex justify-between px-0.5">
+                <span>Skill Tape Cost:</span>
+                <span className="font-bold text-white">{tapeCount ?? 0}</span>
+              </div>
+              <div
+                className="text-center font-black uppercase tracking-wider py-1 rounded-sm shadow-sm"
+                style={{
+                  backgroundColor: `${qColor}18`,
+                  color: qColor,
+                  border: `1px solid ${qColor}22`
+                }}
+              >
+                {actionLabel ?? "Click Learn"}
+              </div>
+            </div>
+          )}
+
+          {(locked || color !== "special") && (
+            <div className="text-[8px] text-zinc-400 normal-case leading-relaxed pt-0.5">
+              {locked ? `This signature slot is locked. ${lockLabel}` : "Standard active gameplay base skill."}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

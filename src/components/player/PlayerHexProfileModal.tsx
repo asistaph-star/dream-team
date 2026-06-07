@@ -32,6 +32,64 @@ const getQualityColor = (q: string) => {
   }
 };
 
+const getQualityBorder = (q: string) => {
+  switch(q) {
+    case 'Legendary': return 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+    case 'Epic': return 'border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]';
+    case 'Elite': return 'border-violet-400/50 shadow-[0_0_15px_rgba(167,139,250,0.2)]';
+    case 'Rare': return 'border-blue-400/50 shadow-[0_0_15px_rgba(96,165,250,0.2)]';
+    default: return 'border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.2)]';
+  }
+};
+
+const getQualityHoverBorder = (q: string) => {
+  switch(q) {
+    case 'Legendary': return 'hover:border-red-500/50 hover:bg-red-500/5';
+    case 'Epic': return 'hover:border-amber-500/50 hover:bg-amber-500/5';
+    case 'Elite': return 'hover:border-violet-400/50 hover:bg-violet-400/5';
+    case 'Rare': return 'hover:border-blue-400/50 hover:bg-blue-400/5';
+    default: return 'hover:border-emerald-400/50 hover:bg-emerald-400/5';
+  }
+};
+
+const getQualityGroupHoverBorder = (q: string) => {
+  switch(q) {
+    case 'Legendary': return 'group-hover:border-red-500/80 group-hover:bg-red-500';
+    case 'Epic': return 'group-hover:border-amber-500/80 group-hover:bg-amber-500';
+    case 'Elite': return 'group-hover:border-violet-400/80 group-hover:bg-violet-400';
+    case 'Rare': return 'group-hover:border-blue-400/80 group-hover:bg-blue-400';
+    default: return 'group-hover:border-emerald-400/80 group-hover:bg-emerald-500';
+  }
+};
+
+const getQualityBadgeBg = (q: string) => {
+  switch(q) {
+    case 'Legendary': return 'bg-red-500';
+    case 'Epic': return 'bg-amber-500';
+    case 'Elite': return 'bg-violet-400';
+    case 'Rare': return 'bg-blue-400';
+    default: return 'bg-emerald-400';
+  }
+};
+
+const getDynamicSkillDescription = (skillName: string, quality: string, baseText: string) => {
+  if (skillName === "Sky Wall" || skillName === "SKY_WALL") {
+    let drain = 3;
+    if (quality === "Rare") drain = 5;
+    if (quality === "Elite") drain = 7;
+    if (quality === "Epic" || quality === "Legendary") drain = 9;
+    return `Boosts rim protection and block pressure. After a successful block, triggers a team-wide opponent stamina drain (drains ${drain} stamina from all active opponents).`;
+  }
+  if (skillName === "Lock Chain" || skillName === "LOCK_CHAIN") {
+    let drain = 2;
+    if (quality === "Rare") drain = 4;
+    if (quality === "Elite") drain = 6;
+    if (quality === "Epic" || quality === "Legendary") drain = 8;
+    return `Enhances on-ball pressure and steal pressure. Can apply Hooked to increase pass and drive pressure on the handler. After a successful steal, triggers a team-wide opponent stamina drain (drains ${drain} stamina from all active opponents).`;
+  }
+  return baseText;
+};
+
 export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp, isAscending }: PlayerHexProfileModalProps) {
   const { inventory, roster, activeLineup, activeReserves, pendingAscendSacrificeWarning, cancelAscendSacrifice, trainSpecialSkill, acceptSkillTraining, rejectSkillTraining, pendingSkillTraining } = useGameState();
   
@@ -142,7 +200,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
         </div>
 
         {/* Content Wrapper */}
-        <div className="flex-1 flex relative">
+        <div className="flex-1 flex min-h-0 relative">
           {/* Animated Glowing Edge Dots */}
           <div 
             className="absolute inset-0 opacity-40 pointer-events-none animate-pulse z-0" 
@@ -200,7 +258,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           </div>
 
           {/* Right: Tabbed profile, skills & actions */}
-          <div className="flex-1 h-full relative flex flex-col z-10">
+          <div className="flex-1 h-full min-h-0 relative flex flex-col z-10">
             <div className="px-6 pt-4 pb-3 border-b border-white/5 bg-black/20">
               <div className="flex gap-2">
                 {profileTabs.map((tab) => (
@@ -385,6 +443,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                             unlockStar: 0
                           })}
                           actionLabel="View Details"
+                          tooltipPosition="bottom"
                         />
                       </div>
                     ))}
@@ -420,6 +479,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                               hasLearnedSkill: hasLearnedSkill
                             })}
                             actionLabel="View Details"
+                            tooltipPosition="bottom"
                           />
                         </div>
                       );
@@ -434,17 +494,17 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               <div className="flex items-end justify-end gap-5 relative z-10">
                 
                 {/* Enhance Hex */}
-                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50">
-                  <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
-                  <Shield className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
-                  <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Enhance</span>
+                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-75 transition-all hover:opacity-85 mb-2">
+                  <div className="absolute inset-0 bg-zinc-900 border border-white/20 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+                  <Shield className="relative text-zinc-400 w-4 h-4 mb-1.5 z-10" />
+                  <span className="relative text-[8px] font-bold text-zinc-300 uppercase tracking-widest z-10">Enhance</span>
                 </button>
 
                 {/* Core Hex */}
-                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-40 transition-all hover:opacity-50 mb-5">
-                  <div className="absolute inset-0 bg-zinc-900 border border-white/10 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
-                  <Sword className="relative text-zinc-500 w-4 h-4 mb-1.5 z-10" />
-                  <span className="relative text-[8px] font-bold text-zinc-400 uppercase tracking-widest z-10">Core</span>
+                <button className="group relative w-16 h-20 flex flex-col items-center justify-center cursor-not-allowed opacity-75 transition-all hover:opacity-85 mb-2">
+                  <div className="absolute inset-0 bg-zinc-900 border border-white/20 pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }} />
+                  <Sword className="relative text-zinc-400 w-4 h-4 mb-1.5 z-10" />
+                  <span className="relative text-[8px] font-bold text-zinc-300 uppercase tracking-widest z-10">Core</span>
                 </button>
 
                 {/* Star Up Hex */}
@@ -1087,53 +1147,64 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
           <div className="flex flex-col relative z-10 p-5">
             
             {/* Top: New Skill */}
-            <div className="bg-black/40 border border-white/5 rounded-sm p-4 flex gap-5 items-center relative overflow-hidden group">
+            <div className={`bg-black/40 border ${getQualityBorder(pendingSkillTraining.newQuality)} rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden group shadow-lg`}>
               <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,1) 45%, transparent 50%)', backgroundSize: '200% 200%' }} />
               
-              <div className="transform scale-[1.35] origin-center shrink-0 ml-3 mr-2 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
-                <SkillBadge name={pendingSkillTraining.newSkill} color="special" quality={pendingSkillTraining.newQuality as any} />
-              </div>
-              
-              <div className="flex flex-col flex-1 pl-2 relative z-10">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="px-1.5 py-0.5 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-sm">New</div>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                    {(() => {
-                      const familyDef = getSpecialSkillFamilyDefinition(pendingSkillTraining.newSkill);
-                      const cat = familyDef?.category;
-                      return cat === "OFFENSE" ? "Offense Skill Discovered" : cat === "DEFENSE" ? "Defense Skill Discovered" : cat === "COMPREHENSIVE" ? "Comprehensive Skill Discovered" : "Skill Discovered";
-                    })()}
+              <div className="flex justify-between items-start relative z-10">
+                <div className="flex gap-4 items-center">
+                  <div className="transform scale-[1.35] origin-center shrink-0 ml-1 drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">
+                    <SkillBadge name={pendingSkillTraining.newSkill} color="special" quality={pendingSkillTraining.newQuality as any} tooltipPosition="bottom" />
+                  </div>
+                  
+                  <div className="flex flex-col pl-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`px-2 py-0.5 text-black text-[9px] font-black uppercase tracking-widest rounded-sm ${getQualityBadgeBg(pendingSkillTraining.newQuality)}`}>New</div>
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                        {(() => {
+                          const familyDef = getSpecialSkillFamilyDefinition(pendingSkillTraining.newSkill);
+                          const cat = familyDef?.category;
+                          return cat === "OFFENSE" ? "Offense Skill Discovered" : cat === "DEFENSE" ? "Defense Skill Discovered" : cat === "COMPREHENSIVE" ? "Comprehensive Skill Discovered" : "Skill Discovered";
+                        })()}
+                      </div>
+                    </div>
+                    <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(pendingSkillTraining.newSkill)}</h2>
                   </div>
                 </div>
-                <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(pendingSkillTraining.newSkill)}</h2>
-                <p className="text-gray-400 text-[11px] leading-relaxed mt-1">
-                  <span className="text-gray-300 font-bold">Effect:</span> {SPECIAL_SKILL_TEXT[pendingSkillTraining.newSkill as SpecialSkillName]} 
-                  {' '}When in a game, there is a <span className={`font-black text-[12px] ${getQualityColor(pendingSkillTraining.newQuality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)}</span> rate to trigger this effect.
-                </p>
+
+                {/* Reroll Instantly Button */}
+                <button 
+                  onClick={() => {
+                    if (pendingSkillTraining.newQuality === "Epic" || pendingSkillTraining.newQuality === "Legendary") {
+                      setShowTrainConfirm({ 
+                        show: true, 
+                        isRerollAgain: true,
+                        warning: `You are about to discard a ${pendingSkillTraining.newQuality} Signature Skill! Are you sure you want to reroll it?` 
+                      });
+                    } else {
+                      trainSpecialSkill(player.id, { force: true });
+                    }
+                  }}
+                  disabled={(inventory.materials.skill_tape ?? 0) < 1}
+                  className="px-4 py-2 bg-black/60 hover:bg-zinc-800 border border-white/10 hover:border-white/30 rounded-md flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed group/reroll"
+                >
+                  <div className="flex items-center gap-1.5">
+                     <svg className="w-3.5 h-3.5 text-gray-500 group-hover/reroll:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover/reroll:text-white italic">Reroll</span>
+                  </div>
+                  <div className="text-[8px] font-bold text-gray-500 mt-1">Cost: 1 Tape</div>
+                </button>
               </div>
 
-              {/* Reroll Instantly Button */}
-              <button 
-                onClick={() => {
-                  if (pendingSkillTraining.newQuality === "Epic" || pendingSkillTraining.newQuality === "Legendary") {
-                    setShowTrainConfirm({ 
-                      show: true, 
-                      isRerollAgain: true,
-                      warning: `You are about to discard a ${pendingSkillTraining.newQuality} Signature Skill! Are you sure you want to reroll it?` 
-                    });
-                  } else {
-                    trainSpecialSkill(player.id, { force: true });
-                  }
-                }}
-                disabled={(inventory.materials.skill_tape ?? 0) < 1}
-                className="ml-auto px-5 py-2.5 bg-black/40 hover:bg-[#d61e38]/10 border border-white/5 hover:border-[#d61e38]/50 rounded-sm flex flex-col items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed group/reroll z-10 mr-2 relative overflow-hidden"
-              >
-                <div className="flex items-center gap-2">
-                   <svg className="w-3.5 h-3.5 text-gray-500 group-hover/reroll:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                   <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest group-hover/reroll:text-white italic">Reroll</span>
+              {/* Description Panel (Full Width to prevent cutting off) */}
+              <div className="bg-black/50 rounded-md p-3 border border-white/5 relative z-10 w-full mt-1">
+                <p className="text-gray-300 text-[11.5px] leading-relaxed">
+                  <span className="text-white font-bold uppercase tracking-widest text-[9.5px] mr-2">Effect:</span> 
+                  {getDynamicSkillDescription(pendingSkillTraining.newSkill, pendingSkillTraining.newQuality, SPECIAL_SKILL_TEXT[pendingSkillTraining.newSkill as SpecialSkillName] || "")}
+                </p>
+                <div className="mt-2 text-[11px] text-gray-400 flex items-center gap-1.5">
+                  Trigger Rate: <span className={`font-black text-[13px] ${getQualityColor(pendingSkillTraining.newQuality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[pendingSkillTraining.newSkill as SpecialSkillName] ?? 0, pendingSkillTraining.newQuality as any)}</span>
                 </div>
-                <div className="text-[9px]  font-bold text-gray-500 mt-0.5 group-hover/reroll:text-[#d61e38]">Cost: 1 Tape</div>
-              </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-3 mt-6 mb-4 px-1">
@@ -1146,14 +1217,14 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               
               {/* Slot 1 */}
               <div 
-                className="bg-black/30 border border-white/5 hover:border-[#d61e38]/50 hover:bg-[#d61e38]/5 transition-all rounded-sm p-5 flex flex-col items-center gap-4 relative group cursor-pointer"
+                className={`bg-black/30 border border-white/5 ${getQualityHoverBorder(pendingSkillTraining.newQuality)} transition-all rounded-sm p-5 flex flex-col items-center gap-4 relative group cursor-pointer`}
                 onClick={() => acceptSkillTraining(0)}
               >
                 <div className="absolute top-2 left-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Slot 1</div>
                 
                 <div className="transform scale-[1.15] origin-center mt-3 drop-shadow-[0_8px_15px_rgba(0,0,0,0.6)] h-10 w-10 flex items-center justify-center">
                   {specialSkills[0] ? (
-                    <SkillBadge name={specialSkills[0]} color="special" quality={(player.skillRarities?.[specialSkills[0]] as any) || "Common"} />
+                    <SkillBadge name={specialSkills[0]} color="special" quality={(player.skillRarities?.[specialSkills[0]] as any) || "Common"} tooltipPosition="bottom" />
                   ) : (
                     <div className="w-10 h-10 rounded-[8px] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/40 text-gray-500">
                        <Plus size={16} />
@@ -1164,7 +1235,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 <div className="text-center w-full mt-1">
                   <div className="text-gray-200 font-bold text-[13px] uppercase tracking-wider truncate w-full">{specialSkills[0] ? formatSkillName(specialSkills[0], getDefaultSkillTier(player)) : "Available"}</div>
                 </div>
-                <button className="w-full mt-1 py-2 bg-zinc-900 group-hover:bg-[#d61e38] border border-white/5 group-hover:border-[#eb233f] text-gray-400 group-hover:text-white font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md">
+                <button className={`w-full mt-1 py-2 bg-zinc-900 ${getQualityGroupHoverBorder(pendingSkillTraining.newQuality)} border border-white/5 text-gray-400 group-hover:text-black font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md`}>
                   Replace
                 </button>
               </div>
@@ -1174,7 +1245,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 className={`border transition-all rounded-sm p-5 flex flex-col items-center gap-4 relative ${
                   (player.starLevel ?? 0) < 5 
                     ? 'bg-black/20 border-white/5 opacity-50 cursor-not-allowed' 
-                    : 'bg-black/30 border-white/5 hover:border-[#d61e38]/50 hover:bg-[#d61e38]/5 cursor-pointer group'
+                    : `bg-black/30 border-white/5 ${getQualityHoverBorder(pendingSkillTraining.newQuality)} cursor-pointer group`
                 }`}
                 onClick={() => {
                   if ((player.starLevel ?? 0) >= 5) acceptSkillTraining(1);
@@ -1188,7 +1259,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                       <div className="w-5 h-5 rounded bg-gray-500/50 flex items-center justify-center"><div className="w-2 h-3 border-2 border-zinc-300 rounded-t-full relative after:absolute after:w-0.5 after:h-1 after:bg-zinc-300 after:-bottom-1.5 after:left-0.5" /></div>
                     </div>
                   ) : specialSkills[1] ? (
-                    <SkillBadge name={specialSkills[1]} color="special" quality={(player.skillRarities?.[specialSkills[1]] as any) || "Common"} />
+                    <SkillBadge name={specialSkills[1]} color="special" quality={(player.skillRarities?.[specialSkills[1]] as any) || "Common"} tooltipPosition="bottom" />
                   ) : (
                     <div className="w-10 h-10 rounded-[8px] border-2 border-dashed border-white/20 flex items-center justify-center bg-black/40 text-gray-500">
                        <Plus size={16} />
@@ -1204,7 +1275,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                   )}
                 </div>
                 {(player.starLevel ?? 0) >= 5 && (
-                  <button className="w-full mt-1 py-2 bg-zinc-900 group-hover:bg-[#d61e38] border border-white/5 group-hover:border-[#eb233f] text-gray-400 group-hover:text-white font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md">
+                  <button className={`w-full mt-1 py-2 bg-zinc-900 ${getQualityGroupHoverBorder(pendingSkillTraining.newQuality)} border border-white/5 text-gray-400 group-hover:text-black font-black text-[11px] uppercase tracking-[0.2em] italic rounded-sm transition-colors drop-shadow-md`}>
                     Replace
                   </button>
                 )}
@@ -1365,7 +1436,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     </div>
                     <h2 className="text-white font-black text-2xl italic tracking-tight font-oswald uppercase drop-shadow-md">{getSkillDisplayName(showSkillInfo.name)}</h2>
                     <p className="text-gray-400 text-[11px] leading-relaxed mt-2 border-t border-white/10 pt-2">
-                      <span className="text-gray-300 font-bold">Effect:</span> {showSkillInfo.isSpecial ? SPECIAL_SKILL_TEXT[showSkillInfo.name as SpecialSkillName] : BASE_SKILL_TEXT[showSkillInfo.name as BaseSkillName] || "Provides standard boosts during matches."}
+                      <span className="text-gray-300 font-bold">Effect:</span> {showSkillInfo.isSpecial ? getDynamicSkillDescription(showSkillInfo.name, showSkillInfo.quality as string, SPECIAL_SKILL_TEXT[showSkillInfo.name as SpecialSkillName] || "") : BASE_SKILL_TEXT[showSkillInfo.name as BaseSkillName] || "Provides standard boosts during matches."}
                       {showSkillInfo.isSpecial && (
                         <> When in a game, there is a <span className={`font-black text-[12px] ${getQualityColor(showSkillInfo.quality as any)}`}>{getSkillQualityRate(SPECIAL_SKILL_RATES[showSkillInfo.name as SpecialSkillName] ?? 0, showSkillInfo.quality as any)}</span> rate to trigger this effect.</>
                       )}
