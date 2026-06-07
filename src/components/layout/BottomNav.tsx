@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { icon: Package, label: "Warehouse", href: "/inventory", locked: false },
@@ -27,15 +28,21 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [ready, setReady] = useState(false);
+
+  // Wait for client-side mount to avoid hydration mismatch
+  useEffect(() => { setReady(true); }, []);
 
   // Hub-and-Spoke Navigation: Only show the BottomNav on the main Stadium page
   // Subpages have a '<' back button to return to the hub, keeping UI clean.
   if (pathname !== '/') return null;
+  if (!ready) return null;
 
   return (
     <nav 
       id="global-bottom-nav"
-      className="fixed z-40 bottom-4 left-1/2 -translate-x-1/2 h-[64px] w-[calc(100%-2rem)] max-w-[900px] bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden"
+      className="fixed z-40 bottom-4 left-1/2 -translate-x-1/2 h-[64px] w-full max-w-[900px] bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden"
+      style={{ margin: '0 auto' }}
     >
       {/* Low Poly / Glass Facets Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-60">
@@ -57,15 +64,14 @@ export function BottomNav() {
             <Link 
               key={index} 
               href={item.locked ? '#' : item.href}
-              className={`flex-1 flex items-center justify-center gap-1 md:gap-2 relative transition-all ${item.locked ? 'cursor-not-allowed opacity-60 hover:bg-white/5' : 'cursor-pointer hover:bg-white/10'} ${isActive && !item.locked ? 'bg-white/5 shadow-[inset_0_-2px_0_#fff]' : ''}`}
+              className={`flex-1 flex items-center justify-center gap-2 relative transition-all ${item.locked ? 'cursor-not-allowed opacity-60 hover:bg-white/5' : 'cursor-pointer hover:bg-white/10'} ${isActive && !item.locked ? 'bg-white/5 shadow-[inset_0_-2px_0_#fff]' : ''}`}
               onClick={(e) => { if(item.locked) e.preventDefault(); }}
             >
               <div className="relative flex items-center justify-center pointer-events-none">
                 <Icon size={20} className={isActive && !item.locked ? 'text-white' : 'text-[#b3b3b3]'} strokeWidth={2.5} />
               </div>
               
-              {/* Labels hidden below 768px for space */}
-              <div className="hidden md:flex items-start relative pointer-events-none">
+              <div className="flex items-start relative pointer-events-none">
                 <span className={`text-[14px] font-bold tracking-wide ${isActive && !item.locked ? 'text-white' : 'text-[#b3b3b3]'}`}>
                   {item.label}
                 </span>
@@ -76,11 +82,6 @@ export function BottomNav() {
                   <div className="absolute -top-1 -right-3 w-2 h-2 bg-gradient-to-br from-[#ff8c00] to-[#ff0000] rounded-full shadow-[0_0_6px_rgba(255,0,0,0.8)] border border-[#121316]" />
                 )}
               </div>
-
-              {/* Lock icon visible on narrow screens when labels are hidden */}
-              {item.locked && (
-                <Lock size={10} className="text-[#888] md:hidden" strokeWidth={3} />
-              )}
               
               {/* Separator Line */}
               {index < navItems.length - 1 && (

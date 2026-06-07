@@ -285,9 +285,9 @@ export default function AuthenticLobby() {
 
   useEffect(() => {
     const handleResize = () => {
-      // Contain-fit: always pick the smaller ratio so the whole
-      // 1420x800 stage fits inside the window (letterbox/pillarbox).
-      const s = Math.min(window.innerWidth / 1420, window.innerHeight / 800);
+      // Cover-fit: pick the larger ratio so the 1420x800 stage
+      // fills the entire viewport with no black bars. Overflow is clipped.
+      const s = Math.max(window.innerWidth / 1420, window.innerHeight / 800);
       setLogDim({ w: 1420, h: 800 });
       setScale(s);
     };
@@ -447,16 +447,20 @@ export default function AuthenticLobby() {
         />
       )}
       
-      {/* Reserved box: scaled dimensions take layout space */}
-      <div style={{ width: `${1420 * scale}px`, height: `${800 * scale}px`, position: 'relative' }}>
+      {/* Full-screen stage: covers entire viewport, overflow clipped */}
+      <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       <div
         id="stadium-container"
-        className="relative pointer-events-auto shadow-2xl"
+        className="absolute pointer-events-auto shadow-2xl"
         style={{
           width: '1420px',
           height: '800px',
           transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          transformOrigin: 'center center',
+          left: '50%',
+          top: '50%',
+          marginLeft: '-710px',
+          marginTop: '-400px',
           backgroundImage: 'url("/bg/stadium-v9.png")',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
