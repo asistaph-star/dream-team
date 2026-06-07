@@ -76,20 +76,20 @@ Arc Pressure, Paint Magnet, Power Driver, Mismatch Caller, Glass Touch, Foul Mag
 ### Active Families & Mechanic Connections
 | Category | Family ID | Status | Connected Mechanics |
 |---|---|---|---|
-| Offense | DEEP_STRIKE | Active / Rollable | DEEP_STRIKE_EXPOSE_SETUP, DEEP_STRIKE_FOUR_POINT_BAIT |
-| | COURT_VISION_ENGINE | Active / Rollable | COURT_VISION_RHYTHM, COURT_VISION_CHAIN_PASS |
-| | POSTER_SPARK | Active / Rollable | POSTER_SPARK_TILT |
-| | FLOP | Active / Rollable | FLOP_SELL_CONTACT (Protected SGA modifier preserved) |
+| Offense | DEEP_STRIKE | Active / Rollable | DEEP_STRIKE_SHOT_BOOST, DEEP_STRIKE_EXPOSE, DEEP_STRIKE_FOUL_PRESSURE |
+| | COURT_VISION_ENGINE | Active / Rollable | COURT_VISION_RHYTHM_BOOST |
+| | POSTER_SPARK | Active / Rollable | POSTER_SPARK_FINISH_BOOST, POSTER_SPARK_TILT |
+| | FLOP | Active / Rollable | FLOP_FOUL_PRESSURE |
 | | BROKEN_PLAY_RESCUE | Active / Rollable | BROKEN_PLAY_RESCUE_SAVE |
-| Defense | SKY_WALL | Active / Rollable | SKY_WALL_RIM_PRESSURE |
-| | LOCK_CHAIN | Active / Rollable | LOCK_CHAIN_ON_BALL_PRESSURE, LOCK_CHAIN_CAGE_STEP |
-| | DEFENSIVE_ANCHOR | Active / Rollable | DEFENSIVE_ANCHOR_TEAM_IQ_BOOST |
+| Defense | SKY_WALL | Active / Rollable | SKY_WALL_BLOCK_BOOST, SKY_WALL_STAMINA_DRAIN |
+| | LOCK_CHAIN | Active / Rollable | LOCK_CHAIN_ON_BALL_PRESSURE, LOCK_CHAIN_HOOKED, LOCK_CHAIN_STAMINA_DRAIN |
+| | DEFENSIVE_ANCHOR | Active / Rollable | DEFENSIVE_ANCHOR_TEAM_BOOST |
 | | CLEAN_CHALLENGE | Active / Rollable | CLEAN_CHALLENGE_CONTEST |
 | | GLASS_STRIKE | Active / Rollable | GLASS_STRIKE_REBOUND |
-| Comprehensive | BENCH_CAPTAIN | Active / Rollable | BENCH_CAPTAIN_STABILIZE |
-| | MOMENTUM_SWING | Active / Rollable | MOMENTUM_SWING_STABILIZE |
+| Comprehensive | BENCH_CAPTAIN | Active / Rollable | BENCH_CAPTAIN_RECOVERY, BENCH_CAPTAIN_STABILIZE |
+| | MOMENTUM_SWING | Active / Rollable | MOMENTUM_SWING_RECOVERY |
 | | COMPOSURE_SHIELD | Active / Rollable | COMPOSURE_SHIELD_CANCEL |
-| | GAMEPLAN_JAMMER | Active / Rollable | GAMEPLAN_DEAD_AIR |
+| | GAMEPLAN_JAMMER | Active / Rollable | GAMEPLAN_JAMMER_STATIC |
 | | TIMEOUT_RESET | Active / Rollable | TIMEOUT_RESET_CLEANSE |
 
 
@@ -171,3 +171,57 @@ Final balance audit: **complete** via Match Realism Calibration phase.
 ## Hard Stops — Do Not Cross Without Approval
 - Do not start new balance buffs until Phase SkillAudit-Final-1 is complete.
 - Do not declare the skill system "complete" yet.
+
+---
+
+## Final Canonical Skill Ownership Table (Phase SkillSystemCanonicalCloseout)
+
+This is the authoritative ownership record for all 15 learned special skill families after:
+- CourtVisionMechanicOwnershipAudit (fd7fa08)
+- FullSkillOwnershipSweep (a2b1560)
+- LockChainDrainOwnershipAudit (b38045c)
+
+| # | Family | Owns | Marks | Drains Opponent? | Constraints |
+|---|---|---|---|---|---|
+| 1 | DEEP_STRIKE | 3PT shot boost, Exposed setup, foul pressure | Exposed | No | -- |
+| 2 | COURT_VISION_ENGINE | Rhythm / assist flow only | None | No | No marks, no drain |
+| 3 | POSTER_SPARK | Finishing boost, Tilted pressure | Tilted | No | -- |
+| 4 | FLOP | Foul pressure on Tilted defenders | None | No | No guaranteed free throws |
+| 5 | BROKEN_PLAY_RESCUE | Rare turnover rescue | None | Self-cost only | Shot penalty, no guaranteed score |
+| 6 | SKY_WALL | Block pressure | None | Yes: all-opponent after block | 3/5/7/9 with anti-snowball |
+| 7 | LOCK_CHAIN | Hooked pressure, on-ball TOV modifier | Hooked | Yes: all-opponent after steal only | 2/4/6/8 with anti-snowball. No generic TOV drain. No per-shot drain. No Hooked bleed. |
+| 8 | DEFENSIVE_ANCHOR | Non-stacking defIQ/team defense boost | None | No | Leader-based, does not stack |
+| 9 | CLEAN_CHALLENGE | Clean contest, foul-bait counter | None | No | Counters Flop and Deep Strike |
+| 10 | GLASS_STRIKE | Rebound timing, controlled putback pressure | None | No | -- |
+| 11 | BENCH_CAPTAIN | Bench recovery, rotation stability | None | No | -- |
+| 12 | MOMENTUM_SWING | Momentum recovery after stops | None | No | No possession steal |
+| 13 | COMPOSURE_SHIELD | Anti-foul-bait, anti-tilt protection | None | No | -- |
+| 14 | GAMEPLAN_JAMMER | Static / tactical disruption | Static | No | No Debt, no drain |
+| 15 | TIMEOUT_RESET | Limited cleanse, small recovery | None | No | -- |
+
+### Active Marks
+
+| Mark | Owner | Effect |
+|---|---|---|
+| Exposed | Deep Strike | Enables Deep Strike foul pressure on 3PT |
+| Tilted | Poster Spark / Paint Magnet (base) | Enables Flop foul pressure |
+| Hooked | Lock Chain (LOCK_CHAIN_HOOKED) | Increases future turnover chance |
+| Static | Gameplan Jammer (GAMEPLAN_JAMMER_STATIC) | Shot penalty while active |
+| Pinned | Rebound system | Blocks stamina recovery |
+
+### Banned Legacy Mechanics (Removed from Active Gameplay)
+
+- Legacy X active skill branches (all migrated to family IDs on load)
+- Debt mark application (0 addMark calls with "Debt" in engine)
+- Debt mark consumption (0 hasMark calls with "Debt" in engine)
+- 110/190 stamina drain values
+- 40/60 team stamina nuke values
+- 38 Hooked bleed drain
+- 45 splash drain
+- 12 per-action enemy drain
+- Generic turnover drain from Lock Chain (removed in b38045c)
+- Per-shot Lock Chain on-ball drain (removed in b38045c)
+- Court Vision Hooked mark application (removed in fd7fa08)
+- Random ejection / flagrant foul
+- Guaranteed 2+1 (and-one)
+- Guaranteed 3+1 (four-point play)

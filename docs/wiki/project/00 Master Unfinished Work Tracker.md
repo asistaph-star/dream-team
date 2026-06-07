@@ -371,6 +371,7 @@ All core special skill family implementations are complete:
 - Phase CourtVisionMechanicOwnershipAudit: Completed and verified. Removed legacy Hooked mark applications from Court Vision Engine in shotPossessionResolver.ts. Hooked now belongs exclusively to Lock Chain.
 - Phase FullSkillOwnershipSweep: Completed and verified. All 15 learned families comply with ownership rules. Zero violations found. 20-check validation script added.
 - Phase LockChainDrainOwnershipAudit: Completed and verified. Removed 2 hidden Lock Chain drain paths: (1) single-target drain on all turnovers, (2) per-possession on-ball shot drain. Lock Chain now drains only after successful steals.
+- Phase SkillSystemCanonicalCloseout: Completed. Final canonical ownership table for all 15 families recorded in 00 Current Canonical System State.md. Banned legacy mechanics list documented. All mechanic IDs corrected to match FAMILY_TO_MECHANIC_MAP. Tilted ownership corrected to Poster Spark/Paint Magnet.
 
 Next phases:
 1. **Phase UI**: Update hex chart, player detail panels, and compare card overlay components to display the new attributes.las.

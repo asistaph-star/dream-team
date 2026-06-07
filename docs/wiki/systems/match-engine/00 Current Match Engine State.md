@@ -91,8 +91,8 @@ None. All 15 planned learned special skill families and mechanics are now fully 
 | Hooked | LOCK_CHAIN_HOOKED | Lock Chain only (userPossessionResolver.ts, aiPossessionResolver.ts) |
 | Exposed | DEEP_STRIKE | Deep Strike only |
 | Pinned | DEFENSIVE_ANCHOR | Defensive Anchor only |
-| Static | GAMEPLAN_JAMMER | Gameplan Jammer only |
-| Tilted | FLOP | Flop only |
+| Static | GAMEPLAN_JAMMER_STATIC | Gameplan Jammer only |
+| Tilted | POSTER_SPARK / Paint Magnet (base) | Poster Spark and Paint Magnet only |
 | Debt | (deprecated) | Not applied by any active skill |
 
 **Court Vision Engine** operates exclusively as a rhythm/assist mechanic:
@@ -102,6 +102,13 @@ None. All 15 planned learned special skill families and mechanics are now fully 
 - No mark application (no Debt, no Hooked)
 - No stamina drain
 - Phase CourtVisionMechanicOwnershipAudit removed legacy Hooked applications from shotPossessionResolver.ts
+
+**Lock Chain** drains opponent stamina only after successful steal:
+- All-opponent drain after steal: 2/4/6/8 with anti-snowball scaling
+- No generic turnover drain (removed in b38045c)
+- No per-shot on-ball drain (removed in b38045c)
+- No Hooked stamina bleed
+- Hooked mark is turnover pressure only
 
 ---
 
@@ -129,4 +136,5 @@ None. All 15 planned learned special skill families and mechanics are now fully 
 * **Snapshot Parity**: 100% exact match verified via `test_match_engine_snapshot_baseline.ts --verify`.
 * **Match Realism**: Passed successfully via `test_match_realism_calibration.ts`.
 * **TypeScript Compilation**: Clean compilation (`npx tsc --noEmit` runs with zero errors).
-* **Validation Suite**: All 45 validation tests pass successfully.
+* **Validation Suite**: All 51 validation tests pass successfully.
+* **Canonical Closeout**: Phase SkillSystemCanonicalCloseout recorded final ownership state for all 15 families. See `00 Current Canonical System State.md` for the authoritative ownership table and banned mechanics list.
