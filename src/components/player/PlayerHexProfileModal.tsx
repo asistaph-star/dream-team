@@ -420,12 +420,12 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {group.stats.map(stat => (
-                            <div key={stat.label} className="flex items-center gap-2 text-[10px]">
-                              <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
-                              <div className="flex-1 h-[3px] min-h-[3px] bg-zinc-900 rounded-sm overflow-hidden relative">
-                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                            <div key={stat.label} className="flex items-center gap-2 h-[14px]">
+                              <span className="w-24 text-[10px] leading-[14px] font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
+                              <div className="flex-1 h-[6px] bg-black/60 border border-white/10 overflow-hidden relative rounded-[1px] shadow-inner transform-gpu">
+                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
-                              <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                              <span className="w-8 text-right text-[11px] leading-[14px] font-black text-white font-mono">{stat.val}</span>
                             </div>
                           ))}
                         </div>
@@ -442,12 +442,12 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {group.stats.map(stat => (
-                            <div key={stat.label} className="flex items-center gap-2 text-[10px]">
-                              <span className="w-24 font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
-                              <div className="flex-1 h-[3px] min-h-[3px] bg-zinc-900 rounded-sm overflow-hidden relative">
-                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} shadow-[0_0_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                            <div key={stat.label} className="flex items-center gap-2 h-[14px]">
+                              <span className="w-24 text-[10px] leading-[14px] font-black text-zinc-400 uppercase tracking-wider shrink-0 whitespace-nowrap">{stat.label}</span>
+                              <div className="flex-1 h-[6px] bg-black/60 border border-white/10 overflow-hidden relative rounded-[1px] shadow-inner transform-gpu">
+                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
                               </div>
-                              <span className="w-8 text-right font-black text-white font-mono text-[11px]">{stat.val}</span>
+                              <span className="w-8 text-right text-[11px] leading-[14px] font-black text-white font-mono">{stat.val}</span>
                             </div>
                           ))}
                         </div>
