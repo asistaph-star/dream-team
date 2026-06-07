@@ -28,59 +28,69 @@ export const GameViewport = ({
   backgroundImage?: string;
   className?: string;
 }) => {
-  const [vp, setVp] = useState({ scale: 1, logW: BASE_W, logH: BASE_H, offsetX: 0, offsetY: 0 });
+  const [vp, setVp] = useState({
+    scale: 1, logW: BASE_W, logH: BASE_H, offsetX: 0, offsetY: 0,
+  });
 
   useEffect(() => {
     const calc = () => {
       const winW = window.innerWidth;
       const winH = window.innerHeight;
-      const winRatio = winW / winH;
-      const baseRatio = BASE_W / BASE_H;
-
-      let scale: number, logW: number, logH: number, offsetX: number, offsetY: number;
-
-      if (winRatio > baseRatio) {
-        // Wider than base — expand width to fill
-        scale = winH / BASE_H;
-        logW = winW / scale;
-        logH = BASE_H;
-        offsetX = (logW - BASE_W) / 2;
-        offsetY = 0;
-      } else {
-        // Taller than base — expand height to fill
-        scale = winW / BASE_W;
-        logW = BASE_W;
-        logH = winH / scale;
-        offsetX = 0;
-        offsetY = (logH - BASE_H) / 2;
-      }
-
-      setVp({ scale, logW, logH, offsetX, offsetY });
+      // Contain-fit: always pick the smaller ratio so the whole
+      // 1420x800 stage fits inside the window (letterbox/pillarbox).
+      const scale = Math.min(winW / BASE_W, winH / BASE_H);
+      setVp({
+        scale,
+        logW: BASE_W,
+        logH: BASE_H,
+        offsetX: 0,
+        offsetY: 0,
+      });
     };
     calc();
     window.addEventListener('resize', calc);
-    return () => window.removeEventListener('resize', calc);
+    window.addEventListener('orientationchange', calc);
+    return () => {
+      window.removeEventListener('resize', calc);
+      window.removeEventListener('orientationchange', calc);
+    };
   }, []);
 
   return (
     <GameViewportContext.Provider value={vp}>
+      {/* Outer fills the window and centers the stage */}
       <div
-        className={`relative overflow-hidden ${className}`}
+        className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black"
         style={{
-          width: `${vp.logW}px`,
-          height: `${vp.logH}px`,
-          transform: `scale(${vp.scale})`,
-          transformOrigin: 'center center',
           backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
           backgroundSize: 'cover',
-          backgroundColor: 'black',
-          ['--court-offset-x' as string]: `${vp.offsetX}px`,
-          ['--court-offset-y' as string]: `${vp.offsetY}px`,
         }}
       >
-        {children}
+        {/* Reserved box: scaled dimensions actually take layout space */}
+        <div
+          style={{
+            width: `${BASE_W * vp.scale}px`,
+            height: `${BASE_H * vp.scale}px`,
+            position: 'relative',
+          }}
+        >
+          {/* The real stage at logical 1420x800, scaled from top-left */}
+          <div
+            className={`relative ${className}`}
+            style={{
+              width: `${BASE_W}px`,
+              height: `${BASE_H}px`,
+              transform: `scale(${vp.scale})`,
+              transformOrigin: 'top left',
+              ['--court-offset-x' as string]: `0px`,
+              ['--court-offset-y' as string]: `0px`,
+            }}
+          >
+            {children}
+          </div>
+        </div>
       </div>
     </GameViewportContext.Provider>
   );
