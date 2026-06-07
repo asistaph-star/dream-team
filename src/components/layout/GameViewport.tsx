@@ -59,15 +59,14 @@ export const GameViewport = ({
   return (
     <GameViewportContext.Provider value={vp}>
       {/* Outer fills the window and centers the stage */}
-      <div
-        className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black"
-        style={{
-          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center center',
-          backgroundSize: 'cover',
-        }}
-      >
+      <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black">
+        {/* Blurred background image for letterbox/pillarbox space */}
+        {backgroundImage && (
+          <div 
+            className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none"
+            style={{ backgroundImage: `url("${backgroundImage}")` }}
+          />
+        )}
         {/* Reserved box: scaled dimensions actually take layout space */}
         <div
           style={{

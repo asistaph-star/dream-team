@@ -45,23 +45,11 @@ export default function AuthenticLobby() {
   const [isAscending, setIsAscending] = useState(false);
 
   const [scale, setScale] = useState(1);
-  const [logDim, setLogDim] = useState({ w: 1420, h: 800 });
   const [time, setTime] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [showCoachModal, setShowCoachModal] = useState(false);
   const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
   const [benchSelectSlot, setBenchSelectSlot] = useState<string | null>(null);
-  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
-  const [showReservesDrawer, setShowReservesDrawer] = useState(false);
-  const [showChatDrawer, setShowChatDrawer] = useState(false);
-
-  // Track narrow viewport for drawer behavior
-  useEffect(() => {
-    const checkWidth = () => setIsNarrowViewport(window.innerWidth < 900);
-    checkWidth();
-    window.addEventListener('resize', checkWidth);
-    return () => window.removeEventListener('resize', checkWidth);
-  }, []);
   
   // Drag & Drop States
   const [draggingPlayerId, setDraggingPlayerId] = useState<string | null>(null);
@@ -285,10 +273,7 @@ export default function AuthenticLobby() {
 
   useEffect(() => {
     const handleResize = () => {
-      // Cover-fit: pick the larger ratio so the 1420x800 stage
-      // fills the entire viewport with no black bars. Overflow is clipped.
-      const s = Math.max(window.innerWidth / 1420, window.innerHeight / 800);
-      setLogDim({ w: 1420, h: 800 });
+      const s = Math.min(window.innerWidth / 1420, window.innerHeight / 800);
       setScale(s);
     };
     handleResize();
@@ -320,10 +305,6 @@ export default function AuthenticLobby() {
     const player = getPlayerForSlot(pos);
     const coords = customCoords[pos as keyof typeof customCoords];
     
-    // Calculate offsets to keep players anchored to the background image center
-    const offsetX = (logDim.w - 1420) / 2;
-    const offsetY = (logDim.h - 800) / 2;
-    
     const isHovered = dragHoverSlot === pos;
     const draggingPlayer = draggingPlayerId ? roster.find(p => p.id === draggingPlayerId) : null;
     const isWrongPosition = draggingPlayer && draggingPlayer.position !== pos;
@@ -345,7 +326,7 @@ export default function AuthenticLobby() {
           }
         }}
         className={`absolute pointer-events-auto transition-transform ${isHovered ? 'scale-110 z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ top: `${coords.top + offsetY}px`, left: `${coords.left + offsetX}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
+        style={{ top: `${coords.top}px`, left: `${coords.left}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
       >
         <div className="flex flex-col items-center relative">
           
@@ -384,7 +365,13 @@ export default function AuthenticLobby() {
     .filter((p): p is Player => p !== undefined);
 
   return (
-    <main className="relative w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center pointer-events-none">
+    <main className="fixed inset-0 overflow-hidden bg-black flex items-center justify-center pointer-events-none">
+      {/* Blurred stadium background to replace black letterbox bars */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" 
+        style={{ backgroundImage: 'url("/bg/stadium-v9.png")' }} 
+      />
+
       {draggingPlayerId && (
         <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
       )}
@@ -447,25 +434,20 @@ export default function AuthenticLobby() {
         />
       )}
       
-      {/* Full-screen stage: covers entire viewport, overflow clipped */}
-      <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ width: `${1420 * scale}px`, height: `${800 * scale}px`, position: 'relative' }}>
       <div
         id="stadium-container"
-        className="absolute pointer-events-auto shadow-2xl"
+        className="relative pointer-events-auto shadow-2xl"
         style={{
           width: '1420px',
           height: '800px',
           transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          left: '50%',
-          top: '50%',
-          marginLeft: '-710px',
-          marginTop: '-400px',
+          transformOrigin: 'top left',
           backgroundImage: 'url("/bg/stadium-v9.png")',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center center',
-          backgroundSize: 'cover',
-          backgroundColor: 'black'
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          backgroundColor: "black"
         }}
       >
 
@@ -504,25 +486,13 @@ export default function AuthenticLobby() {
         />
 
 
-        {/* Chat drawer toggle on narrow screens */}
-        {isNarrowViewport && (
-          <button
-            onClick={() => setShowChatDrawer(!showChatDrawer)}
-            className="absolute bottom-[10px] left-[8px] z-30 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-lg px-2.5 py-2 shadow-lg flex items-center gap-1.5 hover:bg-white/10 transition-all"
-          >
-            <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase">{showChatDrawer ? 'CLOSE' : 'CHAT'}</span>
-          </button>
-        )}
-
         {/* --- Global Chat Box (NBA 2K STYLE - SHARP HD FIX) --- */}
-        <div className={`transition-all duration-300 ${isNarrowViewport && !showChatDrawer ? '-translate-x-[400px] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
-          <LobbyChat 
-            messages={chatMessages} 
-            chatInput={chatInput} 
-            setChatInput={setChatInput} 
-            onSendMessage={handleSendChat} 
-          />
-        </div>
+        <LobbyChat 
+          messages={chatMessages} 
+          chatInput={chatInput} 
+          setChatInput={setChatInput} 
+          onSendMessage={handleSendChat} 
+        />
 
         {/* --- Lineup Archetypes Panel (NBA 2K STYLE - SHARP HD FIX) --- */}
         <LineupArchetypePanel startingLineup={starting5} />
@@ -591,19 +561,8 @@ export default function AuthenticLobby() {
         {renderSlot('SG')}
         {renderSlot('PG')}
 
-        {/* --- RESERVES DRAWER TOGGLE (visible only on narrow screens) --- */}
-        {isNarrowViewport && (
-          <button
-            onClick={() => setShowReservesDrawer(!showReservesDrawer)}
-            className="absolute top-[200px] right-[8px] z-30 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-lg px-2.5 py-2 shadow-lg flex items-center gap-1.5 hover:bg-white/10 transition-all"
-          >
-            <span className="text-white font-[family-name:var(--font-outfit)] font-black text-[10px] tracking-wider uppercase">{showReservesDrawer ? 'CLOSE' : 'BENCH'}</span>
-            <span className="text-white font-bold text-[9px] bg-white/10 border border-white/20 px-1.5 py-[2px] rounded">{activeReserves.length}</span>
-          </button>
-        )}
-
         {/* --- BENCH PLAYERS (PREMIUM 2K BINDER CARD STORAGE) --- */}
-        <div className={`absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible transition-all duration-300 ${isNarrowViewport && !showReservesDrawer ? 'translate-x-[240px] opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
+        <div className="absolute w-[210px] h-[360px] top-[200px] right-[20px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible">
           {/* Low Poly / Glass Facets Texture for the entire panel */}
           <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-white/[0.02]" style={{ clipPath: "polygon(0 0, 100% 0, 0 100%)" }}></div>
