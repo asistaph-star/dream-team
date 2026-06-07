@@ -110,7 +110,7 @@ export default function MatchPage() {
   const [activeLogTab, setActiveLogTab] = useState<'pbp' | 'stats'>('pbp');
   const [statsTeam, setStatsTeam] = useState<'user' | 'ai'>('user');
   const [statsFilter, setStatsFilter] = useState<'starters' | 'bench'>('starters');
-  const matchScale = 1;
+  const [matchScale, setMatchScale] = useState(1);
   const [showOTTransition, setShowOTTransition] = useState(false);
   const [showPostStats, setShowPostStats] = useState(false);
   const [shootoutRevealCount, setShootoutRevealCount] = useState(0);
@@ -118,6 +118,7 @@ export default function MatchPage() {
   const [activeRunOverlay, setActiveRunOverlay] = useState<{ team: 'user' | 'ai'; count: number } | null>(null);
   const prevUserRunRef = useRef(0);
   const prevAiRunRef = useRef(0);
+  const stadiumWrapperRef = useRef<HTMLDivElement>(null);
 
   // Shot meter sequence states
   const [shotMeterProgress, setShotMeterProgress] = useState(0);
@@ -136,11 +137,22 @@ export default function MatchPage() {
     if (!draggingPlayerId && !potentialDragPlayerId) return;
 
     const handlePointerMove = (e: PointerEvent) => {
-      pointerPosRef.current = { x: e.clientX, y: e.clientY };
-      setPointerPos({ x: e.clientX, y: e.clientY });
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      let localX = clientX;
+      let localY = clientY;
+
+      if (stadiumWrapperRef.current) {
+        const rect = stadiumWrapperRef.current.getBoundingClientRect();
+        localX = (clientX - rect.left) / matchScale;
+        localY = (clientY - rect.top) / matchScale;
+      }
+
+      pointerPosRef.current = { x: localX, y: localY };
+      setPointerPos({ x: localX, y: localY });
 
       if (potentialDragPlayerId && !draggingPlayerId && dragStartPos) {
-        const dist = Math.hypot(e.clientX - dragStartPos.x, e.clientY - dragStartPos.y);
+        const dist = Math.hypot(localX - dragStartPos.x, localY - dragStartPos.y);
         if (dist > 10) {
           hasDraggedRef.current = true;
           setDraggingPlayerId(potentialDragPlayerId);
@@ -214,7 +226,7 @@ export default function MatchPage() {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [draggingPlayerId, dragHoverSlotId, potentialDragPlayerId, dragStartPos, liveLineup, activeLineup, matchRoster, matchState, subCooldownEnd, cooldownNow]);
+  }, [draggingPlayerId, dragHoverSlotId, potentialDragPlayerId, dragStartPos, liveLineup, activeLineup, matchRoster, matchState, subCooldownEnd, cooldownNow, matchScale]);
 
   // Smooth clock animation states
   const [displayClock, setDisplayClock] = useState<number>(720);
@@ -363,6 +375,20 @@ export default function MatchPage() {
     runSeq();
     return () => { active = false; };
   }, [matchState.activeShotMeter]);
+
+  // Dynamic full-screen scale — fills viewport while preserving 1420x800 aspect ratio
+  useEffect(() => {
+    const STADIUM_W = 1420;
+    const STADIUM_H = 800;
+    const compute = () => {
+      const scaleW = window.innerWidth / STADIUM_W;
+      const scaleH = window.innerHeight / STADIUM_H;
+      setMatchScale(Math.max(scaleW, scaleH));
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, []);
 
   const logEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -916,8 +942,18 @@ export default function MatchPage() {
           if (!isAi && !showSubModal) {
             e.preventDefault();
             setPotentialDragPlayerId(p.id);
-            setDragStartPos({ x: e.clientX, y: e.clientY });
-            setPointerPos({ x: e.clientX, y: e.clientY });
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (stadiumWrapperRef.current) {
+              const rect = stadiumWrapperRef.current.getBoundingClientRect();
+              const localX = (clientX - rect.left) / matchScale;
+              const localY = (clientY - rect.top) / matchScale;
+              setDragStartPos({ x: localX, y: localY });
+              setPointerPos({ x: localX, y: localY });
+            } else {
+              setDragStartPos({ x: clientX, y: clientY });
+              setPointerPos({ x: clientX, y: clientY });
+            }
           }
         }}
         isHot={Boolean(matchState.hotPlayers[p.id])}
@@ -975,7 +1011,7 @@ export default function MatchPage() {
 
   if (viewState === 'SIMULATING' || viewState === 'HALFTIME') {
     return (
-      <div className="w-screen h-[100dvh] relative font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
+      <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
         
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
@@ -983,160 +1019,183 @@ export default function MatchPage() {
           <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
         )}
         
-        {/* Global Ghost Drag Image */}
-        {draggingPlayerId && (
-          <DragGhost
-            draggingPlayerId={draggingPlayerId}
-            matchRoster={matchRoster}
-            roster={roster}
-            pointerPos={pointerPos}
-            matchScale={matchScale}
-            showSubModal={showSubModal}
-            playerStamina={matchState.playerStamina}
-          />
-        )}
-
-        <div className="stadium">
-            {/* DEV TOGGLE FOR BLOCK ANIMATION */}
-            <BlockAnimationDevToggle 
-              blockAnimationType={blockAnimationType} 
-              setBlockAnimationType={setBlockAnimationType} 
-            />
-            {/* TOP HUD */}
-            <MatchScoreboard
-              matchState={matchState}
-              viewState={viewState}
-              currentLineup={currentLineup}
-              aiTeam={aiTeam}
-              teamOffense={teamOffense}
-              teamDefense={teamDefense}
-              displayUserScore={displayUserScore}
-              displayAiScore={displayAiScore}
-              displayClock={displayClock}
-              displayPossClock={displayPossClock}
-              halftimeCountdown={halftimeCountdown}
+        {/* Unified scaled container wrapping stadium and all UI overlays */}
+        <div
+          ref={stadiumWrapperRef}
+          className="relative flex-shrink-0 animate-page-enter"
+          style={{
+            width: '1420px',
+            height: '800px',
+            transform: `scale(${matchScale})`,
+            transformOrigin: 'center center',
+            zIndex: 1
+          }}
+        >
+          {/* Global Ghost Drag Image */}
+          {draggingPlayerId && (
+            <DragGhost
               draggingPlayerId={draggingPlayerId}
-              dragHoverSlotId={dragHoverSlotId}
-              selectedDifficulty={selectedDifficulty}
-              isClutchActive={isClutchActive}
-              isClutchHigh={isClutchHigh}
-              isHomeGame={isHomeGame}
-              uiRallyMode={uiRallyMode}
-              userMomPct={userMomPct}
-            />
-
-            {/* EXIT BUTTON */}
-            <MatchExitButton onExit={handleReturn} />
-
-            {/* PLAYERS */}
-            {currentLineup.map((p, idx) => renderPlayerCard(p, false, SLOT_POSITIONS[idx]))}
-            {matchState.aiLineupIds.map((id, idx) => {
-              const p = aiTeam.roster.find(r => r.id === id);
-              if (!p) return null;
-              return renderPlayerCard(p, true, SLOT_POSITIONS[idx]);
-            })}
-
-            {/* SCORING RUN OVERLAY */}
-            <RunOverlay activeRunOverlay={activeRunOverlay} aiTeamName={aiTeam.name} />
-
-            {/* FREE THROW OVERLAY — removed from top center to avoid overlap with TV scoreboard, rendered directly on the shooting player card */}
-
-            {/* OT TRANSITION OVERLAY */}
-            <OvertimeTransitionOverlay show={showOTTransition} quarter={matchState.quarter} />
-
-            {/* SHOOTOUT OVERLAY */}
-            <ShootoutOverlay
-              shootoutSequence={matchState.shootoutSequence}
-              shootoutRevealCount={shootoutRevealCount}
-              aiTeamName={aiTeam.name}
-            />
-
-            {/* BOTTOM HUD CONTAINER (Groups Chat, Logs, and Actions tightly) */}
-            <div className="absolute bottom-6 left-6 right-6 z-50 flex gap-3 items-end xl:justify-center">
-                
-                <MatchBottomHUD
-                  activeLogTab={activeLogTab}
-                  setActiveLogTab={setActiveLogTab}
-                  statsTeam={statsTeam}
-                  setStatsTeam={setStatsTeam}
-                  statsFilter={statsFilter}
-                  setStatsFilter={setStatsFilter}
-                  displayEvents={displayEvents}
-                  matchState={matchState}
-                  currentLineup={currentLineup}
-                  aiTeam={aiTeam}
-                  getDisplayStats={getDisplayStats}
-                  logEndRef={logEndRef}
-                  roster={roster}
-                />
-                
-                {/* BOTTOM HUD - ACTION BAR Container */}
-                <div className="flex gap-2 items-end shrink-0">
-                    
-                    <MatchActionBar
-                      openModal={openModal}
-                      handleTimeout={handleTimeout}
-                      handleMomentum={handleMomentum}
-                      matchState={matchState}
-                      timeoutCountdown={timeoutCountdown}
-                      momentumTimer={0}
-                      subCooldownEnd={subCooldownEnd}
-                      cooldownNow={cooldownNow}
-                    />
-                </div>
-            </div>
-
-
-            {/* ENERGY DRINK MODAL */}
-            <EnergyDrinkModal
-              show={showEnergyDrinkModal}
-              onClose={closeModal}
-              currentLineup={currentLineup}
-              energyDrinkPick={energyDrinkPick}
-              setEnergyDrinkPick={setEnergyDrinkPick}
-              onConfirm={handleEnergyDrinkConfirm}
-              matchState={matchState}
-              getPlayerMaxStamina={getPlayerMaxStamina}
-              getStaminaPercent={getStaminaPercent}
-            />
-
-            {/* STRATEGY MODAL */}
-            <StrategyModal
-              show={showStrategyModal}
-              onClose={closeModal}
-              matchState={matchState}
-              offCooldownEnd={offCooldownEnd}
-              defCooldownEnd={defCooldownEnd}
-              cooldownNow={cooldownNow}
-              onOffStrategyChange={handleOffStrategyChange}
-              onDefStrategyChange={handleDefStrategyChange}
-              offensiveStrategies={OFFENSIVE_STRATEGIES}
-              defensiveStrategies={DEFENSIVE_STRATEGIES}
-            />
-
-            <SubstitutionModal
-              show={showSubModal}
-              onClose={closeModal}
               matchRoster={matchRoster}
-              currentLineup={currentLineup}
-              activeLineup={activeLineup}
-              activeReserves={activeReserves}
-              matchState={matchState}
-              cooldownNow={cooldownNow}
-              subCooldownEnd={subCooldownEnd}
-              subCourtPick={subCourtPick}
-              subBenchPick={subBenchPick}
-              onConfirm={handleSubConfirm}
-              dragHoverSlotId={dragHoverSlotId}
-              draggingPlayerId={draggingPlayerId}
-              setPotentialDragPlayerId={setPotentialDragPlayerId}
-              setDragStartPos={setDragStartPos}
-              computeEffective={computeEffective}
-              SLOT_POSITIONS={SLOT_POSITIONS}
-              courtPositions={courtPositions}
-              getPlayerImage={getPlayerImage}
-              getPlayerMaxStamina={getPlayerMaxStamina}
+              roster={roster}
+              pointerPos={pointerPos}
+              matchScale={matchScale}
+              showSubModal={showSubModal}
+              playerStamina={matchState.playerStamina}
             />
+          )}
+
+          <div className="stadium">
+              {/* DEV TOGGLE FOR BLOCK ANIMATION */}
+              <BlockAnimationDevToggle 
+                blockAnimationType={blockAnimationType} 
+                setBlockAnimationType={setBlockAnimationType} 
+              />
+              {/* TOP HUD */}
+              <MatchScoreboard
+                matchState={matchState}
+                viewState={viewState}
+                currentLineup={currentLineup}
+                aiTeam={aiTeam}
+                teamOffense={teamOffense}
+                teamDefense={teamDefense}
+                displayUserScore={displayUserScore}
+                displayAiScore={displayAiScore}
+                displayClock={displayClock}
+                displayPossClock={displayPossClock}
+                halftimeCountdown={halftimeCountdown}
+                draggingPlayerId={draggingPlayerId}
+                dragHoverSlotId={dragHoverSlotId}
+                selectedDifficulty={selectedDifficulty}
+                isClutchActive={isClutchActive}
+                isClutchHigh={isClutchHigh}
+                isHomeGame={isHomeGame}
+                uiRallyMode={uiRallyMode}
+                userMomPct={userMomPct}
+              />
+
+              {/* EXIT BUTTON */}
+              <MatchExitButton onExit={handleReturn} />
+
+              {/* PLAYERS */}
+              {currentLineup.map((p, idx) => renderPlayerCard(p, false, SLOT_POSITIONS[idx]))}
+              {matchState.aiLineupIds.map((id, idx) => {
+                const p = aiTeam.roster.find(r => r.id === id);
+                if (!p) return null;
+                return renderPlayerCard(p, true, SLOT_POSITIONS[idx]);
+              })}
+
+              {/* SCORING RUN OVERLAY */}
+              <RunOverlay activeRunOverlay={activeRunOverlay} aiTeamName={aiTeam.name} />
+
+              {/* FREE THROW OVERLAY — removed from top center to avoid overlap with TV scoreboard, rendered directly on the shooting player card */}
+
+              {/* OT TRANSITION OVERLAY */}
+              <OvertimeTransitionOverlay show={showOTTransition} quarter={matchState.quarter} />
+
+              {/* SHOOTOUT OVERLAY */}
+              <ShootoutOverlay
+                shootoutSequence={matchState.shootoutSequence}
+                shootoutRevealCount={shootoutRevealCount}
+                aiTeamName={aiTeam.name}
+              />
+
+              {/* BOTTOM HUD CONTAINER (Groups Chat, Logs, and Actions tightly) */}
+              <div className="absolute bottom-6 left-6 right-6 z-50 flex gap-3 items-end xl:justify-center">
+                  
+                  <MatchBottomHUD
+                    activeLogTab={activeLogTab}
+                    setActiveLogTab={setActiveLogTab}
+                    statsTeam={statsTeam}
+                    setStatsTeam={setStatsTeam}
+                    statsFilter={statsFilter}
+                    setStatsFilter={setStatsFilter}
+                    displayEvents={displayEvents}
+                    matchState={matchState}
+                    currentLineup={currentLineup}
+                    aiTeam={aiTeam}
+                    getDisplayStats={getDisplayStats}
+                    logEndRef={logEndRef}
+                    roster={roster}
+                  />
+                  
+                  {/* BOTTOM HUD - ACTION BAR Container */}
+                  <div className="flex gap-2 items-end shrink-0">
+                      
+                      <MatchActionBar
+                        openModal={openModal}
+                        handleTimeout={handleTimeout}
+                        handleMomentum={handleMomentum}
+                        matchState={matchState}
+                        timeoutCountdown={timeoutCountdown}
+                        momentumTimer={0}
+                        subCooldownEnd={subCooldownEnd}
+                        cooldownNow={cooldownNow}
+                      />
+                  </div>
+              </div>
+
+
+              {/* ENERGY DRINK MODAL */}
+              <EnergyDrinkModal
+                show={showEnergyDrinkModal}
+                onClose={closeModal}
+                currentLineup={currentLineup}
+                energyDrinkPick={energyDrinkPick}
+                setEnergyDrinkPick={setEnergyDrinkPick}
+                onConfirm={handleEnergyDrinkConfirm}
+                matchState={matchState}
+                getPlayerMaxStamina={getPlayerMaxStamina}
+                getStaminaPercent={getStaminaPercent}
+              />
+
+              {/* STRATEGY MODAL */}
+              <StrategyModal
+                show={showStrategyModal}
+                onClose={closeModal}
+                matchState={matchState}
+                offCooldownEnd={offCooldownEnd}
+                defCooldownEnd={defCooldownEnd}
+                cooldownNow={cooldownNow}
+                onOffStrategyChange={handleOffStrategyChange}
+                onDefStrategyChange={handleDefStrategyChange}
+                offensiveStrategies={OFFENSIVE_STRATEGIES}
+                defensiveStrategies={DEFENSIVE_STRATEGIES}
+              />
+
+              <SubstitutionModal
+                show={showSubModal}
+                onClose={closeModal}
+                matchRoster={matchRoster}
+                currentLineup={currentLineup}
+                activeLineup={activeLineup}
+                activeReserves={activeReserves}
+                matchState={matchState}
+                cooldownNow={cooldownNow}
+                subCooldownEnd={subCooldownEnd}
+                subCourtPick={subCourtPick}
+                subBenchPick={subBenchPick}
+                onConfirm={handleSubConfirm}
+                dragHoverSlotId={dragHoverSlotId}
+                draggingPlayerId={draggingPlayerId}
+                setPotentialDragPlayerId={setPotentialDragPlayerId}
+                setDragStartPos={setDragStartPos}
+                computeEffective={computeEffective}
+                SLOT_POSITIONS={SLOT_POSITIONS}
+                courtPositions={courtPositions}
+                getPlayerImage={getPlayerImage}
+                getPlayerMaxStamina={getPlayerMaxStamina}
+                clientToLocalPos={(clientX, clientY) => {
+                  if (stadiumWrapperRef.current) {
+                    const rect = stadiumWrapperRef.current.getBoundingClientRect();
+                    return {
+                      x: (clientX - rect.left) / matchScale,
+                      y: (clientY - rect.top) / matchScale,
+                    };
+                  }
+                  return { x: clientX, y: clientY };
+                }}
+              />
+          </div>
         </div>
       </div>
     );
