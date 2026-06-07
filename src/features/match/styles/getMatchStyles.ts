@@ -3,7 +3,6 @@ export const getMatchStyles = (matchScale: number): string => `
             width: 1420px; height: 800px; min-width: 1420px; flex-shrink: 0;
             background-image: url('https://www.dreamteamph.com/bg/match_stadium-v2.webp');
             background-size: 100% 100%; position: relative;
-            transform: scale(${matchScale}); transform-origin: center;
         }
         .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; }
         .player-unit:hover { z-index: 100; }
