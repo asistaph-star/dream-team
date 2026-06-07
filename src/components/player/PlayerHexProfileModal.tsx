@@ -490,7 +490,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
             </div>
 
             {/* Hexagonal Button Cluster */}
-            <div className="mt-auto relative pointer-events-auto px-6 pb-5 pt-3 border-t border-white/5 bg-black/25">
+            <div className="mt-auto relative pointer-events-auto px-6 pb-3 pt-2 border-t border-white/5 bg-black/25">
               <div className="flex items-end justify-end gap-5 relative z-10">
                 
                 {/* Enhance Hex */}
@@ -511,18 +511,18 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                 <button 
                   onClick={() => setShowStarUpConfirm(true)}
                   disabled={isAscending || (player.starLevel ?? 0) >= 25}
-                  className={`group relative w-28 h-32 flex flex-col items-center justify-center transition-all ${isAscending ? 'opacity-50 cursor-wait' : ((player.starLevel ?? 0) >= 25 ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-2 cursor-pointer active:scale-90 active:translate-y-0 duration-150')}`}
+                  className={`group relative w-20 h-24 flex flex-col items-center justify-center transition-all ${isAscending ? 'opacity-50 cursor-wait' : ((player.starLevel ?? 0) >= 25 ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1 cursor-pointer active:scale-95 active:translate-y-0 duration-150')}`}
                 >
                   {/* Outer Glow */}
-                  <div className="absolute -inset-3 bg-red-600/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute -inset-2 bg-red-600/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                   
                   {/* Hex Shape */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-red-900 via-red-950 to-black border-2 border-red-500 shadow-[inset_0_0_25px_rgba(220,38,38,0.3)] transition-all pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
+                  <div className="absolute inset-0 bg-gradient-to-b from-red-900 via-red-950 to-black border border-red-500 shadow-[inset_0_0_15px_rgba(220,38,38,0.3)] transition-all pointer-events-none" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}>
                     <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.4) 45%, transparent 50%)', backgroundSize: '200% 200%' }} />
                   </div>
                   
-                  <Zap className={`relative text-white w-7 h-7 mb-1.5 z-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] ${isAscending ? 'animate-bounce' : 'group-hover:animate-pulse'}`} />
-                  <span className="relative text-[10px] font-black text-white uppercase tracking-[0.2em] z-10 drop-shadow-[0_2px_4px_black]">
+                  <Zap className={`relative text-white w-5 h-5 mb-1 z-10 drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] ${isAscending ? 'animate-bounce' : 'group-hover:animate-pulse'}`} />
+                  <span className="relative text-[9px] font-black text-white uppercase tracking-widest z-10 drop-shadow-[0_2px_4px_black]">
                     {isAscending ? 'Upgrading' : ((player.starLevel ?? 0) >= 25 ? 'Max Star' : 'Star Up')}
                   </span>
                 </button>
