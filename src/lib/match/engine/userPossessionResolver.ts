@@ -209,22 +209,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
         draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, committer.id, "Hooked", "LOCK_CHAIN_HOOKED", 2);
         skillLog(ctx, `Lock Chain hooks ${committer.name}'s handle`, false);
       }
-      if (lockChainActive) {
-        const holders = aiLineup.filter(p => hasSpecialSkillMechanic(p, "LOCK_CHAIN_ON_BALL_PRESSURE"));
-        if (holders.length > 0) {
-          const leader = [...holders].sort((a, b) => {
-            const rA = a.skillRarities?.["LOCK_CHAIN"] || 'Common';
-            const rB = b.skillRarities?.["LOCK_CHAIN"] || 'Common';
-            const val = { Common: 1, Rare: 2, Elite: 3, Epic: 4, Legendary: 5 };
-            return (val[rB] ?? 1) - (val[rA] ?? 1);
-          })[0];
-          const rarity = leader.skillRarities?.["LOCK_CHAIN"] || 'Common';
-          const baseDrain = getLockChainDrain(rarity);
-          const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, committer));
-          const drain = drainStamina(draft.playerStamina, committer, userLineup, finalDrain);
-          skillLog(ctx, `Lock Chain: On-ball pressure drains ${drain} stamina from ${committer.name} on the turnover`, false);
-        }
-      }
+
       ctx.activePlayerId = committer.id;
       ensureStats(ctx, committer.id);
       draft.playerStats[committer.id].TOV = (draft.playerStats[committer.id].TOV ?? 0) + 1;
@@ -490,16 +475,7 @@ export function resolveUserPossession(ctx: PossessionContext) {
             skillShotBonus += 0.025;
             skillLog(ctx, `${scorer.name}'s Tempo Switch boosts the early attack`, true);
           }
-          if (primaryDefender && rollSpecialMechanic([primaryDefender], "LOCK_CHAIN_ON_BALL_PRESSURE", draft.playerStamina, (h) => {
-            const identity = (getOnBallDefenseRating(h) + getStealRating(h) + getStaminaRating(h)) / 3;
-            return 0.90 + (identity / 100) * 0.20;
-          })) {
-            const rarity = primaryDefender.skillRarities?.["LOCK_CHAIN"] || 'Common';
-            const baseDrain = getLockChainDrain(rarity);
-            const finalDrain = applyAntiSnowballScaling(baseDrain, staminaPct(ctx, scorer));
-            const drain = drainStamina(draft.playerStamina, scorer, userLineup, finalDrain);
-            skillLog(ctx, `Lock Chain: ${primaryDefender.name}'s on-ball pressure drains ${drain} stamina from shooter ${scorer.name}`, false);
-          }
+
 
           // SKY_WALL rim protection
           const CLOSE_RANGE_SHOTS = [

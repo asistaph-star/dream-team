@@ -37,7 +37,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | MatchSkillEventUIFinalQA | Done (verified match screen wording, cleaned legacy prefixes, added mark descriptions to tooltip, ensured Court Vision Engine has rhythm-based wording) |
 | CourtVisionMechanicOwnershipAudit | Done (removed legacy Hooked mark applications from Court Vision Engine in shotPossessionResolver.ts, Hooked belongs only to Lock Chain, Debt remains deprecated) |
 | FullSkillOwnershipSweep | Done (all 15 families verified, zero violations, 20-check validation script added) |
-| Validation Suite Status | Done (all 50 tests passing) |
+| LockChainDrainOwnershipAudit | Done (removed single-target turnover drain and per-possession on-ball shot drain, Lock Chain drains only after successful steal) |
+| Validation Suite Status | Done (all 51 tests passing) |
 
 ---
 

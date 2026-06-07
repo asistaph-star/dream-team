@@ -60,6 +60,7 @@ All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run be
 | `test_match_skill_event_ui_final_qa.ts` | Match skill event wording, clean prefixes, and active mark descriptions |
 | `test_court_vision_mechanic_ownership.ts` | Court Vision rhythm-only ownership, Hooked belongs to Lock Chain only, Debt is deprecated |
 | `test_full_skill_ownership_sweep.ts` | All 15 family mark ownership, drain ownership, legacy X branches, toxic drain values, approved Tilted sources |
+| `test_lock_chain_drain_ownership.ts` | Lock Chain drain after steal only, no turnover drain, no shot drain, no Hooked bleed, correct values, anti-snowball |
 | *(more -- see `src/scripts/validation/` for full list)* | |
 
 ---
