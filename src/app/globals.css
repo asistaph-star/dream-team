@@ -20,39 +20,6 @@
 :root {
   --background: #020617;
   --foreground: #F8FAFC;
-
-  /* Responsive layout tokens */
-  --safe-page-padding: 1rem;
-  --hud-height: 64px;
-  --panel-width: 340px;
-  --sidebar-width: 180px;
-  --card-scale: 1;
-  --court-scale: 1;
-}
-
-@media (max-width: 1279px) {
-  :root {
-    --card-scale: 0.92;
-    --panel-width: 300px;
-    --sidebar-width: 160px;
-  }
-}
-
-@media (max-width: 1023px) {
-  :root {
-    --card-scale: 0.85;
-    --panel-width: 280px;
-    --sidebar-width: 0px;
-  }
-}
-
-@media (max-width: 767px) {
-  :root {
-    --card-scale: 0.75;
-    --panel-width: 100%;
-    --sidebar-width: 0px;
-    --safe-page-padding: 0.5rem;
-  }
 }
 
 body {

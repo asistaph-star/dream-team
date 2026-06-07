@@ -31,11 +31,11 @@ export const DragGhost: React.FC<DragGhostProps> = ({
   return (
     <div
       id="drag-clone"
-      className="absolute pointer-events-none z-[9999] w-[120px] h-[124px]"
+      className="fixed pointer-events-none z-[9999] w-[120px] h-[124px]"
       style={{
         left: pointerPos.x,
         top: pointerPos.y,
-        transform: `translate(-50%, -50%) scale(${showSubModal ? 0.70 : 0.9})`,
+        transform: `translate(-50%, -50%) scale(${matchScale * (showSubModal ? 0.70 : 0.9)})`,
         opacity: 0.9,
         filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.5))',
       }}

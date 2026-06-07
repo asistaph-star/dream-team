@@ -24,7 +24,6 @@ interface SubstitutionModalProps {
   courtPositions: Record<string, { x: number; y: number }>;
   getPlayerImage: (p: Player) => string;
   getPlayerMaxStamina: (p: Player) => number;
-  clientToLocalPos: (clientX: number, clientY: number) => { x: number; y: number };
 }
 
 export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
@@ -49,7 +48,6 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
   courtPositions,
   getPlayerImage,
   getPlayerMaxStamina,
-  clientToLocalPos,
 }) => {
   if (!show) return null;
 
@@ -71,7 +69,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 z-[300] bg-[#1c1d21] flex flex-col font-sans select-none overflow-hidden">
+    <div className="fixed inset-0 z-[300] bg-[#1c1d21] flex flex-col font-sans select-none overflow-hidden">
       {/* Global Stone Wall Texture Overlay */}
       <div 
         className="absolute inset-0 z-0 pointer-events-none opacity-[0.25] mix-blend-overlay"
@@ -183,8 +181,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
                  e.preventDefault();
                  if (isCooldownActive) return;
                  setPotentialDragPlayerId(p.id);
-                 const localPos = clientToLocalPos(e.clientX, e.clientY);
-                 setDragStartPos(localPos);
+                 setDragStartPos({ x: e.clientX, y: e.clientY });
               }}
             >
               <div className="pointer-events-none relative transition-all">
@@ -246,8 +243,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
                      if (isUnavailable || isCooldownActive) return;
                      e.preventDefault();
                      setPotentialDragPlayerId(p.id);
-                     const localPos = clientToLocalPos(e.clientX, e.clientY);
-                     setDragStartPos(localPos);
+                     setDragStartPos({ x: e.clientX, y: e.clientY });
                    }}
                 >
                    <div className={`pointer-events-none flex items-center justify-center w-full h-full pb-4 relative`}>

@@ -158,7 +158,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden relative z-10">
+      <div className="flex flex-1 overflow-hidden relative z-10">
 
         {/* ── Left Sidebar ── */}
         <SidebarTabs
@@ -277,12 +277,8 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Right Detail Panel -- sidebar on lg+, overlay on narrow */}
-        <div className={`z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 transition-all
-          ${(selectedMatId || selectedEquip || selectedCraftSlot) ? 'fixed inset-0 lg:static lg:w-[340px] lg:h-full bg-black/80 lg:bg-transparent p-4 lg:p-0' : 'hidden lg:flex w-[340px] h-full'}
-        `}
-          onClick={(e) => { if (e.target === e.currentTarget) { setSelectedMatId(null); setSelectedEquip(null); } }}
-        >
+        {/* ── Right Detail Panel ── */}
+        <div className="w-[340px] z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 h-full">
           <div className="flex-1 bg-[#313338] border border-white/10 rounded-sm flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.5)] overflow-hidden">
           
           {/* DETAILS: MATERIALS */}

@@ -16,11 +16,14 @@ interface LobbyChatProps {
 }
 
 export function LobbyChat({ messages, chatInput, setChatInput, onSendMessage }: LobbyChatProps) {
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!isCollapsed) {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isCollapsed]);
 
   return (
     <div className="absolute bottom-[10px] left-[20px] w-[350px] z-30 group p-3">
@@ -50,72 +53,84 @@ export function LobbyChat({ messages, chatInput, setChatInput, onSendMessage }: 
               </span>
             </div>
           </div>
-          <div className="text-[9px] text-zinc-400 font-[family-name:var(--font-outfit)] font-black tracking-widest uppercase italic mr-1">
-            SERVERS: ONLINE
+          <div className="flex items-center gap-2 mr-1">
+            <span className="text-[9px] text-zinc-400 font-[family-name:var(--font-outfit)] font-black tracking-widest uppercase italic">
+              ONLINE
+            </span>
+            <button 
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="text-zinc-400 hover:text-white transition-colors text-[9px] font-bold bg-white/5 border border-white/10 px-1.5 py-0.5 rounded cursor-pointer pointer-events-auto"
+            >
+              {isCollapsed ? "EXPAND" : "MIN"}
+            </button>
           </div>
         </div>
 
-        {/* Chat Board Box */}
-        <div className="h-[135px] overflow-y-auto bg-zinc-950/90 border border-white/5 rounded-xl p-2.5 relative scrollbox article-scroll scroll-smooth">
-          <div className="flex flex-col gap-2">
-            {messages.map((msg, idx) => (
-              <div key={idx} className="text-xs border-b border-white/[0.03] pb-1.5 last:border-0 last:pb-0 leading-relaxed break-words">
-                <span className="inline-flex items-center gap-1.5 mr-1.5 align-middle select-none">
-                  {/* [all] tag */}
-                  <span className="bg-white/10 border border-white/20 text-white text-[8px] font-black tracking-wide uppercase px-1 rounded">
-                    ALL
-                  </span>
-                  
-                  {/* Title Badges */}
-                  <span className={`text-[8px] font-black tracking-wide uppercase px-1.5 py-0.5 rounded skew-x-[-6deg] shadow-sm ${
-                    msg.title === 'Champion' ? 'bg-white/15 border border-white/30 text-white drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]' :
-                    msg.title === 'DreamTeam' ? 'bg-white/10 border border-white/20 text-zinc-100' :
-                    'bg-zinc-700/20 border border-zinc-600/30 text-zinc-300'
-                  }`}>
-                    <span className="skew-x-[6deg] inline-block">{msg.title}</span>
-                  </span>
-                  
-                  {/* Username */}
-                  <span className="font-[family-name:var(--font-outfit)] font-bold text-white text-[11px] tracking-wide">
-                    {msg.user}:
-                  </span>
-                </span>
-                
-                {/* Message Body */}
-                <span className="text-zinc-200 text-xs font-semibold tracking-wide font-sans mt-0.5 inline align-middle">
-                  {msg.text}
-                </span>
+        {!isCollapsed && (
+          <>
+            {/* Chat Board Box */}
+            <div className="h-[135px] overflow-y-auto bg-zinc-950/90 border border-white/5 rounded-xl p-2.5 relative scrollbox article-scroll scroll-smooth pointer-events-auto">
+              <div className="flex flex-col gap-2">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className="text-xs border-b border-white/[0.03] pb-1.5 last:border-0 last:pb-0 leading-relaxed break-words">
+                    <span className="inline-flex items-center gap-1.5 mr-1.5 align-middle select-none">
+                      {/* [all] tag */}
+                      <span className="bg-white/10 border border-white/20 text-white text-[8px] font-black tracking-wide uppercase px-1 rounded">
+                        ALL
+                      </span>
+                      
+                      {/* Title Badges */}
+                      <span className={`text-[8px] font-black tracking-wide uppercase px-1.5 py-0.5 rounded skew-x-[-6deg] shadow-sm ${
+                        msg.title === 'Champion' ? 'bg-white/15 border border-white/30 text-white drop-shadow-[0_0_2px_rgba(255,255,255,0.4)]' :
+                        msg.title === 'DreamTeam' ? 'bg-white/10 border border-white/20 text-zinc-100' :
+                        'bg-zinc-700/20 border border-zinc-600/30 text-zinc-300'
+                      }`}>
+                        <span className="skew-x-[6deg] inline-block">{msg.title}</span>
+                      </span>
+                      
+                      {/* Username */}
+                      <span className="font-[family-name:var(--font-outfit)] font-bold text-white text-[11px] tracking-wide">
+                        {msg.user}:
+                      </span>
+                    </span>
+                    
+                    {/* Message Body */}
+                    <span className="text-zinc-200 text-xs font-semibold tracking-wide font-sans mt-0.5 inline align-middle">
+                      {msg.text}
+                    </span>
+                  </div>
+                ))}
+                <div ref={chatEndRef} />
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-        </div>
+            </div>
 
-        {/* Input Action Panel */}
-        <div className="mt-2.5 flex space-x-2 items-center relative">
-          {/* Emoji button */}
-          <button className="w-9 h-9 bg-zinc-800/80 border border-white/10 hover:bg-zinc-700 hover:border-white/30 text-white rounded-lg flex items-center justify-center transition hover:scale-105 active:scale-95 shadow-md text-sm">
-            😊
-          </button>
-          
-          {/* Text input */}
-          <input 
-            type="text" 
-            className="flex-1 h-9 bg-zinc-950/80 border border-white/10 rounded-lg px-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-sans font-semibold tracking-wide shadow-inner animate-none" 
-            value={chatInput} 
-            onChange={e => setChatInput(e.target.value)} 
-            onKeyDown={e => { if (e.key === 'Enter') onSendMessage(); }}
-            placeholder="Type a message..." 
-          />
-          
-          {/* Send Button */}
-          <button 
-            onClick={onSendMessage}
-            className="h-9 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-xs px-4 rounded-lg shadow-lg hover:shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all skew-x-[-12deg]"
-          >
-            <span className="skew-x-[12deg] flex items-center gap-1">SEND</span>
-          </button>
-        </div>
+            {/* Input Action Panel */}
+            <div className="mt-2.5 flex space-x-2 items-center relative pointer-events-auto">
+              {/* Emoji button */}
+              <button className="w-9 h-9 bg-zinc-800/80 border border-white/10 hover:bg-zinc-700 hover:border-white/30 text-white rounded-lg flex items-center justify-center transition hover:scale-105 active:scale-95 shadow-md text-sm">
+                😊
+              </button>
+              
+              {/* Text input */}
+              <input 
+                type="text" 
+                className="flex-1 h-9 bg-zinc-950/80 border border-white/10 rounded-lg px-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all font-sans font-semibold tracking-wide shadow-inner animate-none" 
+                value={chatInput} 
+                onChange={e => setChatInput(e.target.value)} 
+                onKeyDown={e => { if (e.key === 'Enter') onSendMessage(); }}
+                placeholder="Type a message..." 
+              />
+              
+              {/* Send Button */}
+              <button 
+                onClick={onSendMessage}
+                className="h-9 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-[family-name:var(--font-outfit)] font-black tracking-wider uppercase text-xs px-4 rounded-lg shadow-lg hover:shadow-[0_0_10px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95 transition-all skew-x-[-12deg]"
+              >
+                <span className="skew-x-[12deg] flex items-center gap-1">SEND</span>
+              </button>
+            </div>
+          </>
+        )}
 
       </div>
     </div>

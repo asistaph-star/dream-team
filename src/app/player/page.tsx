@@ -81,12 +81,12 @@ export default function PlayerPage() {
       />
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/5 to-transparent z-0" />
       
-      {/* Header */}
-      <div className="relative z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between min-h-[60px] bg-transparent shrink-0 pr-4 gap-2">
+      {/* Header exactly like screenshot */}
+      <div className="relative z-20 flex items-center justify-between h-[60px] bg-transparent shrink-0 pr-4">
         {/* Fading white line at the bottom */}
         <div className="absolute bottom-0 left-0 w-[60%] h-[1px] bg-gradient-to-r from-white/40 via-white/5 to-transparent pointer-events-none" />
         {/* Left: < Player Bag */}
-        <div className="flex items-center gap-3 pl-4 py-2 sm:py-0">
+        <div className="flex items-center gap-3 pl-4">
           <Link href="/" className="text-white hover:text-gray-300 transition-colors drop-shadow-md">
             <ChevronLeft size={36} strokeWidth={3} />
           </Link>
@@ -94,16 +94,16 @@ export default function PlayerPage() {
         </div>
 
         {/* Right side controls */}
-        <div className="flex items-center h-[44px] w-full sm:w-auto">
+        <div className="flex items-center h-[44px]">
           {/* Owned Players */}
-          <span className="text-[13px] text-gray-500 font-medium tracking-wide mr-4 sm:mr-6 hidden sm:inline">
+          <span className="text-[13px] text-gray-500 font-medium tracking-wide mr-6">
             Owned Players: {roster.length}
           </span>
           
           {/* Filter Button with circling glow animation */}
           <button 
             onClick={handleOpenFilter}
-            className="relative overflow-hidden h-full px-6 sm:px-12 flex items-center justify-center border-l border-white/5 cursor-pointer"
+            className="relative overflow-hidden h-full px-12 flex items-center justify-center border-l border-white/5 cursor-pointer"
           >
             <div className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,transparent_0_270deg,#00ffff_360deg)] animate-spin opacity-90" />
             <div className="absolute inset-[1.5px] bg-gradient-to-b from-[#2096fc] to-[#1a8ff5]" />
@@ -112,13 +112,13 @@ export default function PlayerPage() {
           
           {/* Rarity Dropdown (Quick Filter) */}
           <div 
-            className="relative flex items-center justify-between bg-[#131417] h-full px-3 sm:px-5 border-l border-white/5 shadow-inner w-[120px] sm:w-[160px] cursor-pointer hover:bg-[#1a1c21] transition-colors"
+            className="relative flex items-center justify-between bg-[#131417] h-full px-5 border-l border-white/5 shadow-inner w-[160px] cursor-pointer hover:bg-[#1a1c21] transition-colors"
             onClick={() => setIsRarityOpen(!isRarityOpen)}
           >
-            <span className="text-[13px] font-bold text-gray-400 truncate">
+            <span className="text-[13px] font-bold text-gray-400">
               {activeRarity === 'All' ? 'Rarity' : activeRarity}
             </span>
-            <ChevronDown size={18} className="text-white shrink-0" strokeWidth={3} />
+            <ChevronDown size={18} className="text-white" strokeWidth={3} />
 
             {isRarityOpen && (
               <div className="absolute top-[44px] left-[-1px] w-[calc(100%+1px)] bg-[#131417] border border-white/5 shadow-2xl z-50 flex flex-col">
@@ -138,7 +138,7 @@ export default function PlayerPage() {
       </div>
 
       {/* Main Content Area (Sidebar + Grid) */}
-      <div className="relative z-10 flex flex-col md:flex-row flex-1 overflow-hidden">
+      <div className="relative z-10 flex flex-1 overflow-hidden">
         
         {/* ── Left Sidebar ── */}
         <SidebarTabs
@@ -186,7 +186,7 @@ export default function PlayerPage() {
                   <div 
                     key={player.id} 
                     className={`transform transition-transform hover:-translate-y-1 hover:scale-[1.02] cursor-pointer relative hover:z-[100]`}
-                    style={{ transform: `scale(var(--card-scale, 1))`, transformOrigin: 'top left' }}
+                    style={{ zoom: '1.15' }} 
                   >
                     <div>
                       <PlayerCard player={player} />

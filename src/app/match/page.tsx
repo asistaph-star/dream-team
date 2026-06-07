@@ -42,25 +42,19 @@ import { OvertimeTransitionOverlay } from "@/features/match/components/OvertimeT
 import { MatchExitButton } from "@/features/match/components/MatchExitButton";
 import { BlockAnimationDevToggle } from "@/features/match/components/BlockAnimationDevToggle";
 import { getMatchStyles } from "@/features/match/styles/getMatchStyles";
+import { useGameViewportScale } from "@/lib/hooks/useGameViewportScale";
 
-
-
-
-
-const HOME_COORDS = {
-  SF: { top: 450, left: 200 },
-  C:  { top: 290, left: 160 },
-  PF: { top: 200, left: 340 },
-  SG: { top: 430, left: 420 },
-  PG: { top: 280, left: 500 }
-};
-
-const AWAY_COORDS = {
-  SF: { top: 450, right: 180 },
-  C:  { top: 290, right: 140 },
-  PF: { top: 200, right: 320 },
-  SG: { top: 430, right: 400 },
-  PG: { top: 280, right: 480 }
+const VIRTUAL_POSITIONS: Record<string, { top: number; left: number }> = {
+  "user_SF": { top: 450, left: 200 },
+  "user_C":  { top: 290, left: 160 },
+  "user_PF": { top: 200, left: 340 },
+  "user_SG": { top: 430, left: 420 },
+  "user_PG": { top: 280, left: 500 },
+  "ai_SF": { top: 450, left: 1420 - 180 - 106 },
+  "ai_C":  { top: 290, left: 1420 - 140 - 106 },
+  "ai_PF": { top: 200, left: 1420 - 320 - 106 },
+  "ai_SG": { top: 430, left: 1420 - 400 - 106 },
+  "ai_PG": { top: 280, left: 1420 - 480 - 106 }
 };
 
 export default function MatchPage() {
@@ -126,8 +120,16 @@ export default function MatchPage() {
   const [activeLogTab, setActiveLogTab] = useState<'pbp' | 'stats'>('pbp');
   const [statsTeam, setStatsTeam] = useState<'user' | 'ai'>('user');
   const [statsFilter, setStatsFilter] = useState<'starters' | 'bench'>('starters');
-  const [matchScale, setMatchScale] = useState(1);
-  const [logDim, setLogDim] = useState({ w: 1420, h: 800 });
+  const {
+    scale: matchScale,
+    viewportWidth,
+    virtualXMin,
+    virtualXMax,
+    virtualYMin,
+    virtualYMax,
+    visibleVirtualWidth,
+    visibleVirtualHeight
+  } = useGameViewportScale();
   const [showOTTransition, setShowOTTransition] = useState(false);
   const [showPostStats, setShowPostStats] = useState(false);
   const [shootoutRevealCount, setShootoutRevealCount] = useState(0);
@@ -381,28 +383,6 @@ export default function MatchPage() {
     runSeq();
     return () => { active = false; };
   }, [matchState.activeShotMeter]);
-
-  // Dynamic full-screen scale — fills viewport dynamically to match Lobby Stadium scaling
-  useEffect(() => {
-    const compute = () => {
-      let logW = 1420;
-      let logH = 800;
-      const screenAspect = window.innerWidth / window.innerHeight;
-      const baseAspect = 1420 / 800;
-
-      if (screenAspect > baseAspect) {
-        logW = 800 * screenAspect;
-      } else {
-        logH = 1420 / screenAspect;
-      }
-      
-      setLogDim({ w: logW, h: logH });
-      setMatchScale(window.innerWidth / logW);
-    };
-    compute();
-    window.addEventListener('resize', compute);
-    return () => window.removeEventListener('resize', compute);
-  }, []);
 
   const logEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -938,30 +918,6 @@ export default function MatchPage() {
     const hasFT = ftActive;
     const hasShotMeter = matchState.activeShotMeter && matchState.activeShotMeter.playerId === p.id;
 
-    const offsetX = (logDim.w - 1420) / 2;
-    const offsetY = (logDim.h - 800) / 2;
-
-    let positionStyle: React.CSSProperties = {};
-    if (!isGhost) {
-      if (isAi) {
-        const coords = AWAY_COORDS[displayPos as keyof typeof AWAY_COORDS];
-        if (coords) {
-          positionStyle = {
-            top: `${coords.top + offsetY}px`,
-            right: `${coords.right + offsetX}px`,
-          };
-        }
-      } else {
-        const coords = HOME_COORDS[displayPos as keyof typeof HOME_COORDS];
-        if (coords) {
-          positionStyle = {
-            top: `${coords.top + offsetY}px`,
-            left: `${coords.left + offsetX}px`,
-          };
-        }
-      }
-    }
-
     const isCourtDragged = draggingPlayerId === p.id;
     const isCourtDragOver = dragHoverSlotId === p.id && draggingPlayerId && draggingPlayerId !== p.id;
     const dragClass = isCourtDragged
@@ -970,16 +926,49 @@ export default function MatchPage() {
       ? 'shadow-[0_0_25px_#06b6d4] scale-105 border-cyan-400 ring-4 ring-cyan-400/50 z-50'
       : '';
 
+    // Spacing and interpolation to prevent card overlaps on narrow viewports
+    const userOrder = ['C', 'SF', 'PF', 'SG', 'PG'];
+    const aiOrder = ['PG', 'SG', 'PF', 'SF', 'C'];
+    const index = isAi ? aiOrder.indexOf(displayPos) : userOrder.indexOf(displayPos);
+    
+    const basePos = VIRTUAL_POSITIONS[`${isAi ? 'ai' : 'user'}_${displayPos}`];
+    const origLeft = basePos ? basePos.left : 200;
+    const origTop = basePos ? basePos.top : 200;
+    
+    const pad = 15;
+    const playerWidth = 106;
+    const playerHeight = 110;
+    const halfWidth = visibleVirtualWidth / 2;
+    
+    let spacedLeft = 0;
+    if (!isAi) {
+      // User half
+      const leftBoundary = virtualXMin + pad;
+      const rightBoundary = virtualXMin + halfWidth - playerWidth - 10;
+      spacedLeft = leftBoundary + (index * (rightBoundary - leftBoundary)) / 4;
+    } else {
+      // AI half
+      const leftBoundary = virtualXMin + halfWidth + 10;
+      const rightBoundary = virtualXMin + visibleVirtualWidth - playerWidth - pad;
+      spacedLeft = leftBoundary + (index * (rightBoundary - leftBoundary)) / 4;
+    }
+    
+    // Smooth interpolation factor between original layout and narrow spacing
+    const t = Math.max(0, Math.min(1, (1200 - visibleVirtualWidth) / 500));
+    const finalLeft = origLeft + t * (spacedLeft - origLeft);
+    const finalTop = Math.max(virtualYMin + 15, Math.min(virtualYMax - 15 - playerHeight, origTop));
+
     return (
       <MatchPlayerUnit
         player={p}
         dataSlotId={!isAi ? p.id : undefined}
         className={`player-unit ${posClass} ${dragClass} ${!isAi && !draggingPlayerId ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{
-          ...positionStyle,
-          transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)',
-          transformOrigin: 'bottom center',
-          ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {})
+        style={{ 
+          top: `${finalTop}px`, 
+          left: `${finalLeft}px`, 
+          transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)', 
+          transformOrigin: 'bottom center', 
+          ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) 
         }}
         onPointerDown={(e) => {
           if (!isAi && !showSubModal) {
@@ -1045,6 +1034,8 @@ export default function MatchPage() {
   if (viewState === 'SIMULATING' || viewState === 'HALFTIME') {
     return (
       <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
+        {/* Blurred stadium background to replace black letterbox bars */}
+        <div className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" style={{ backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")' }} />
         
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
@@ -1065,18 +1056,12 @@ export default function MatchPage() {
           />
         )}
 
-        <div
-          className="stadium"
+        {/* 1. GAME WORLD LAYER (scales with cover scaling) */}
+        <div 
+          className="stadium absolute top-1/2 left-1/2 shadow-2xl pointer-events-auto"
           style={{
-            width: `${logDim.w}px`,
-            height: `${logDim.h}px`,
-            transform: `scale(${matchScale})`,
-            transformOrigin: "center center",
-            backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")',
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "center center",
-            backgroundSize: "cover",
-            backgroundColor: "black"
+            transform: `translate(-50%, -50%) scale(${matchScale})`,
+            transformOrigin: "center center"
           }}
         >
             {/* DEV TOGGLE FOR BLOCK ANIMATION */}
@@ -1084,31 +1069,6 @@ export default function MatchPage() {
               blockAnimationType={blockAnimationType} 
               setBlockAnimationType={setBlockAnimationType} 
             />
-            {/* TOP HUD */}
-            <MatchScoreboard
-              matchState={matchState}
-              viewState={viewState}
-              currentLineup={currentLineup}
-              aiTeam={aiTeam}
-              teamOffense={teamOffense}
-              teamDefense={teamDefense}
-              displayUserScore={displayUserScore}
-              displayAiScore={displayAiScore}
-              displayClock={displayClock}
-              displayPossClock={displayPossClock}
-              halftimeCountdown={halftimeCountdown}
-              draggingPlayerId={draggingPlayerId}
-              dragHoverSlotId={dragHoverSlotId}
-              selectedDifficulty={selectedDifficulty}
-              isClutchActive={isClutchActive}
-              isClutchHigh={isClutchHigh}
-              isHomeGame={isHomeGame}
-              uiRallyMode={uiRallyMode}
-              userMomPct={userMomPct}
-            />
-
-            {/* EXIT BUTTON */}
-            <MatchExitButton onExit={handleReturn} />
 
             {/* PLAYERS */}
             {currentLineup.map((p, idx) => renderPlayerCard(p, false, SLOT_POSITIONS[idx]))}
@@ -1121,8 +1081,6 @@ export default function MatchPage() {
             {/* SCORING RUN OVERLAY */}
             <RunOverlay activeRunOverlay={activeRunOverlay} aiTeamName={aiTeam.name} />
 
-            {/* FREE THROW OVERLAY — removed from top center to avoid overlap with TV scoreboard, rendered directly on the shooting player card */}
-
             {/* OT TRANSITION OVERLAY */}
             <OvertimeTransitionOverlay show={showOTTransition} quarter={matchState.quarter} />
 
@@ -1132,10 +1090,42 @@ export default function MatchPage() {
               shootoutRevealCount={shootoutRevealCount}
               aiTeamName={aiTeam.name}
             />
+        </div>
 
-            {/* BOTTOM HUD CONTAINER (Groups Chat, Logs, and Actions tightly) */}
-            <div className="absolute bottom-6 left-6 right-6 z-50 flex gap-3 items-end xl:justify-center">
-                
+        {/* 2. UI SAFE OVERLAY LAYER */}
+        <div className="absolute inset-0 w-full h-[100dvh] pointer-events-none z-50 overflow-hidden">
+            {/* EXIT BUTTON */}
+            <div className="pointer-events-auto">
+              <MatchExitButton onExit={handleReturn} />
+            </div>
+
+            {/* TOP HUD */}
+            <div className="pointer-events-auto">
+              <MatchScoreboard
+                matchState={matchState}
+                viewState={viewState}
+                currentLineup={currentLineup}
+                aiTeam={aiTeam}
+                teamOffense={teamOffense}
+                teamDefense={teamDefense}
+                displayUserScore={displayUserScore}
+                displayAiScore={displayAiScore}
+                displayClock={displayClock}
+                displayPossClock={displayPossClock}
+                halftimeCountdown={halftimeCountdown}
+                draggingPlayerId={draggingPlayerId}
+                dragHoverSlotId={dragHoverSlotId}
+                selectedDifficulty={selectedDifficulty}
+                isClutchActive={isClutchActive}
+                isClutchHigh={isClutchHigh}
+                isHomeGame={isHomeGame}
+                uiRallyMode={uiRallyMode}
+                userMomPct={userMomPct}
+              />
+            </div>
+
+            {/* BOTTOM HUD CONTAINER */}
+            <div className="absolute bottom-6 left-6 right-6 z-50 flex gap-3 items-end xl:justify-center pointer-events-auto">
                 <MatchBottomHUD
                   activeLogTab={activeLogTab}
                   setActiveLogTab={setActiveLogTab}
@@ -1152,9 +1142,7 @@ export default function MatchPage() {
                   roster={roster}
                 />
                 
-                {/* BOTTOM HUD - ACTION BAR Container */}
                 <div className="flex gap-2 items-end shrink-0">
-                    
                     <MatchActionBar
                       openModal={openModal}
                       handleTimeout={handleTimeout}
@@ -1167,58 +1155,61 @@ export default function MatchPage() {
                     />
                 </div>
             </div>
+        </div>
 
+        {/* MODALS */}
+        <div className="pointer-events-auto">
+          {/* ENERGY DRINK MODAL */}
+          <EnergyDrinkModal
+            show={showEnergyDrinkModal}
+            onClose={closeModal}
+            currentLineup={currentLineup}
+            energyDrinkPick={energyDrinkPick}
+            setEnergyDrinkPick={setEnergyDrinkPick}
+            onConfirm={handleEnergyDrinkConfirm}
+            matchState={matchState}
+            getPlayerMaxStamina={getPlayerMaxStamina}
+            getStaminaPercent={getStaminaPercent}
+          />
 
-            {/* ENERGY DRINK MODAL */}
-            <EnergyDrinkModal
-              show={showEnergyDrinkModal}
-              onClose={closeModal}
-              currentLineup={currentLineup}
-              energyDrinkPick={energyDrinkPick}
-              setEnergyDrinkPick={setEnergyDrinkPick}
-              onConfirm={handleEnergyDrinkConfirm}
-              matchState={matchState}
-              getPlayerMaxStamina={getPlayerMaxStamina}
-              getStaminaPercent={getStaminaPercent}
-            />
+          {/* STRATEGY MODAL */}
+          <StrategyModal
+            show={showStrategyModal}
+            onClose={closeModal}
+            matchState={matchState}
+            offCooldownEnd={offCooldownEnd}
+            defCooldownEnd={defCooldownEnd}
+            cooldownNow={cooldownNow}
+            onOffStrategyChange={handleOffStrategyChange}
+            onDefStrategyChange={handleDefStrategyChange}
+            offensiveStrategies={OFFENSIVE_STRATEGIES}
+            defensiveStrategies={DEFENSIVE_STRATEGIES}
+          />
 
-            {/* STRATEGY MODAL */}
-            <StrategyModal
-              show={showStrategyModal}
-              onClose={closeModal}
-              matchState={matchState}
-              offCooldownEnd={offCooldownEnd}
-              defCooldownEnd={defCooldownEnd}
-              cooldownNow={cooldownNow}
-              onOffStrategyChange={handleOffStrategyChange}
-              onDefStrategyChange={handleDefStrategyChange}
-              offensiveStrategies={OFFENSIVE_STRATEGIES}
-              defensiveStrategies={DEFENSIVE_STRATEGIES}
-            />
-
-            <SubstitutionModal
-              show={showSubModal}
-              onClose={closeModal}
-              matchRoster={matchRoster}
-              currentLineup={currentLineup}
-              activeLineup={activeLineup}
-              activeReserves={activeReserves}
-              matchState={matchState}
-              cooldownNow={cooldownNow}
-              subCooldownEnd={subCooldownEnd}
-              subCourtPick={subCourtPick}
-              subBenchPick={subBenchPick}
-              onConfirm={handleSubConfirm}
-              dragHoverSlotId={dragHoverSlotId}
-              draggingPlayerId={draggingPlayerId}
-              setPotentialDragPlayerId={setPotentialDragPlayerId}
-              setDragStartPos={setDragStartPos}
-              computeEffective={computeEffective}
-              SLOT_POSITIONS={SLOT_POSITIONS}
-              courtPositions={courtPositions}
-              getPlayerImage={getPlayerImage}
-              getPlayerMaxStamina={getPlayerMaxStamina}
-            />
+          {/* SUBSTITUTION MODAL */}
+          <SubstitutionModal
+            show={showSubModal}
+            onClose={closeModal}
+            matchRoster={matchRoster}
+            currentLineup={currentLineup}
+            activeLineup={activeLineup}
+            activeReserves={activeReserves}
+            matchState={matchState}
+            cooldownNow={cooldownNow}
+            subCooldownEnd={subCooldownEnd}
+            subCourtPick={subCourtPick}
+            subBenchPick={subBenchPick}
+            onConfirm={handleSubConfirm}
+            dragHoverSlotId={dragHoverSlotId}
+            draggingPlayerId={draggingPlayerId}
+            setPotentialDragPlayerId={setPotentialDragPlayerId}
+            setDragStartPos={setDragStartPos}
+            computeEffective={computeEffective}
+            SLOT_POSITIONS={SLOT_POSITIONS}
+            courtPositions={courtPositions}
+            getPlayerImage={getPlayerImage}
+            getPlayerMaxStamina={getPlayerMaxStamina}
+          />
         </div>
       </div>
     );

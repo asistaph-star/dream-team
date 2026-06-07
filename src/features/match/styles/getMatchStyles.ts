@@ -1,8 +1,10 @@
 export const getMatchStyles = (matchScale: number): string => `
         .stadium {
-            min-width: 1420px; flex-shrink: 0; position: relative;
+            width: 1420px; height: 800px; min-width: 1420px; flex-shrink: 0;
+            background-image: url('https://www.dreamteamph.com/bg/match_stadium-v2.webp');
+            background-size: 100% 100%; position: relative;
         }
-        .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; pointer-events: auto; }
+        .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; }
         .player-unit:hover { z-index: 100; }
         .headshot { width: 106px; height: 100px; background-size: cover; background-repeat: no-repeat; background-position: center; position: absolute; bottom: 26px; left: 0; z-index: 30; }
         .card-bottom-wrapper { width: 106px; height: 34px; position: absolute; bottom: 0; left: 0; box-sizing: border-box; background: rgba(15, 15, 20, 0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-top: 1px solid rgba(255, 255, 255, 0.05); border-radius: 0 0 8px 8px; display: flex; flex-direction: column; overflow: hidden; z-index: 40; }
@@ -29,6 +31,11 @@ export const getMatchStyles = (matchScale: number): string => `
         .tt-stats b { color: #eab308; font-size: 12px; }
         .tt-hot { text-align: center; font-size: 10px; color: #f59e0b; padding: 4px; background: rgba(245,158,11,0.1); font-weight: bold; }
         .tt-rarity { text-align: center; font-size: 10px; font-weight: 900; padding: 4px 0 6px; }
+
+        .h-sf, .h-c, .h-pf, .h-sg, .h-pg,
+        .a-sf, .a-c, .a-pf, .a-sg, .a-pg {
+            /* Positioned dynamically in React component style props */
+        }
 
         @keyframes float-up {
             0% { transform: translateY(0); opacity: 1; }
