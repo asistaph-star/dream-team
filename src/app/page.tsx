@@ -44,7 +44,6 @@ export default function AuthenticLobby() {
   const [selectedGlobalPlayer, setSelectedGlobalPlayer] = useState<Player | null>(null);
   const [isAscending, setIsAscending] = useState(false);
 
-  const [scale, setScale] = useState(1);
   const [time, setTime] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [showCoachModal, setShowCoachModal] = useState(false);
@@ -60,19 +59,27 @@ export default function AuthenticLobby() {
   const hasDraggedRef = useRef(false);
 
   const defaultCoords = {
-    SF: { top: 320, left: 279 },
-    C: { top: 242, left: 451 },
-    PF: { top: 243, left: 661 },
-    SG: { top: 424, left: 515 },
-    PG: { top: 370, left: 816 }
+    SF: { top: "40%", left: "19.6%" },
+    C: { top: "30.3%", left: "31.8%" },
+    PF: { top: "30.4%", left: "46.5%" },
+    SG: { top: "53%", left: "36.3%" },
+    PG: { top: "46.3%", left: "57.5%" }
   };
-  const [customCoords, setCustomCoords] = useState(defaultCoords);
+  const [customCoords, setCustomCoords] = useState<Record<string, { top: string; left: string }>>(defaultCoords);
 
   useEffect(() => {
     const saved = localStorage.getItem("courtLayout");
     if (saved) {
       try {
-        setCustomCoords(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        const converted: Record<string, { top: string; left: string }> = {};
+        for (const [pos, val] of Object.entries(parsed) as [string, any][]) {
+          converted[pos] = {
+            top: typeof val.top === 'number' ? `${(val.top / 800) * 100}%` : val.top,
+            left: typeof val.left === 'number' ? `${(val.left / 1420) * 100}%` : val.left,
+          };
+        }
+        setCustomCoords(converted);
       } catch(e) {}
     }
   }, []);
@@ -137,7 +144,7 @@ export default function AuthenticLobby() {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos, scale, roster]);
+  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos, roster]);
 
   // NBA 2K Free Agents Market States
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -271,19 +278,7 @@ export default function AuthenticLobby() {
     }
   };
 
-  useEffect(() => {
-    const handleResize = () => {
-      const s = Math.min(window.innerWidth / 1420, window.innerHeight / 800);
-      setScale(s);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, []);
+  // Removed resize listener scaled dimension calculations
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -326,7 +321,7 @@ export default function AuthenticLobby() {
           }
         }}
         className={`absolute pointer-events-auto transition-transform ${isHovered ? 'scale-110 z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ top: `${coords.top}px`, left: `${coords.left}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
+        style={{ top: coords.top, left: coords.left, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
       >
         <div className="flex flex-col items-center relative">
           
@@ -365,13 +360,7 @@ export default function AuthenticLobby() {
     .filter((p): p is Player => p !== undefined);
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-black flex items-center justify-center pointer-events-none">
-      {/* Blurred stadium background to replace black letterbox bars */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" 
-        style={{ backgroundImage: 'url("/bg/stadium-v9.png")' }} 
-      />
-
+    <main className="relative w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center pointer-events-none">
       {draggingPlayerId && (
         <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
       )}
@@ -434,15 +423,10 @@ export default function AuthenticLobby() {
         />
       )}
       
-      <div style={{ width: `${1420 * scale}px`, height: `${800 * scale}px`, position: 'relative' }}>
       <div
         id="stadium-container"
-        className="relative pointer-events-auto shadow-2xl"
+        className="absolute inset-0 pointer-events-auto shadow-2xl"
         style={{
-          width: '1420px',
-          height: '800px',
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
           backgroundImage: 'url("/bg/stadium-v9.png")',
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center center",
@@ -679,7 +663,6 @@ export default function AuthenticLobby() {
           onSignPlayer={handleSignPlayer}
         />
 
-      </div>
       </div>
     </main>
   );

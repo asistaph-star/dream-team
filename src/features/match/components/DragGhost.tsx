@@ -31,7 +31,7 @@ export const DragGhost: React.FC<DragGhostProps> = ({
   return (
     <div
       id="drag-clone"
-      className="absolute pointer-events-none z-[9999] w-[120px] h-[124px]"
+      className="fixed pointer-events-none z-[9999] w-[120px] h-[124px]"
       style={{
         left: pointerPos.x,
         top: pointerPos.y,
