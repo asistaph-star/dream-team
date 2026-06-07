@@ -274,23 +274,19 @@ export default function AuthenticLobby() {
 
   useEffect(() => {
     const handleResize = () => {
-      let logW = 1420;
-      let logH = 800;
-      const screenAspect = window.innerWidth / window.innerHeight;
-      const baseAspect = 1420 / 800;
-
-      if (screenAspect > baseAspect) {
-        logW = 800 * screenAspect;
-      } else {
-        logH = 1420 / screenAspect;
-      }
-      
-      setLogDim({ w: logW, h: logH });
-      setScale(window.innerWidth / logW);
+      // Contain-fit: always pick the smaller ratio so the whole
+      // 1420x800 stage fits inside the window (letterbox/pillarbox).
+      const s = Math.min(window.innerWidth / 1420, window.innerHeight / 800);
+      setLogDim({ w: 1420, h: 800 });
+      setScale(s);
     };
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -440,19 +436,21 @@ export default function AuthenticLobby() {
         />
       )}
       
+      {/* Reserved box: scaled dimensions take layout space */}
+      <div style={{ width: `${1420 * scale}px`, height: `${800 * scale}px`, position: 'relative' }}>
       <div
         id="stadium-container"
         className="relative pointer-events-auto shadow-2xl"
         style={{
-          width: `${logDim.w}px`,
-          height: `${logDim.h}px`,
+          width: '1420px',
+          height: '800px',
           transform: `scale(${scale})`,
-          transformOrigin: "center center",
+          transformOrigin: 'top left',
           backgroundImage: 'url("/bg/stadium-v9.png")',
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center center",
-          backgroundSize: "cover",
-          backgroundColor: "black"
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center center',
+          backgroundSize: 'cover',
+          backgroundColor: 'black'
         }}
       >
 
@@ -684,6 +682,7 @@ export default function AuthenticLobby() {
           onSignPlayer={handleSignPlayer}
         />
 
+      </div>
       </div>
     </main>
   );
