@@ -410,7 +410,7 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               )}
 
               {activeTab === "attributes" && (
-                <div className="grid grid-cols-3 gap-x-6 gap-y-4 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-4 pb-4">
                   <div className="flex flex-col gap-5">
                     {groupedAttributes.slice(0, 2).map(group => (
                       <div key={group.title}>
