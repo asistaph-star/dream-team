@@ -1,10 +1,8 @@
 export const getMatchStyles = (matchScale: number): string => `
         .stadium {
-            width: 1420px; height: 800px; min-width: 1420px; flex-shrink: 0;
-            background-image: url('https://www.dreamteamph.com/bg/match_stadium-v2.webp');
-            background-size: 100% 100%; position: relative;
+            min-width: 1420px; flex-shrink: 0; position: relative;
         }
-        .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; }
+        .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; pointer-events: auto; }
         .player-unit:hover { z-index: 100; }
         .headshot { width: 106px; height: 100px; background-size: cover; background-repeat: no-repeat; background-position: center; position: absolute; bottom: 26px; left: 0; z-index: 30; }
         .card-bottom-wrapper { width: 106px; height: 34px; position: absolute; bottom: 0; left: 0; box-sizing: border-box; background: rgba(15, 15, 20, 0.85); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border-top: 1px solid rgba(255, 255, 255, 0.05); border-radius: 0 0 8px 8px; display: flex; flex-direction: column; overflow: hidden; z-index: 40; }
@@ -31,18 +29,6 @@ export const getMatchStyles = (matchScale: number): string => `
         .tt-stats b { color: #eab308; font-size: 12px; }
         .tt-hot { text-align: center; font-size: 10px; color: #f59e0b; padding: 4px; background: rgba(245,158,11,0.1); font-weight: bold; }
         .tt-rarity { text-align: center; font-size: 10px; font-weight: 900; padding: 4px 0 6px; }
-
-        .h-sf { top: 450px; left: 200px; }
-        .h-c  { top: 290px; left: 160px; }
-        .h-pf { top: 200px; left: 340px; }
-        .h-sg { top: 430px; left: 420px; }
-        .h-pg { top: 280px; left: 500px; }
-
-        .a-sf { top: 450px; right: 180px; }
-        .a-c  { top: 290px; right: 140px; }
-        .a-pf { top: 200px; right: 320px; }
-        .a-sg { top: 430px; right: 400px; }
-        .a-pg { top: 280px; right: 480px; }
 
         @keyframes float-up {
             0% { transform: translateY(0); opacity: 1; }
