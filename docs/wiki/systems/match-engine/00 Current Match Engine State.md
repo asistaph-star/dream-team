@@ -59,6 +59,7 @@ All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run be
 | `test_match_realism_calibration.ts` | Match Realism Calibration, baseline scores, IQ/Hustle impact, and symmetry |
 | `test_match_skill_event_ui_final_qa.ts` | Match skill event wording, clean prefixes, and active mark descriptions |
 | `test_court_vision_mechanic_ownership.ts` | Court Vision rhythm-only ownership, Hooked belongs to Lock Chain only, Debt is deprecated |
+| `test_full_skill_ownership_sweep.ts` | All 15 family mark ownership, drain ownership, legacy X branches, toxic drain values, approved Tilted sources |
 | *(more -- see `src/scripts/validation/` for full list)* | |
 
 ---

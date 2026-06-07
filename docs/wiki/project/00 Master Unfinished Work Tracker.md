@@ -369,6 +369,7 @@ All core special skill family implementations are complete:
 - Phase AttributeModelRefinement: Completed and verified.
 - Phase MatchEngineWiring: Completed and verified.
 - Phase CourtVisionMechanicOwnershipAudit: Completed and verified. Removed legacy Hooked mark applications from Court Vision Engine in shotPossessionResolver.ts. Hooked now belongs exclusively to Lock Chain.
+- Phase FullSkillOwnershipSweep: Completed and verified. All 15 learned families comply with ownership rules. Zero violations found. 20-check validation script added.
 
 Next phases:
 1. **Phase UI**: Update hex chart, player detail panels, and compare card overlay components to display the new attributes.las.
