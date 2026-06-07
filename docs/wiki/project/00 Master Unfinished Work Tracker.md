@@ -368,6 +368,7 @@ All core special skill family implementations are complete:
 - Phase NBADataPipelineFinalLock: Completed and verified.
 - Phase AttributeModelRefinement: Completed and verified.
 - Phase MatchEngineWiring: Completed and verified.
+- Phase CourtVisionMechanicOwnershipAudit: Completed and verified. Removed legacy Hooked mark applications from Court Vision Engine in shotPossessionResolver.ts. Hooked now belongs exclusively to Lock Chain.
 
 Next phases:
 1. **Phase UI**: Update hex chart, player detail panels, and compare card overlay components to display the new attributes.las.

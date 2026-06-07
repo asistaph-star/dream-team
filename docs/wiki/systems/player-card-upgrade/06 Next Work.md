@@ -35,7 +35,8 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | PlayerStorageVisualQA | Done (visual QA, card badge layouts, skill badge color category, and warning formats polished) |
 | SkillDescriptionFinalQA | Done (skill descriptions, tooltips, catalog text, category labels audited and cleaned) |
 | MatchSkillEventUIFinalQA | Done (verified match screen wording, cleaned legacy prefixes, added mark descriptions to tooltip, ensured Court Vision Engine has rhythm-based wording) |
-| Validation Suite Status | Done (all 48 tests passing) |
+| CourtVisionMechanicOwnershipAudit | Done (removed legacy Hooked mark applications from Court Vision Engine in shotPossessionResolver.ts, Hooked belongs only to Lock Chain, Debt remains deprecated) |
+| Validation Suite Status | Done (all 49 tests passing) |
 
 ---
 

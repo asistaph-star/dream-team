@@ -31,8 +31,7 @@ import {
 import {
   rollBaseSkill,
   rollSpecialMechanic,
-  hasBaseSkill,
-  addMark
+  hasBaseSkill
 } from '../../skills/skillResolver';
 import { recoverSkillStamina } from './skillHooks';
 import {
@@ -219,8 +218,6 @@ export function resolveUserShotAttempt(
           const chainPassIdentity = getAssistRating(h);
           return 0.90 + (chainPassIdentity / 100) * 0.20;
         })) {
-          const debtTarget = [...aiLineup].sort((a_p, b_p) => (draft.playerStamina[a_p.id] ?? 100) - (draft.playerStamina[b_p.id] ?? 100))[0];
-          draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
           ctx.draft.events.push(makeEvent(newQuarter, newClock, "Court Vision Engine builds passing rhythm.", true));
         }
       }
@@ -413,8 +410,6 @@ export function resolveAiShotAttempt(
             const chainPassIdentity = getAssistRating(h);
             return 0.90 + (chainPassIdentity / 100) * 0.20;
           })) {
-            const debtTarget = [...userLineup].sort((a_p, b_p) => (draft.playerStamina[a_p.id] ?? 100) - (draft.playerStamina[b_p.id] ?? 100))[0];
-            draft.skillMarks = addMark(draft.skillMarks, draft.markImmunity, debtTarget.id, "Hooked", "Court Vision Engine", 3);
             ctx.draft.events.push(makeEvent(newQuarter, newClock, "Court Vision Engine builds passing rhythm.", false));
           }
         }

@@ -8,7 +8,7 @@ Welcome to the Match Engine documentation directory. This is the single source o
 
 * **[[01 Match Gameplay Architecture]]**: UI layouts, responsive scaling scale factors (black side bars fix), premium animations, and viewport containment.
 * **[[02 Match Simulation Balance]]**: Smart Fatigue (stamina reweighting), possession timing calibration, crowd energy/rally rebalances, 3PT additive bonus caps, and the frontend-equivalent balance harness (`sim_accurate_mock.ts`).
-* **[[03 Marks And Stamina]]**: Marks definition (Exposed, Debt, Hooked, Pinned, Static, Tilted), same-mark immunity, mark decay, stamina drain scaling, and action stamina costs.
+* **[[03 Marks And Stamina]]**: Marks definition (Exposed, Hooked, Pinned, Static, Tilted; Debt is deprecated), same-mark immunity, mark decay, stamina drain scaling, and action stamina costs.
 * **[[04 Skill Trigger Pipeline]]**: Complete Engine trigger rate boosts, `rollBaseSkill()`, and mechanic-aware `rollSpecialMechanic()` pipelines.
 * **[[../player-card-upgrade/SkillAudit-Final-1 Base And Legacy Skill Status Lock]]**: Complete audit and status lock mapping of all 22 Base Skills and 15 legacy Special Skills.
 
@@ -58,7 +58,8 @@ All regression scripts use `npx ts-node --project tsconfig.scripts.json`. Run be
 | `test_stamina_decay_helpers.ts` | staminaDecay.ts pure helper unit tests (17/17) |
 | `test_match_realism_calibration.ts` | Match Realism Calibration, baseline scores, IQ/Hustle impact, and symmetry |
 | `test_match_skill_event_ui_final_qa.ts` | Match skill event wording, clean prefixes, and active mark descriptions |
-| *(more — see `src/scripts/validation/` for full list)* | |
+| `test_court_vision_mechanic_ownership.ts` | Court Vision rhythm-only ownership, Hooked belongs to Lock Chain only, Debt is deprecated |
+| *(more -- see `src/scripts/validation/` for full list)* | |
 
 ---
 
@@ -78,6 +79,27 @@ These must never change without an explicit audit + full regression run:
 ## Blocked / Intentionally Not Implemented
 
 None. All 15 planned learned special skill families and mechanics are now fully implemented, integrated, and verified.
+
+---
+
+## Mark Ownership Rules
+
+| Mark | Owner | Source |
+|---|---|---|
+| Hooked | LOCK_CHAIN_HOOKED | Lock Chain only (userPossessionResolver.ts, aiPossessionResolver.ts) |
+| Exposed | DEEP_STRIKE | Deep Strike only |
+| Pinned | DEFENSIVE_ANCHOR | Defensive Anchor only |
+| Static | GAMEPLAN_JAMMER | Gameplan Jammer only |
+| Tilted | FLOP | Flop only |
+| Debt | (deprecated) | Not applied by any active skill |
+
+**Court Vision Engine** operates exclusively as a rhythm/assist mechanic:
+- Passing rhythm event messages
+- Bounded shot quality bonuses in possession resolvers
+- Maps to COURT_VISION_RHYTHM_BOOST only
+- No mark application (no Debt, no Hooked)
+- No stamina drain
+- Phase CourtVisionMechanicOwnershipAudit removed legacy Hooked applications from shotPossessionResolver.ts
 
 ---
 
