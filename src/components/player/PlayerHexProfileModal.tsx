@@ -410,13 +410,13 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
               )}
 
               {activeTab === "attributes" && (
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6 pb-4">
-                  <div className="flex flex-col gap-6">
-                    {groupedAttributes.slice(0, 3).map(group => (
+                <div className="grid grid-cols-3 gap-x-6 gap-y-4 pb-4">
+                  <div className="flex flex-col gap-5">
+                    {groupedAttributes.slice(0, 2).map(group => (
                       <div key={group.title}>
-                        <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                        <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-1">
                           <div className={`w-1 h-3 ${group.color} skew-x-[-15deg]`} />
-                          <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
+                          <h3 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {group.stats.map(stat => (
@@ -435,12 +435,36 @@ export function PlayerHexProfileModal({ player: initialPlayer, onClose, onStarUp
                     ))}
                   </div>
 
-                  <div className="flex flex-col gap-6">
-                    {groupedAttributes.slice(3).map(group => (
+                  <div className="flex flex-col gap-5">
+                    {groupedAttributes.slice(2, 4).map(group => (
                       <div key={group.title}>
-                        <div className="flex items-center gap-3 mb-2 border-b border-white/5 pb-1.5">
+                        <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-1">
                           <div className={`w-1 h-3 ${group.color} skew-x-[-15deg]`} />
-                          <h3 className="text-xs font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
+                          <h3 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {group.stats.map(stat => (
+                            <div key={stat.label} className="flex flex-col gap-1">
+                              <div className="flex justify-between items-end">
+                                <span className="text-[11px] font-semibold text-zinc-300 capitalize">{stat.label.toLowerCase()}</span>
+                                <span className="text-[12px] font-bold text-white font-mono leading-none">{stat.val}</span>
+                              </div>
+                              <div className="w-full h-[3px] bg-white/10 rounded-sm overflow-hidden transform-gpu">
+                                <div className={`h-full ${group.color.replace('bg-', 'bg-')} transition-all duration-1000 ease-out`} style={{ width: `${Math.min((stat.val / attributeVisualMax) * 100, 100)}%` }} />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-5">
+                    {groupedAttributes.slice(4).map(group => (
+                      <div key={group.title}>
+                        <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-1">
+                          <div className={`w-1 h-3 ${group.color} skew-x-[-15deg]`} />
+                          <h3 className="text-[11px] font-black text-white/70 uppercase tracking-[0.2em]">{group.title}</h3>
                         </div>
                         <div className="flex flex-col gap-1.5">
                           {group.stats.map(stat => (
