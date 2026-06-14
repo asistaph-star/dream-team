@@ -106,14 +106,13 @@ export function MatchScoreboard({
     return 'to-amber-950/40';
   };
 
-  const { viewportWidth } = useGameViewportScale();
-  const scaleFactor = viewportWidth < 760 ? Math.max(0.6, (viewportWidth - 24) / 760) : 1;
+  const { uiScale } = useGameViewportScale();
 
   return (
     <div 
       className="absolute top-8 left-1/2 flex items-start gap-10 z-50 transition-transform duration-300"
       style={{
-        transform: `translateX(-50%) scale(${scaleFactor})`,
+        transform: `translateX(-50%) scale(${uiScale})`,
         transformOrigin: "top center"
       }}
     >

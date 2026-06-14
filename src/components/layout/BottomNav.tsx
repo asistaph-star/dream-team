@@ -15,6 +15,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
+import { useGameViewportScale } from "@/lib/hooks/useGameViewportScale";
+
 const navItems = [
   { icon: Package, label: "Warehouse", href: "/inventory", locked: false },
   { icon: ShoppingCart, label: "Shop", href: "/shop", locked: true },
@@ -28,6 +30,7 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { uiScale } = useGameViewportScale();
 
   // Hub-and-Spoke Navigation: Only show the BottomNav on the main Stadium page
   // Subpages have a '<' back button to return to the hub, keeping UI clean.
@@ -36,10 +39,11 @@ export function BottomNav() {
   return (
     <nav 
       id="global-bottom-nav"
-      className="fixed z-40 bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden"
+      className="fixed z-40 bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       style={{
         left: "50%",
-        transform: "translateX(-50%)",
+        transform: `translateX(-50%) scale(${uiScale})`,
+        transformOrigin: "bottom center",
         bottom: "var(--bottom-safe-gap)",
         height: "var(--bottom-nav-height)",
         width: "min(100vw - 24px, 900px)"

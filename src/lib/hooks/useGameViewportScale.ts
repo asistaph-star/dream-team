@@ -10,6 +10,7 @@ export interface GameViewportScale {
   virtualYMax: number;
   visibleVirtualWidth: number;
   visibleVirtualHeight: number;
+  uiScale: number;
 }
 
 export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
@@ -23,6 +24,7 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
     virtualYMax: baseHeight,
     visibleVirtualWidth: baseWidth,
     visibleVirtualHeight: baseHeight,
+    uiScale: 1,
   });
 
   useEffect(() => {
@@ -44,6 +46,11 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
       const virtualYMin = (baseHeight - visibleVirtualHeight) / 2;
       const virtualYMax = (baseHeight + visibleVirtualHeight) / 2;
       
+      // UI Scale calculation for responsive shrinking without bars
+      const wScale = w / 1280;
+      const hScale = h / 760;
+      const uiScale = Math.max(0.55, Math.min(1, Math.min(wScale, hScale)));
+      
       setDimensions({
         scale,
         viewportWidth: w,
@@ -54,6 +61,7 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
         virtualYMax,
         visibleVirtualWidth,
         visibleVirtualHeight,
+        uiScale,
       });
     };
 

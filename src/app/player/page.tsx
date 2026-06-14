@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlayerCard } from "@/components/player/PlayerCard";
 import { PlayerPosition, PlayerRarity } from "@/lib/types/player";
 import { ChevronLeft, ChevronDown, Search, ArrowDownUp } from "lucide-react";
@@ -17,6 +17,16 @@ export default function PlayerPage() {
   const { roster, activeLineup, activeReserves } = useGameState();
   const [activeTab, setActiveTab] = useState<Tab>('ALL');
   const [isRarityOpen, setIsRarityOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Active Filter States
   const [activeRarity, setActiveRarity] = useState<PlayerRarity | 'All'>('All');
@@ -137,26 +147,49 @@ export default function PlayerPage() {
         </div>
       </div>
 
+      {/* Mobile Horizontal Tabs */}
+      {isMobile && (
+        <div className="w-full flex overflow-x-auto no-scrollbar gap-1.5 px-4 py-2.5 bg-black/25 border-b border-white/5 relative z-10 shrink-0">
+          {(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 text-[10px] font-[family-name:var(--font-outfit)] font-black uppercase tracking-wider italic rounded border transition-all whitespace-nowrap cursor-pointer
+                  ${isActive 
+                    ? 'bg-zinc-800 text-white border-white shadow-[0_0_10px_rgba(255,255,255,0.15)] border-l-2' 
+                    : 'bg-zinc-950/60 text-zinc-500 border-white/5 hover:text-zinc-300'}`}
+              >
+                {tab}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Main Content Area (Sidebar + Grid) */}
-      <div className="relative z-10 flex flex-1 overflow-hidden">
+      <div className={`relative z-10 flex flex-1 overflow-hidden ${isMobile ? 'flex-col' : 'flex-row'}`}>
         
         {/* ── Left Sidebar ── */}
-        <SidebarTabs
-          tabs={(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => ({
-            id: tab,
-            label: (
-              <>
-                <div>{tab.split(' ')[0]}</div>
-                {tab.split(' ')[1] && <div>{tab.split(' ')[1]}</div>}
-              </>
-            )
-          }))}
-          activeTab={activeTab}
-          onTabChange={(id) => setActiveTab(id as Tab)}
-          className="w-[180px] pt-7"
-          activeTabClassName="w-[192px]"
-          dotClassName="w-2 h-2"
-        />
+        {!isMobile && (
+          <SidebarTabs
+            tabs={(['ALL', 'STARTING LINEUP', 'BENCH', 'AVAILABLE', 'DUPLICATES'] as Tab[]).map((tab) => ({
+              id: tab,
+              label: (
+                <>
+                  <div>{tab.split(' ')[0]}</div>
+                  {tab.split(' ')[1] && <div>{tab.split(' ')[1]}</div>}
+                </>
+              )
+            }))}
+            activeTab={activeTab}
+            onTabChange={(id) => setActiveTab(id as Tab)}
+            className="w-[180px] pt-7"
+            activeTabClassName="w-[192px]"
+            dotClassName="w-2 h-2"
+          />
+        )}
 
         {/* ── Right Content Grid ── */}
         <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col">

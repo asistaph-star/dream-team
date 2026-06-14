@@ -51,7 +51,8 @@ export default function AuthenticLobby() {
     virtualYMin,
     virtualYMax,
     visibleVirtualWidth,
-    visibleVirtualHeight
+    visibleVirtualHeight,
+    uiScale
   } = useGameViewportScale();
 
   const [isReservesOpen, setIsReservesOpen] = useState(false);
@@ -341,8 +342,14 @@ export default function AuthenticLobby() {
             setSelectedGlobalPlayer(player);
           }
         }}
-        className={`absolute pointer-events-auto transition-transform ${isHovered ? 'scale-110 z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ top: `${finalTop}px`, left: `${finalLeft}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
+        className={`absolute pointer-events-auto transition-all ${isHovered ? 'z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        style={{ 
+          top: `${finalTop}px`, 
+          left: `${finalLeft}px`, 
+          opacity: draggingPlayerId === player?.id ? 0.5 : 1,
+          transform: `scale(${isHovered ? 1.1 * uiScale : uiScale})`,
+          transformOrigin: "center center"
+        }}
       >
         <div className="flex flex-col items-center relative">
           
@@ -488,7 +495,7 @@ export default function AuthenticLobby() {
           style={{
             left: pointerPos.x - 60,
             top: pointerPos.y - 90,
-            transform: 'scale(0.8)',
+            transform: `scale(${0.8 * uiScale})`,
             opacity: 0.9,
             filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.5))'
           }}
@@ -597,7 +604,7 @@ export default function AuthenticLobby() {
         )}
 
         {/* Unified Profile HUD */}
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto transition-transform duration-300" style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left' }}>
           <LobbyProfileHUD
             accountLevel={accountLevel || 0}
             accountExp={accountExp}
@@ -630,11 +637,13 @@ export default function AuthenticLobby() {
           <>
             {/* Global Chat Box */}
             <div 
-              className="absolute pointer-events-auto"
+              className="absolute pointer-events-auto transition-all duration-300"
               style={{
                 left: "var(--side-safe-gap)",
-                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
-                width: "350px"
+                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
+                width: "350px",
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom left"
               }}
             >
               <LobbyChat 
@@ -646,12 +655,24 @@ export default function AuthenticLobby() {
             </div>
 
             {/* Bench binder container statically placed on the right */}
-            <div className="absolute w-[210px] h-[360px] top-[200px] right-6 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible pointer-events-auto">
+            <div 
+              className="absolute w-[210px] h-[360px] top-[200px] right-6 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible pointer-events-auto transition-all duration-300"
+              style={{
+                transform: `scale(${uiScale})`,
+                transformOrigin: "top right"
+              }}
+            >
               {renderReservesPanelContent()}
             </div>
 
             {/* Auto Lineup Button */}
-            <div className="absolute top-[575px] right-6 w-[210px] h-[38px] z-30 pointer-events-auto">
+            <div 
+              className="absolute top-[575px] right-6 w-[210px] h-[38px] z-30 pointer-events-auto transition-all duration-300"
+              style={{
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom right"
+              }}
+            >
               <button onClick={autoLineup} className="w-full h-full relative group overflow-hidden rounded-[4px] border border-white/20 bg-[#121215]/90 backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300 active:scale-[0.98] hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.15)_0%,transparent_70%)] transition-opacity duration-300 pointer-events-none"></div>
@@ -663,7 +684,13 @@ export default function AuthenticLobby() {
             </div>
 
             {/* Online Server Counter */}
-            <div className="absolute top-[625px] right-6 w-[210px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 z-30 overflow-hidden pointer-events-auto">
+            <div 
+              className="absolute top-[625px] right-6 w-[210px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 z-30 overflow-hidden pointer-events-auto transition-all duration-300"
+              style={{
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom right"
+              }}
+            >
               <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
               <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
               <div className="flex items-center gap-2 relative z-10">
@@ -682,11 +709,13 @@ export default function AuthenticLobby() {
           <>
             {/* Global Chat Box */}
             <div 
-              className="absolute pointer-events-auto animate-[fadeIn_0.2s_ease-out]"
+              className="absolute pointer-events-auto animate-[fadeIn_0.2s_ease-out] transition-all duration-300"
               style={{
                 left: "var(--side-safe-gap)",
-                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
-                width: "min(100vw - 48px, 350px)"
+                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
+                width: "min(100vw - 48px, 350px)",
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom left"
               }}
             >
               <LobbyChat 
@@ -696,22 +725,28 @@ export default function AuthenticLobby() {
                 onSendMessage={handleSendChat} 
               />
             </div>
-
+ 
             {/* Reserves Drawer Button (viewport < 900px) */}
             <button 
               onClick={() => setIsReservesOpen(true)}
               className="absolute right-6 top-[120px] pointer-events-auto bg-[#121215]/90 border border-white/20 px-4 py-2.5 rounded-lg text-white font-[family-name:var(--font-outfit)] font-black text-xs uppercase tracking-wider italic flex items-center gap-2 shadow-[0_4px_15px_rgba(0,0,0,0.6)] hover:border-white transition-all active:scale-[0.98] cursor-pointer z-30"
+              style={{
+                transform: `scale(${uiScale})`,
+                transformOrigin: "top right"
+              }}
             >
               <Sparkles size={14} className="text-yellow-400" />
               RESERVES ({activeReserves.length})
             </button>
-
+ 
             {/* Bottom Right stacked Auto Lineup and Server Counter */}
             <div 
-              className="absolute flex items-center gap-3 pointer-events-auto z-30"
+              className="absolute flex items-center gap-3 pointer-events-auto z-30 transition-all duration-300"
               style={{
                 right: "var(--side-safe-gap)",
-                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)"
+                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom right"
               }}
             >
               {/* Auto Lineup Button */}
@@ -721,7 +756,7 @@ export default function AuthenticLobby() {
                   Auto Lineup
                 </span>
               </button>
-
+ 
               {/* Online Counter */}
               <div className="w-[140px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 overflow-hidden">
                 <div className="flex items-center gap-1.5 relative z-10">
@@ -731,7 +766,7 @@ export default function AuthenticLobby() {
                 <span className="text-white font-black text-[13px] tracking-wider drop-shadow-[0_0_3px_rgba(255,255,255,0.4)] mt-0.5">240</span>
               </div>
             </div>
-
+ 
             {/* Reserves Drawer (collapsible Overlay) */}
             {isReservesOpen && (
               <div 
@@ -752,11 +787,13 @@ export default function AuthenticLobby() {
               `}
               style={{
                 width: viewportWidth >= 640 ? "var(--drawer-max-width)" : "min(100vw - 24px, 450px)",
-                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
+                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
                 top: viewportWidth >= 640 ? "var(--top-safe-gap)" : "auto",
                 maxHeight: viewportWidth >= 640 
-                  ? "calc(100vh - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)"
-                  : "calc(100dvh - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)",
+                  ? `calc((100vh - var(--top-safe-gap)) * ${1 / uiScale} - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)`
+                  : `calc((100dvh - var(--top-safe-gap)) * ${1 / uiScale} - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)`,
+                transform: `scale(${uiScale}) ${viewportWidth < 640 && isReservesOpen ? 'translateY(0)' : viewportWidth < 640 ? 'translateY(100%)' : ''}`,
+                transformOrigin: viewportWidth >= 640 ? "bottom right" : "bottom center",
               }}
             >
               <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2 shrink-0">

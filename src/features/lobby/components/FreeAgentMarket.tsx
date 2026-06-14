@@ -56,13 +56,37 @@ export function FreeAgentMarket({
     }
   };
 
+  const [modalScale, setModalScale] = useState(1);
+
+  React.useEffect(() => {
+    if (!show) return;
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const scaleX = w < 920 ? (w - 24) / 880 : 1;
+      const scaleY = h < 650 ? (h - 24) / 610 : 1;
+      setModalScale(Math.max(0.4, Math.min(1, Math.min(scaleX, scaleY))));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [show]);
+
   if (!show) return null;
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
       <style>{`#global-bottom-nav { display: none !important; }`}</style>
       {/* Standard non-skewed container for absolute pixel-perfect HD clarity */}
-      <div className="w-[880px] h-[610px] rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter">
+      <div 
+        className="rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter shadow-2xl transition-transform duration-300"
+        style={{
+          width: '880px',
+          height: '610px',
+          transform: `scale(${modalScale})`,
+          transformOrigin: 'center center'
+        }}
+      >
         
         {/* Modal Background Pattern (Unified with Player Filter) */}
         <div className="absolute inset-0 pointer-events-none flex overflow-hidden rounded-2xl bg-[#30333b] shadow-2xl border border-white/10 z-0">

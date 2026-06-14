@@ -11,6 +11,14 @@ export interface CoachModalProps {
   defensiveStrategies: LobbyStrategy[];
 }
 
+const getNextExpVal = (lvl: number): number => {
+  if (lvl === 1) return 500;
+  if (lvl === 2) return 1500;
+  if (lvl === 3) return 4000;
+  if (lvl === 4) return 10000;
+  return 0;
+};
+
 export function CoachModal({
   show,
   onClose,
@@ -21,14 +29,21 @@ export function CoachModal({
   defensiveStrategies
 }: CoachModalProps) {
   const [coachActiveTab, setCoachActiveTab] = useState<'OFF' | 'DEF'>('OFF');
+  const [modalScale, setModalScale] = useState(1);
 
-  const getNextExpVal = (lvl: number): number => {
-    if (lvl === 1) return 500;
-    if (lvl === 2) return 1500;
-    if (lvl === 3) return 4000;
-    if (lvl === 4) return 10000;
-    return 0;
-  };
+  React.useEffect(() => {
+    if (!show) return;
+    const handleResize = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const scaleX = w < 890 ? (w - 24) / 850 : 1;
+      const scaleY = h < 630 ? (h - 24) / 590 : 1;
+      setModalScale(Math.max(0.4, Math.min(1, Math.min(scaleX, scaleY))));
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [show]);
 
   if (!show) return null;
 
@@ -36,7 +51,15 @@ export function CoachModal({
     <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
       <style>{`#global-bottom-nav { display: none !important; }`}</style>
       {/* Standard non-skewed container for absolute pixel-perfect HD clarity */}
-      <div className="w-[850px] h-[590px] rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter">
+      <div 
+        className="rounded-2xl p-6 flex flex-col relative overflow-hidden animate-page-enter shadow-2xl transition-transform duration-300"
+        style={{
+          width: '850px',
+          height: '590px',
+          transform: `scale(${modalScale})`,
+          transformOrigin: 'center center'
+        }}
+      >
         
         {/* Modal Background Pattern (Unified with Player Filter) */}
         <div className="absolute inset-0 pointer-events-none flex overflow-hidden rounded-2xl bg-[#30333b] shadow-2xl border border-white/10 z-0">

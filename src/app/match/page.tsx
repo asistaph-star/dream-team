@@ -128,7 +128,8 @@ export default function MatchPage() {
     virtualYMin,
     virtualYMax,
     visibleVirtualWidth,
-    visibleVirtualHeight
+    visibleVirtualHeight,
+    uiScale
   } = useGameViewportScale();
   const [showOTTransition, setShowOTTransition] = useState(false);
   const [showPostStats, setShowPostStats] = useState(false);
@@ -975,7 +976,7 @@ export default function MatchPage() {
         style={{ 
           top: `${finalTop}px`, 
           left: `${finalLeft}px`, 
-          transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)', 
+          transform: (isActive || hasShotMeter) ? `scale(${1.15 * uiScale})` : `scale(${uiScale})`, 
           transformOrigin: 'bottom center', 
           ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) 
         }}
@@ -1133,8 +1134,13 @@ export default function MatchPage() {
 
             {/* BOTTOM HUD CONTAINER */}
             <div 
-              className="absolute left-6 right-6 z-50 flex flex-col md:flex-row gap-3 items-center md:items-end justify-center pointer-events-auto"
-              style={{ bottom: "var(--bottom-safe-gap)" }}
+              className="absolute left-6 right-6 z-50 flex flex-col md:flex-row gap-3 items-center md:items-end justify-center pointer-events-auto transition-transform duration-300"
+              style={{ 
+                bottom: "var(--bottom-safe-gap)",
+                transform: `scale(${uiScale})`,
+                transformOrigin: "bottom center",
+                width: "calc(100% - 48px)"
+              }}
             >
                 <div className="flex gap-3 w-full md:w-auto items-end justify-center flex-1 max-w-[1070px]">
                     <MatchBottomHUD

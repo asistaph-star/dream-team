@@ -56,6 +56,16 @@ export default function InventoryPage() {
   const [upgradeResult, setUpgradeResult] = useState<{ success: boolean; msg?: string } | null>(null);
   const [craftResult, setCraftResult] = useState<{ success: boolean; msg?: string } | null>(null);
   const [craftedItem, setCraftedItem] = useState<Equipment | null>(null);
+  const [isNarrow, setIsNarrow] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsNarrow(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'CRAFTING' && !selectedCraftSlot) {
@@ -113,6 +123,137 @@ export default function InventoryPage() {
     setTimeout(() => setUpgradeResult(null), 3000);
   };
 
+  const renderDetailContent = () => {
+    return (
+      <>
+        {/* DETAILS: MATERIALS */}
+        {activeTab === 'MATERIALS' && selectedMatId && (() => {
+          const mat = mockMaterials[selectedMatId];
+          const qty = inventory.materials[selectedMatId as keyof typeof inventory.materials] || 0;
+          const glowColor = selectedMatId === 'skill_tape' ? '#ef4444' : selectedMatId === 'mat_upgrade' ? '#a855f7' : selectedMatId === 'mat_crafting' ? '#10b981' : '#3b82f6';
+          
+          return (
+            <DetailPanelShell
+              title={mat.name}
+              glowColor={glowColor}
+              icon={getMaterialIcon(selectedMatId)}
+              subtitle={`Owned: ${qty.toLocaleString()}`}
+              infoContent={
+                <p className="text-[13px] text-gray-300 leading-relaxed">{mat.description}</p>
+              }
+              actionButtons={
+                <>
+                  <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
+                    <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                    <span className="relative z-10">Get</span>
+                  </button>
+                  <button className="w-full bg-gradient-to-br from-[#e5303c] to-[#be1824] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
+                    <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                    <span className="relative z-10">Use</span>
+                  </button>
+                </>
+              }
+            />
+          );
+        })()}
+
+        {/* DETAILS: EQUIPMENT */}
+        {activeTab === 'EQUIPMENT' && selectedEquip && (() => {
+          const currentLevel = selectedEquip.upgradeLevel;
+          const matCost = currentLevel + 1;
+          const cashCost = (currentLevel + 1) * 5000;
+          const successRate = Math.max(0.1, 0.90 - (currentLevel * 0.15)) * 100;
+          const canUpgrade = inventory.materials.mat_upgrade >= matCost && cash >= cashCost;
+          const glowColor = currentLevel > 5 ? '#f59e0b' : currentLevel > 2 ? '#a855f7' : '#3b82f6';
+          
+          return (
+            <DetailPanelShell
+              title={`Lv.${currentLevel} ${selectedEquip.name}`}
+              glowColor={glowColor}
+              icon={getEquipmentGlyph(selectedEquip.slot)}
+              subtitle="Owned: 1"
+              infoContent={
+                <>
+                  <p className="text-xs text-gray-300 leading-relaxed mb-4">
+                    Equip this gear to boost player attributes. Higher levels yield stronger bonuses.
+                  </p>
+                  
+                  <div className="bg-[#242426] p-3 border border-[#444] mb-4">
+                    <div className="text-xs text-gray-400 mb-1">Current Effect</div>
+                    <div className="text-sm text-green-400 font-bold">+{selectedEquip.bonus.value}{selectedEquip.bonus.isPercentage ? '%' : ''} {selectedEquip.bonus.statName}</div>
+                  </div>
+
+                  <div className="text-[13px] text-gray-400 font-semibold mb-2">Enhancement</div>
+                  <div className="bg-[#242426] p-3 border border-[#444] grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500">Success Rate: </span>
+                      <span className={successRate >= 70 ? 'text-green-400' : 'text-yellow-400'}>{successRate.toFixed(0)}%</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Cash: </span>
+                      <span className={cash >= cashCost ? 'text-white' : 'text-red-400'}>${(cashCost/1000).toFixed(0)}K</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-gray-500">Stones Needed: </span>
+                      <span className={inventory.materials.mat_upgrade >= matCost ? 'text-purple-400' : 'text-red-400'}>{matCost} / {inventory.materials.mat_upgrade}</span>
+                    </div>
+                  </div>
+                  
+                  {upgradeResult && (
+                    <div className={`mt-2 p-2 text-xs text-center border font-semibold ${upgradeResult.success ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50'}`}>
+                      {upgradeResult.msg}
+                    </div>
+                  )}
+                </>
+              }
+              actionButtons={
+                <>
+                  <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
+                    <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+                    <span className="relative z-10">Equip</span>
+                  </button>
+                  <button 
+                    onClick={handleUpgrade}
+                    disabled={!canUpgrade}
+                    className={`w-full py-2.5 font-bold text-[14px] shadow-sm relative ${canUpgrade ? 'bg-gradient-to-br from-[#e5303c] to-[#be1824] hover:brightness-110 text-white' : 'bg-[#444] text-gray-500 cursor-not-allowed'}`}
+                    style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}
+                  >
+                    {canUpgrade && <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />}
+                    <span className="relative z-10">Enhance</span>
+                  </button>
+                </>
+              }
+            />
+          );
+        })()}
+
+        {/* DETAILS: CRAFTING */}
+        {activeTab === 'CRAFTING' && selectedCraftSlot && (
+          <CraftDetailPanel
+            slot={selectedCraftSlot}
+            ownedThread={inventory.materials.mat_crafting}
+            onCraft={handleCraft}
+            onGetMaterials={handleViewMaterials}
+            craftResult={craftResult}
+            renderIcon={getEquipmentGlyph}
+          />
+        )}
+
+        {/* DETAILS: EMPTY STATE */}
+        {((activeTab === 'MATERIALS' && !selectedMatId) ||
+          (activeTab === 'EQUIPMENT' && !selectedEquip)) && (
+          <div className="flex-1 flex flex-col items-center justify-center opacity-30 p-6 text-center">
+            <div className="w-14 h-14 border-2 border-dashed border-gray-500 rounded-sm flex items-center justify-center mb-4 text-[10px] font-black tracking-widest text-gray-500">
+              EMPTY
+            </div>
+            <div className="text-sm font-semibold tracking-wide text-white">Select an Item</div>
+            <div className="text-xs text-gray-400 mt-2">Click any item in the grid to view details and perform actions.</div>
+          </div>
+        )}
+      </>
+    );
+  };
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'MATERIALS', label: 'Items' },
     { id: 'EQUIPMENT', label: 'Equipment' },
@@ -142,6 +283,10 @@ export default function InventoryPage() {
           animation: shooting-star 3.5s infinite linear 1.2s;
           background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.4) 50%, transparent);
         }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
       `}</style>
 
       {/* ── Top Header ── */}
@@ -158,17 +303,40 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative z-10">
+      {/* Mobile Horizontal Tabs */}
+      {isNarrow && (
+        <div className="w-full flex overflow-x-auto no-scrollbar gap-1.5 px-4 py-2.5 bg-black/25 border-b border-white/5 relative z-10 shrink-0">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`px-4 py-1.5 text-[10px] font-[family-name:var(--font-outfit)] font-black uppercase tracking-wider italic rounded border transition-all whitespace-nowrap cursor-pointer
+                  ${isActive 
+                    ? 'bg-zinc-800 text-white border-white shadow-[0_0_10px_rgba(255,255,255,0.15)] border-l-2' 
+                    : 'bg-zinc-950/60 text-zinc-500 border-white/5 hover:text-zinc-300'}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className={`flex flex-1 overflow-hidden relative z-10 ${isNarrow ? 'flex-col' : 'flex-row'}`}>
 
         {/* ── Left Sidebar ── */}
-        <SidebarTabs
-          tabs={tabs.map(t => ({ id: t.id, label: <span>{t.label}</span> }))}
-          activeTab={activeTab}
-          onTabChange={(id) => handleTabChange(id as Tab)}
-          className="w-[160px] pt-5 shadow-xl"
-          activeTabClassName="w-[172px]"
-          dotClassName="w-2.5 h-2.5"
-        />
+        {!isNarrow && (
+          <SidebarTabs
+            tabs={tabs.map(t => ({ id: t.id, label: <span>{t.label}</span> }))}
+            activeTab={activeTab}
+            onTabChange={(id) => handleTabChange(id as Tab)}
+            className="w-[160px] pt-5 shadow-xl"
+            activeTabClassName="w-[172px]"
+            dotClassName="w-2.5 h-2.5"
+          />
+        )}
 
         {/* ── Middle Grid ── */}
         <div className="flex-1 px-5 pt-5 pb-5 relative z-10 flex flex-col min-w-0">
@@ -277,136 +445,48 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* ── Right Detail Panel ── */}
-        <div className="w-[340px] z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 h-full">
-          <div className="flex-1 bg-[#313338] border border-white/10 rounded-sm flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.5)] overflow-hidden">
-          
-          {/* DETAILS: MATERIALS */}
-          {activeTab === 'MATERIALS' && selectedMatId && (() => {
-            const mat = mockMaterials[selectedMatId];
-            const qty = inventory.materials[selectedMatId as keyof typeof inventory.materials] || 0;
-            const glowColor = selectedMatId === 'skill_tape' ? '#ef4444' : selectedMatId === 'mat_upgrade' ? '#a855f7' : selectedMatId === 'mat_crafting' ? '#10b981' : '#3b82f6';
-            
-            return (
-              <DetailPanelShell
-                title={mat.name}
-                glowColor={glowColor}
-                icon={getMaterialIcon(selectedMatId)}
-                subtitle={`Owned: ${qty.toLocaleString()}`}
-                infoContent={
-                  <p className="text-[13px] text-gray-300 leading-relaxed">{mat.description}</p>
-                }
-                actionButtons={
-                  <>
-                    <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
-                      <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-                      <span className="relative z-10">Get</span>
-                    </button>
-                    <button className="w-full bg-gradient-to-br from-[#e5303c] to-[#be1824] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}>
-                      <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-                      <span className="relative z-10">Use</span>
-                    </button>
-                  </>
-                }
-              />
-            );
-          })()}
-
-          {/* DETAILS: EQUIPMENT */}
-          {activeTab === 'EQUIPMENT' && selectedEquip && (() => {
-            const currentLevel = selectedEquip.upgradeLevel;
-            const matCost = currentLevel + 1;
-            const cashCost = (currentLevel + 1) * 5000;
-            const successRate = Math.max(0.1, 0.90 - (currentLevel * 0.15)) * 100;
-            const canUpgrade = inventory.materials.mat_upgrade >= matCost && cash >= cashCost;
-            const glowColor = currentLevel > 5 ? '#f59e0b' : currentLevel > 2 ? '#a855f7' : '#3b82f6';
-            
-            return (
-              <DetailPanelShell
-                title={`Lv.${currentLevel} ${selectedEquip.name}`}
-                glowColor={glowColor}
-                icon={getEquipmentGlyph(selectedEquip.slot)}
-                subtitle="Owned: 1"
-                infoContent={
-                  <>
-                    <p className="text-xs text-gray-300 leading-relaxed mb-4">
-                      Equip this gear to boost player attributes. Higher levels yield stronger bonuses.
-                    </p>
-                    
-                    <div className="bg-[#242426] p-3 border border-[#444] mb-4">
-                      <div className="text-xs text-gray-400 mb-1">Current Effect</div>
-                      <div className="text-sm text-green-400 font-bold">+{selectedEquip.bonus.value}{selectedEquip.bonus.isPercentage ? '%' : ''} {selectedEquip.bonus.statName}</div>
-                    </div>
-
-                    <div className="text-[13px] text-gray-400 font-semibold mb-2">Enhancement</div>
-                    <div className="bg-[#242426] p-3 border border-[#444] grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-gray-500">Success Rate: </span>
-                        <span className={successRate >= 70 ? 'text-green-400' : 'text-yellow-400'}>{successRate.toFixed(0)}%</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Cash: </span>
-                        <span className={cash >= cashCost ? 'text-white' : 'text-red-400'}>${(cashCost/1000).toFixed(0)}K</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-gray-500">Stones Needed: </span>
-                        <span className={inventory.materials.mat_upgrade >= matCost ? 'text-purple-400' : 'text-red-400'}>{matCost} / {inventory.materials.mat_upgrade}</span>
-                      </div>
-                    </div>
-                    
-                    {upgradeResult && (
-                      <div className={`mt-2 p-2 text-xs text-center border font-semibold ${upgradeResult.success ? 'bg-green-500/20 text-green-400 border-green-500/50' : 'bg-red-500/20 text-red-400 border-red-500/50'}`}>
-                        {upgradeResult.msg}
-                      </div>
-                    )}
-                  </>
-                }
-                actionButtons={
-                  <>
-                    <button className="w-full bg-gradient-to-br from-[#1a8ff5] to-[#1671d4] hover:brightness-110 text-white py-2.5 font-bold text-[14px] shadow-sm relative" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}>
-                      <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
-                      <span className="relative z-10">Equip</span>
-                    </button>
-                    <button 
-                      onClick={handleUpgrade}
-                      disabled={!canUpgrade}
-                      className={`w-full py-2.5 font-bold text-[14px] shadow-sm relative ${canUpgrade ? 'bg-gradient-to-br from-[#e5303c] to-[#be1824] hover:brightness-110 text-white' : 'bg-[#444] text-gray-500 cursor-not-allowed'}`}
-                      style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)' }}
-                    >
-                      {canUpgrade && <div className="absolute top-0 left-0 bottom-0 w-8 bg-white/10" style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />}
-                      <span className="relative z-10">Enhance</span>
-                    </button>
-                  </>
-                }
-              />
-            );
-          })()}
-
-          {/* DETAILS: CRAFTING */}
-          {activeTab === 'CRAFTING' && selectedCraftSlot && (
-            <CraftDetailPanel
-              slot={selectedCraftSlot}
-              ownedThread={inventory.materials.mat_crafting}
-              onCraft={handleCraft}
-              onGetMaterials={handleViewMaterials}
-              craftResult={craftResult}
-              renderIcon={getEquipmentGlyph}
-            />
-          )}
-
-          {/* DETAILS: EMPTY STATE */}
-          {((activeTab === 'MATERIALS' && !selectedMatId) ||
-            (activeTab === 'EQUIPMENT' && !selectedEquip)) && (
-            <div className="flex-1 flex flex-col items-center justify-center opacity-30 p-6 text-center">
-              <div className="w-14 h-14 border-2 border-dashed border-gray-500 rounded-sm flex items-center justify-center mb-4 text-[10px] font-black tracking-widest text-gray-500">
-                EMPTY
-              </div>
-              <div className="text-sm font-semibold tracking-wide text-white">Select an Item</div>
-              <div className="text-xs text-gray-400 mt-2">Click any item in the grid to view details and perform actions.</div>
+        {/* ── Right Detail Panel (Desktop only) ── */}
+        {!isNarrow && (
+          <div className="w-[340px] z-20 flex flex-col shrink-0 pt-5 pb-5 pr-5 h-full">
+            <div className="flex-1 bg-[#313338] border border-white/10 rounded-sm flex flex-col shadow-[0_0_15px_rgba(0,0,0,0.5)] overflow-hidden">
+              {renderDetailContent()}
             </div>
-          )}
           </div>
-        </div>
+        )}
+
+        {/* Detail Panel Drawer (for mobile/tablet width < 1024px) */}
+        {isNarrow && (selectedMatId || selectedEquip || selectedCraftSlot) && (
+          <>
+            <div 
+              onClick={() => {
+                setSelectedMatId(null);
+                setSelectedEquip(null);
+                setSelectedCraftSlot(null);
+              }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-35 pointer-events-auto"
+            />
+            <div 
+              className="fixed bottom-0 left-0 right-0 bg-[#313338] border-t border-white/10 rounded-t-xl z-40 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] flex flex-col max-h-[85vh] animate-[slideUp_0.25s_ease-out] pointer-events-auto"
+            >
+              <div className="flex justify-between items-center mb-3 border-b border-white/5 pb-2 shrink-0">
+                <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Item details</span>
+                <button 
+                  onClick={() => {
+                    setSelectedMatId(null);
+                    setSelectedEquip(null);
+                    setSelectedCraftSlot(null);
+                  }}
+                  className="text-zinc-400 hover:text-white font-black text-sm uppercase px-2 py-0.5 rounded border border-white/5 bg-white/5 cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="overflow-y-auto pr-1">
+                {renderDetailContent()}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {craftedItem && (
