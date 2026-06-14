@@ -62,8 +62,23 @@ export const GameViewport = ({
         className="w-screen h-screen overflow-hidden bg-black relative"
         style={{ width: '100vw', height: '100vh' }}
       >
+        <style dangerouslySetInnerHTML={{ __html: `
+          .game-viewport-inner .w-screen {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+          .game-viewport-inner .h-screen,
+          .game-viewport-inner .h-\\[100dvh\\],
+          .game-viewport-inner .h-\\[100vh\\] {
+            height: 100% !important;
+            max-height: 100% !important;
+          }
+          .game-viewport-inner .fixed {
+            position: absolute !important;
+          }
+        `}} />
         <div
-          className={`absolute overflow-hidden ${className}`}
+          className={`absolute overflow-hidden game-viewport-inner ${className}`}
           style={{
             width: `${vp.logW}px`,
             height: `${vp.logH}px`,
