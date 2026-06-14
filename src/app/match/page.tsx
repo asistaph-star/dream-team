@@ -976,7 +976,7 @@ export default function MatchPage() {
         style={{ 
           top: `${finalTop}px`, 
           left: `${finalLeft}px`, 
-          transform: (isActive || hasShotMeter) ? `scale(${1.15 * uiScale})` : `scale(${uiScale})`, 
+          transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)', 
           transformOrigin: 'bottom center', 
           ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) 
         }}

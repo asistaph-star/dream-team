@@ -8,7 +8,7 @@ import { BenchSelectModal } from "@/components/player/BenchSelectModal";
 import { Player, PlayerPosition } from "@/lib/types/player";
 import Link from "next/link";
 import Image from "next/image";
-import { UserCircle, CircleDollarSign, Ticket, Globe2, Plus, Sparkles, Trophy, ShieldAlert, TrendingUp, TrendingDown, RefreshCw, UserPlus, X, ChevronLeft } from 'lucide-react';
+import { UserCircle, CircleDollarSign, Ticket, Globe2, Plus, Sparkles, Trophy, ShieldAlert, TrendingUp, TrendingDown, RefreshCw, UserPlus, X, ChevronLeft, Database, CalendarDays } from 'lucide-react';
 import { mockPlayers, getTierColor, getTierRating } from "@/lib/data/mockPlayers";
 import { LOBBY_OFFENSIVE_STRATEGIES, LOBBY_DEFENSIVE_STRATEGIES } from "@/features/lobby/data/strategies";
 import { LobbyChat } from "@/features/lobby/components/LobbyChat";
@@ -347,7 +347,7 @@ export default function AuthenticLobby() {
           top: `${finalTop}px`, 
           left: `${finalLeft}px`, 
           opacity: draggingPlayerId === player?.id ? 0.5 : 1,
-          transform: `scale(${isHovered ? 1.1 * uiScale : uiScale})`,
+          transform: `scale(${isHovered ? 1.1 : 1})`,
           transformOrigin: "center center"
         }}
       >
@@ -619,12 +619,38 @@ export default function AuthenticLobby() {
         </div>
 
         {/* Left Side Icons + Lineup Archetypes Panel */}
-        <div className="absolute left-6 top-[120px] flex flex-col gap-4 pointer-events-auto max-w-[280px]">
+        <div 
+          className="absolute left-6 top-[120px] flex flex-col gap-4 pointer-events-auto max-w-[280px] transition-transform duration-300"
+          style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left' }}
+        >
           {/* Left Side Icons */}
           <div className="flex items-center gap-3">
-            <img alt="gameData" src="/bg/button/gamedata.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 active:scale-95 transition" />
-            <img alt="Daily Signin" src="/bg/dailysignin.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 active:scale-95 transition" />
-            <img alt="Lottery" src="/bg/lottery.webp" className="w-[35px] h-[35px] cursor-pointer hover:scale-110 active:scale-95 transition" />
+            {/* Game Data Button */}
+            <div 
+              title="Game Data"
+              className="w-[42px] h-[42px] rounded-xl bg-[#121316]/80 backdrop-blur-md border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/[0.08] active:scale-95 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-white/20 group relative"
+            >
+              <Database size={20} className="text-[#ff9d00] filter drop-shadow-[0_0_4px_rgba(255,157,0,0.4)]" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[#ff9d00]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            
+            {/* Daily Signin Button */}
+            <div 
+              title="Daily Signin"
+              className="w-[42px] h-[42px] rounded-xl bg-[#121316]/80 backdrop-blur-md border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/[0.08] active:scale-95 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-white/20 group relative"
+            >
+              <CalendarDays size={20} className="text-[#00ffcc] filter drop-shadow-[0_0_4px_rgba(0,255,204,0.4)]" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[#00ffcc]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+
+            {/* Lottery Button */}
+            <div 
+              title="Lottery"
+              className="w-[42px] h-[42px] rounded-xl bg-[#121316]/80 backdrop-blur-md border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/[0.08] active:scale-95 transition-all shadow-[0_4px_12px_rgba(0,0,0,0.5)] hover:border-white/20 group relative"
+            >
+              <Sparkles size={20} className="text-[#e040fb] filter drop-shadow-[0_0_4px_rgba(224,64,251,0.4)]" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[#e040fb]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </div>
           
           <div className="relative w-[240px]">
