@@ -604,7 +604,7 @@ export default function AuthenticLobby() {
         )}
 
         {/* Unified Profile HUD */}
-        <div className="pointer-events-auto transition-transform duration-300" style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left' }}>
+        <div className="pointer-events-auto transition-transform duration-300">
           <LobbyProfileHUD
             accountLevel={accountLevel || 0}
             accountExp={accountExp}
@@ -615,6 +615,7 @@ export default function AuthenticLobby() {
             salaryCap={salaryCap}
             onAddCash={addCash}
             onAddTk={addTk}
+            uiScale={uiScale}
           />
         </div>
 

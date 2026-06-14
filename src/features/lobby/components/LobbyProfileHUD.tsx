@@ -11,6 +11,7 @@ export interface LobbyProfileHUDProps {
   salaryCap: number;
   onAddCash: (amount: number) => void;
   onAddTk: (amount: number) => void;
+  uiScale?: number;
 }
 
 export function LobbyProfileHUD({
@@ -22,12 +23,16 @@ export function LobbyProfileHUD({
   currentSalary,
   salaryCap,
   onAddCash,
-  onAddTk
+  onAddTk,
+  uiScale = 1
 }: LobbyProfileHUDProps) {
   return (
     <>
       {/* --- Top Left Profile (Authentic NBA 2K Street Neon Design - SHARP HD FIX) --- */}
-      <div className="absolute top-[20px] left-[20px] z-50 group">
+      <div 
+        className="absolute top-[20px] left-[20px] z-50 group transition-transform duration-300"
+        style={{ transform: `scale(${uiScale})`, transformOrigin: "top left" }}
+      >
         {/* Main Container (No parent skew, completely sharp content) */}
         <div className="relative flex items-center h-[96px] w-[370px] z-10">
           
@@ -163,7 +168,10 @@ export function LobbyProfileHUD({
       </div>
 
       {/* --- Top Right Profile (Salary & TF - SHARP HD FIX) --- */}
-      <div className="absolute top-[20px] right-[20px] z-50 group">
+      <div 
+        className="absolute top-[20px] right-[20px] z-50 group transition-transform duration-300"
+        style={{ transform: `scale(${uiScale})`, transformOrigin: "top right" }}
+      >
         {/* Main Container (No parent skew, completely sharp content) */}
         <div className="relative flex items-center h-[64px] shadow-2xl">
           
