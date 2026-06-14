@@ -42,6 +42,12 @@ export const GameViewport = ({
       const offsetX = (winW - BASE_W * scale) / 2;
       const offsetY = (winH - BASE_H * scale) / 2;
 
+      // Calculate uiScale for the CSS variable override
+      const wScale = winW / 1280;
+      const hScale = winH / 760;
+      const uiScale = Math.max(0.55, Math.min(1, Math.min(wScale, hScale)));
+      document.documentElement.style.setProperty('--ui-scale', uiScale.toString());
+
       setVp({
         scale,
         logW: BASE_W,
@@ -75,6 +81,22 @@ export const GameViewport = ({
           }
           .game-viewport-inner .fixed {
             position: absolute !important;
+          }
+          /* Prevent the top-right profile HUD from overlapping the top-left HUD on small resolutions */
+          .pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) {
+            transform: none !important;
+          }
+          .pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) > .group:first-child {
+            transform: scale(var(--ui-scale, 1)) !important;
+            transform-origin: top left !important;
+            left: 20px !important;
+            right: auto !important;
+          }
+          .pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) > .group:last-child {
+            transform: scale(var(--ui-scale, 1)) !important;
+            transform-origin: top right !important;
+            right: 20px !important;
+            left: auto !important;
           }
         `}} />
         <div

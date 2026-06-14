@@ -472,3 +472,20 @@ a, button, [role="button"], input[type="submit"], input[type="button"], input[ty
 .cursor-not-allowed {
   cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'><path d='M2,2 L2,24 L9,17 L16,30 L22,27 L15,14 L23,14 Z' fill='%23ef4444' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/></svg>") 2 2, not-allowed !important;
 }
+
+/* Prevent the top-right profile HUD from overlapping the top-left HUD on small resolutions */
+.pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) {
+  transform: none !important;
+}
+.pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) > .group:first-child {
+  transform: scale(var(--ui-scale, 1)) !important;
+  transform-origin: top left !important;
+  left: 20px !important;
+  right: auto !important;
+}
+.pointer-events-auto.transition-transform.duration-300:has(img[src*="tf_coin"]) > .group:last-child {
+  transform: scale(var(--ui-scale, 1)) !important;
+  transform-origin: top right !important;
+  right: 20px !important;
+  left: auto !important;
+}

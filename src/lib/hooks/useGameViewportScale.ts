@@ -50,6 +50,7 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
       const wScale = w / 1280;
       const hScale = h / 760;
       const uiScale = Math.max(0.55, Math.min(1, Math.min(wScale, hScale)));
+      document.documentElement.style.setProperty('--ui-scale', uiScale.toString());
       
       setDimensions({
         scale,
