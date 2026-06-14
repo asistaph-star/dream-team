@@ -40,7 +40,7 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | LockChainDrainOwnershipAudit | Done (removed single-target turnover drain and per-possession on-ball shot drain, Lock Chain drains only after successful steal) |
 | SkillSystemCanonicalCloseout | Done (final canonical ownership table, banned mechanics list, corrected mechanic IDs and Tilted ownership) |
 | UI-PlayerCardUpgradePolish | Done (Polished modal, fixed clipping on star-up preview, reorganized attribute panels) |
-| ResponsiveAppLayoutSystem Batch A | Done (Game Viewport + Global BottomNav cover-fit viewport, layout safety overlays) |
+| ResponsiveAppLayoutSystem Batch A | Done (Game Viewport + Global BottomNav cover-fit viewport, layout safety overlays, and ResponsiveGameViewportSafeOverlay safe-area clamping/collapsing) |
 | ResponsiveAppLayoutSystem Batch B | Planned (Player Storage, Inventory, Modal responsiveness) |
 | Validation Suite Status | Done (all 51 tests passing) |
 

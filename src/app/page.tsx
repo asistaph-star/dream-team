@@ -317,7 +317,8 @@ export default function AuthenticLobby() {
     
     // Interpolate based on visible width: active contraction below 1200px
     const t = Math.max(0, Math.min(1, (1200 - visibleVirtualWidth) / 500));
-    const finalLeft = origLeft + t * (spacedLeft - origLeft);
+    const rawLeft = origLeft + t * (spacedLeft - origLeft);
+    const finalLeft = Math.max(virtualXMin + 15, Math.min(virtualXMax - 15 - playerWidth, rawLeft));
     const finalTop = Math.max(virtualYMin + 15, Math.min(virtualYMax - 15 - playerHeight, coords.top));
     
     const isHovered = dragHoverSlot === pos;
@@ -624,19 +625,26 @@ export default function AuthenticLobby() {
           </div>
         </div>
 
-        {/* Global Chat Box */}
-        <div className="absolute bottom-[24px] left-6 pointer-events-auto">
-          <LobbyChat 
-            messages={chatMessages} 
-            chatInput={chatInput} 
-            setChatInput={setChatInput} 
-            onSendMessage={handleSendChat} 
-          />
-        </div>
-
         {/* Reserves and Bottom Controls */}
-        {viewportWidth >= 1200 ? (
+        {viewportWidth >= 900 ? (
           <>
+            {/* Global Chat Box */}
+            <div 
+              className="absolute pointer-events-auto"
+              style={{
+                left: "var(--side-safe-gap)",
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
+                width: "350px"
+              }}
+            >
+              <LobbyChat 
+                messages={chatMessages} 
+                chatInput={chatInput} 
+                setChatInput={setChatInput} 
+                onSendMessage={handleSendChat} 
+              />
+            </div>
+
             {/* Bench binder container statically placed on the right */}
             <div className="absolute w-[210px] h-[360px] top-[200px] right-6 bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible pointer-events-auto">
               {renderReservesPanelContent()}
@@ -672,17 +680,40 @@ export default function AuthenticLobby() {
           </>
         ) : (
           <>
-            {/* Reserves Drawer Button (viewport < 1200px) */}
+            {/* Global Chat Box */}
+            <div 
+              className="absolute pointer-events-auto animate-[fadeIn_0.2s_ease-out]"
+              style={{
+                left: "var(--side-safe-gap)",
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
+                width: "min(100vw - 48px, 350px)"
+              }}
+            >
+              <LobbyChat 
+                messages={chatMessages} 
+                chatInput={chatInput} 
+                setChatInput={setChatInput} 
+                onSendMessage={handleSendChat} 
+              />
+            </div>
+
+            {/* Reserves Drawer Button (viewport < 900px) */}
             <button 
               onClick={() => setIsReservesOpen(true)}
-              className="absolute right-6 top-[120px] pointer-events-auto bg-[#121215]/90 border border-white/20 px-4 py-2.5 rounded-lg text-white font-[family-name:var(--font-outfit)] font-black text-xs uppercase tracking-wider italic flex items-center gap-2 shadow-[0_4px_15px_rgba(0,0,0,0.6)] hover:border-white transition-all active:scale-[0.98] cursor-pointer"
+              className="absolute right-6 top-[120px] pointer-events-auto bg-[#121215]/90 border border-white/20 px-4 py-2.5 rounded-lg text-white font-[family-name:var(--font-outfit)] font-black text-xs uppercase tracking-wider italic flex items-center gap-2 shadow-[0_4px_15px_rgba(0,0,0,0.6)] hover:border-white transition-all active:scale-[0.98] cursor-pointer z-30"
             >
               <Sparkles size={14} className="text-yellow-400" />
               RESERVES ({activeReserves.length})
             </button>
 
             {/* Bottom Right stacked Auto Lineup and Server Counter */}
-            <div className="absolute bottom-[24px] right-6 flex items-center gap-3 pointer-events-auto">
+            <div 
+              className="absolute flex items-center gap-3 pointer-events-auto z-30"
+              style={{
+                right: "var(--side-safe-gap)",
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)"
+              }}
+            >
               {/* Auto Lineup Button */}
               <button onClick={autoLineup} className="w-[140px] h-[36px] relative group overflow-hidden rounded-[4px] border border-white/20 bg-[#121215]/90 backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300 active:scale-[0.98] hover:border-white cursor-pointer">
                 <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
@@ -709,7 +740,24 @@ export default function AuthenticLobby() {
               />
             )}
             <div 
-              className={`fixed top-0 right-0 h-full w-[250px] bg-[#0c0d12]/95 border-l border-white/10 p-4 shadow-[20px_0_40px_rgba(0,0,0,0.9)] z-50 pointer-events-auto transition-transform duration-300 flex flex-col ${isReservesOpen ? 'translate-x-0' : 'translate-x-full'}`}
+              className={`fixed z-50 pointer-events-auto transition-all duration-300 flex flex-col bg-[#0c0d12]/95 border border-white/10 p-4 shadow-[0_15px_40px_rgba(0,0,0,0.8)]
+                ${viewportWidth >= 640 
+                  ? 'top-[var(--top-safe-gap)] right-[var(--side-safe-gap)] rounded-xl' 
+                  : 'left-1/2 -translate-x-1/2 rounded-t-xl'
+                }
+                ${isReservesOpen 
+                  ? (viewportWidth >= 640 ? 'translate-x-0 opacity-100 animate-[fadeIn_0.2s_ease-out]' : 'translate-y-0 opacity-100') 
+                  : (viewportWidth >= 640 ? 'translate-x-full opacity-0' : 'translate-y-full opacity-0')
+                }
+              `}
+              style={{
+                width: viewportWidth >= 640 ? "var(--drawer-max-width)" : "min(100vw - 24px, 450px)",
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
+                top: viewportWidth >= 640 ? "var(--top-safe-gap)" : "auto",
+                maxHeight: viewportWidth >= 640 
+                  ? "calc(100vh - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)"
+                  : "calc(100dvh - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)",
+              }}
             >
               <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2 shrink-0">
                 <span className="text-white font-[family-name:var(--font-outfit)] font-black text-sm tracking-wider uppercase italic">Reserves</span>
@@ -720,13 +768,12 @@ export default function AuthenticLobby() {
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex-1 flex flex-col relative overflow-visible">
+              <div className="flex-grow flex flex-col relative overflow-y-auto no-scrollbar">
                 {renderReservesPanelContent()}
               </div>
             </div>
           </>
         )}
-
       </div>
 
       {/* --- COACH STRATEGY PROGRESSION MODAL --- */}

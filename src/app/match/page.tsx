@@ -955,8 +955,17 @@ export default function MatchPage() {
     
     // Smooth interpolation factor between original layout and narrow spacing
     const t = Math.max(0, Math.min(1, (1200 - visibleVirtualWidth) / 500));
-    const finalLeft = origLeft + t * (spacedLeft - origLeft);
-    const finalTop = Math.max(virtualYMin + 15, Math.min(virtualYMax - 15 - playerHeight, origTop));
+    
+    // Clamp X position to prevent player cards from clipping/falling off screen
+    const rawLeft = origLeft + t * (spacedLeft - origLeft);
+    const finalLeft = Math.max(virtualXMin + 15, Math.min(virtualXMax - 15 - playerWidth, rawLeft));
+
+    // Clamp Y position to stay between top scoreboard (110px) and bottom HUD (210px)
+    const scoreboardHeightVirtual = 110 / matchScale;
+    const bottomHudHeightVirtual = 210 / matchScale;
+    const minY = virtualYMin + scoreboardHeightVirtual + 10;
+    const maxY = virtualYMax - bottomHudHeightVirtual - playerHeight - 10;
+    const finalTop = Math.max(minY, Math.min(maxY, origTop));
 
     return (
       <MatchPlayerUnit
@@ -1034,8 +1043,6 @@ export default function MatchPage() {
   if (viewState === 'SIMULATING' || viewState === 'HALFTIME') {
     return (
       <div className="flex w-full h-full justify-center items-center font-sans bg-black overflow-hidden fixed inset-0 z-[100]">
-        {/* Blurred stadium background to replace black letterbox bars */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-40 blur-md pointer-events-none" style={{ backgroundImage: 'url("https://www.dreamteamph.com/bg/match_stadium-v2.webp")' }} />
         
         <style dangerouslySetInnerHTML={{__html: matchStyles}} />
         
@@ -1125,24 +1132,29 @@ export default function MatchPage() {
             </div>
 
             {/* BOTTOM HUD CONTAINER */}
-            <div className="absolute bottom-6 left-6 right-6 z-50 flex gap-3 items-end xl:justify-center pointer-events-auto">
-                <MatchBottomHUD
-                  activeLogTab={activeLogTab}
-                  setActiveLogTab={setActiveLogTab}
-                  statsTeam={statsTeam}
-                  setStatsTeam={setStatsTeam}
-                  statsFilter={statsFilter}
-                  setStatsFilter={setStatsFilter}
-                  displayEvents={displayEvents}
-                  matchState={matchState}
-                  currentLineup={currentLineup}
-                  aiTeam={aiTeam}
-                  getDisplayStats={getDisplayStats}
-                  logEndRef={logEndRef}
-                  roster={roster}
-                />
+            <div 
+              className="absolute left-6 right-6 z-50 flex flex-col md:flex-row gap-3 items-center md:items-end justify-center pointer-events-auto"
+              style={{ bottom: "var(--bottom-safe-gap)" }}
+            >
+                <div className="flex gap-3 w-full md:w-auto items-end justify-center flex-1 max-w-[1070px]">
+                    <MatchBottomHUD
+                      activeLogTab={activeLogTab}
+                      setActiveLogTab={setActiveLogTab}
+                      statsTeam={statsTeam}
+                      setStatsTeam={setStatsTeam}
+                      statsFilter={statsFilter}
+                      setStatsFilter={setStatsFilter}
+                      displayEvents={displayEvents}
+                      matchState={matchState}
+                      currentLineup={currentLineup}
+                      aiTeam={aiTeam}
+                      getDisplayStats={getDisplayStats}
+                      logEndRef={logEndRef}
+                      roster={roster}
+                    />
+                </div>
                 
-                <div className="flex gap-2 items-end shrink-0">
+                <div className="flex gap-2 items-center justify-center shrink-0 w-full md:w-auto">
                     <MatchActionBar
                       openModal={openModal}
                       handleTimeout={handleTimeout}

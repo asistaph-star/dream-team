@@ -20,13 +20,24 @@ export function LobbyChat({ messages, chatInput, setChatInput, onSendMessage }: 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 900 || window.innerHeight < 750) {
+        setIsCollapsed(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     if (!isCollapsed) {
       chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isCollapsed]);
 
   return (
-    <div className="absolute bottom-[10px] left-[20px] w-[350px] z-30 group p-3">
+    <div className="w-full z-30 group p-3">
       {/* Slanted Glassmorphic Backdrop Card (Skewed separately so scrollbars and text remain ultra-sharp and HD) */}
       <div className="absolute inset-0 bg-[#0c0d12]/95 backdrop-blur-[12px] border border-white/10 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] skew-x-[-4deg] group-hover:border-white/30 transition-all duration-300 z-0 pointer-events-none"></div>
       

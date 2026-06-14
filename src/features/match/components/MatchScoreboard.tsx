@@ -2,6 +2,7 @@ import React from "react";
 import { Player } from "@/lib/types/player";
 import { MatchState, computeEffective } from "@/lib/utils/matchEngine";
 import { SLOT_POSITIONS } from "@/features/match/constants/matchConfig";
+import { useGameViewportScale } from "@/lib/hooks/useGameViewportScale";
 
 interface MatchScoreboardProps {
   matchState: MatchState;
@@ -105,8 +106,17 @@ export function MatchScoreboard({
     return 'to-amber-950/40';
   };
 
+  const { viewportWidth } = useGameViewportScale();
+  const scaleFactor = viewportWidth < 760 ? Math.max(0.6, (viewportWidth - 24) / 760) : 1;
+
   return (
-    <div className="absolute top-8 left-1/2 -translate-x-1/2 flex items-start gap-10 z-50">
+    <div 
+      className="absolute top-8 left-1/2 flex items-start gap-10 z-50 transition-transform duration-300"
+      style={{
+        transform: `translateX(-50%) scale(${scaleFactor})`,
+        transformOrigin: "top center"
+      }}
+    >
       <div className="flex flex-col gap-2 items-center">
         {isPreviewMode && (
           <div className="bg-cyan-500/30 border border-cyan-400 text-cyan-300 font-bold text-[8px] px-2 py-0.5 rounded animate-pulse uppercase tracking-widest shadow-[0_0_10px_rgba(6,182,212,0.5)]">
