@@ -19,6 +19,7 @@ import { SkewedBadge } from "@/components/shared/SkewedBadge";
 import { LineupArchetypePanel } from "@/components/skills/LineupArchetypePanel";
 
 import { useGameViewportScale } from "@/lib/hooks/useGameViewportScale";
+import { GameViewport } from "@/components/layout/GameViewport";
 
 export default function AuthenticLobby() {
   const {
@@ -483,12 +484,12 @@ export default function AuthenticLobby() {
     .filter((p): p is Player => p !== undefined);
 
   return (
-    <main className="relative w-screen h-[100dvh] overflow-hidden bg-black flex items-center justify-center pointer-events-none">
+    <>
       {draggingPlayerId && (
         <style dangerouslySetInnerHTML={{ __html: `* { cursor: none !important; }` }} />
       )}
       
-      {/* Drag & Drop Ghost Image */}
+      {/* Drag & Drop Ghost Image (placed outside GameViewport to prevent coordinate scaling offset) */}
       {draggingPlayerId && (
         <div 
           className="fixed pointer-events-none z-[100]"
@@ -507,6 +508,8 @@ export default function AuthenticLobby() {
           />
         </div>
       )}
+
+      <GameViewport className="pointer-events-none">
 
       {selectedGlobalPlayer && (
         <PlayerHexProfileModal 
@@ -546,15 +549,13 @@ export default function AuthenticLobby() {
         />
       )}
       
-      {/* 1. GAME WORLD LAYER (scales with cover scaling) */}
+      {/* 1. GAME WORLD LAYER */}
       <div
         id="stadium-container"
-        className="absolute top-1/2 left-1/2 pointer-events-auto shadow-2xl overflow-hidden"
+        className="absolute inset-0 pointer-events-auto shadow-2xl overflow-hidden"
         style={{
           width: '1420px',
           height: '800px',
-          transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: "center center",
           backgroundImage: 'url("/bg/stadium-v9.png")',
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center center",
@@ -579,7 +580,7 @@ export default function AuthenticLobby() {
       </div>
 
       {/* 2. UI SAFE OVERLAY LAYER */}
-      <div className="absolute inset-0 w-screen h-[100dvh] pointer-events-none z-30 overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
         
         {/* Floating Toast for OOP Warning (Authentic NBA 2K Style) */}
         {isDraggingOOPGlobal && (
@@ -615,14 +616,13 @@ export default function AuthenticLobby() {
             salaryCap={salaryCap}
             onAddCash={addCash}
             onAddTk={addTk}
-            uiScale={uiScale}
+            uiScale={1}
           />
         </div>
 
         {/* Left Side Icons + Lineup Archetypes Panel */}
         <div 
-          className="absolute left-6 top-[120px] flex flex-col gap-4 pointer-events-auto max-w-[280px] transition-transform duration-300"
-          style={{ transform: `scale(${uiScale})`, transformOrigin: 'top left' }}
+          className="absolute left-6 top-[120px] flex flex-col gap-4 pointer-events-auto max-w-[280px]"
         >
           {/* Left Side Icons */}
           <div className="flex items-center gap-3">
@@ -757,23 +757,17 @@ export default function AuthenticLobby() {
             <button 
               onClick={() => setIsReservesOpen(true)}
               className="absolute right-6 top-[120px] pointer-events-auto bg-[#121215]/90 border border-white/20 px-4 py-2.5 rounded-lg text-white font-[family-name:var(--font-outfit)] font-black text-xs uppercase tracking-wider italic flex items-center gap-2 shadow-[0_4px_15px_rgba(0,0,0,0.6)] hover:border-white transition-all active:scale-[0.98] cursor-pointer z-30"
-              style={{
-                transform: `scale(${uiScale})`,
-                transformOrigin: "top right"
-              }}
             >
               <Sparkles size={14} className="text-yellow-400" />
               RESERVES ({activeReserves.length})
             </button>
- 
+
             {/* Bottom Right stacked Auto Lineup and Server Counter */}
             <div 
               className="absolute flex items-center gap-3 pointer-events-auto z-30 transition-all duration-300"
               style={{
                 right: "var(--side-safe-gap)",
-                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
-                transform: `scale(${uiScale})`,
-                transformOrigin: "bottom right"
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
               }}
             >
               {/* Auto Lineup Button */}
@@ -783,26 +777,26 @@ export default function AuthenticLobby() {
                   Auto Lineup
                 </span>
               </button>
- 
+
               {/* Online Counter */}
               <div className="w-[140px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 overflow-hidden">
                 <div className="flex items-center gap-1.5 relative z-10">
                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.8)]"></div>
                    <span className="text-zinc-300 font-[family-name:var(--font-outfit)] font-bold text-[10px] tracking-wider uppercase mt-0.5">SERVERS</span>
-                </div>
+                 </div>
                 <span className="text-white font-black text-[13px] tracking-wider drop-shadow-[0_0_3px_rgba(255,255,255,0.4)] mt-0.5">240</span>
               </div>
             </div>
- 
+
             {/* Reserves Drawer (collapsible Overlay) */}
             {isReservesOpen && (
               <div 
                 onClick={() => setIsReservesOpen(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 pointer-events-auto transition-opacity duration-300"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40 pointer-events-auto transition-opacity duration-300"
               />
             )}
             <div 
-              className={`fixed z-50 pointer-events-auto transition-all duration-300 flex flex-col bg-[#0c0d12]/95 border border-white/10 p-4 shadow-[0_15px_40px_rgba(0,0,0,0.8)]
+              className={`absolute z-50 pointer-events-auto transition-all duration-300 flex flex-col bg-[#0c0d12]/95 border border-white/10 p-4 shadow-[0_15px_40px_rgba(0,0,0,0.8)]
                 ${viewportWidth >= 640 
                   ? 'top-[var(--top-safe-gap)] right-[var(--side-safe-gap)] rounded-xl' 
                   : 'left-1/2 -translate-x-1/2 rounded-t-xl'
@@ -814,13 +808,11 @@ export default function AuthenticLobby() {
               `}
               style={{
                 width: viewportWidth >= 640 ? "var(--drawer-max-width)" : "min(100vw - 24px, 450px)",
-                bottom: `calc((var(--bottom-nav-height) + var(--bottom-safe-gap)) * ${uiScale} + 12px)`,
+                bottom: "calc(var(--bottom-nav-height) + var(--bottom-safe-gap) + 12px)",
                 top: viewportWidth >= 640 ? "var(--top-safe-gap)" : "auto",
                 maxHeight: viewportWidth >= 640 
-                  ? `calc((100vh - var(--top-safe-gap)) * ${1 / uiScale} - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)`
-                  : `calc((100dvh - var(--top-safe-gap)) * ${1 / uiScale} - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)`,
-                transform: `scale(${uiScale}) ${viewportWidth < 640 && isReservesOpen ? 'translateY(0)' : viewportWidth < 640 ? 'translateY(100%)' : ''}`,
-                transformOrigin: viewportWidth >= 640 ? "bottom right" : "bottom center",
+                  ? "calc(100% - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)"
+                  : "calc(100% - var(--top-safe-gap) - var(--bottom-nav-height) - var(--bottom-safe-gap) - 24px)",
               }}
             >
               <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2 shrink-0">
@@ -863,6 +855,7 @@ export default function AuthenticLobby() {
         onRefreshFA={handleRefreshFA}
         onSignPlayer={handleSignPlayer}
       />
-    </main>
+    </GameViewport>
+  </>
   );
 }
