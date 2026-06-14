@@ -34,29 +34,23 @@ export const GameViewport = ({
     const calc = () => {
       const winW = window.innerWidth;
       const winH = window.innerHeight;
-      const winRatio = winW / winH;
-      const baseRatio = BASE_W / BASE_H;
 
-      let scale: number, logW: number, logH: number, offsetX: number, offsetY: number;
+      // Scale to fit available screen space while maintaining fixed 1420x800 aspect ratio
+      const scale = Math.min(winW / BASE_W, winH / BASE_H);
+      
+      // Calculate letterbox/pillarbox offset translations to center the inner viewport
+      const offsetX = (winW - BASE_W * scale) / 2;
+      const offsetY = (winH - BASE_H * scale) / 2;
 
-      if (winRatio > baseRatio) {
-        // Wider than base — expand width to fill
-        scale = winH / BASE_H;
-        logW = winW / scale;
-        logH = BASE_H;
-        offsetX = (logW - BASE_W) / 2;
-        offsetY = 0;
-      } else {
-        // Taller than base — expand height to fill
-        scale = winW / BASE_W;
-        logW = BASE_W;
-        logH = winH / scale;
-        offsetX = 0;
-        offsetY = (logH - BASE_H) / 2;
-      }
-
-      setVp({ scale, logW, logH, offsetX, offsetY });
+      setVp({
+        scale,
+        logW: BASE_W,
+        logH: BASE_H,
+        offsetX,
+        offsetY,
+      });
     };
+
     calc();
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
@@ -64,23 +58,28 @@ export const GameViewport = ({
 
   return (
     <GameViewportContext.Provider value={vp}>
-      <div
-        className={`relative overflow-hidden ${className}`}
-        style={{
-          width: `${vp.logW}px`,
-          height: `${vp.logH}px`,
-          transform: `scale(${vp.scale})`,
-          transformOrigin: 'center center',
-          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center center',
-          backgroundSize: 'cover',
-          backgroundColor: 'black',
-          ['--court-offset-x' as string]: `${vp.offsetX}px`,
-          ['--court-offset-y' as string]: `${vp.offsetY}px`,
-        }}
+      <div 
+        className="w-screen h-screen overflow-hidden bg-black relative"
+        style={{ width: '100vw', height: '100vh' }}
       >
-        {children}
+        <div
+          className={`absolute overflow-hidden ${className}`}
+          style={{
+            width: `${vp.logW}px`,
+            height: `${vp.logH}px`,
+            transform: `translate(${vp.offsetX}px, ${vp.offsetY}px) scale(${vp.scale})`,
+            transformOrigin: 'top left',
+            backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center center',
+            backgroundSize: 'cover',
+            backgroundColor: 'black',
+            ['--court-offset-x' as string]: '0px',
+            ['--court-offset-y' as string]: '0px',
+          }}
+        >
+          {children}
+        </div>
       </div>
     </GameViewportContext.Provider>
   );
