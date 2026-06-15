@@ -591,7 +591,7 @@ function AuthenticLobbyContent() {
           </div>
           
           {/* Scrollable binder grid */}
-          <div className="relative flex-1 pr-1 flex flex-col min-h-0 z-10 overflow-y-auto scrollbar-thin">
+          <div className="relative flex-1 pr-1 flex flex-col min-h-0 z-10 overflow-y-auto overflow-x-hidden scrollbar-thin">
             <div className="grid grid-cols-2 gap-x-2 gap-y-4" style={{ gridAutoRows: 'min-content', alignItems: 'start' }}>
               {['B1', 'B2', 'B3', 'B4', 'B5', 'B6'].map((slotKey, index) => {
                 const benchPlayer = activeReserves.find(p => lineupOverride[slotKey] === p.id);
