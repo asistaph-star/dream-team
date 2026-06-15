@@ -12,7 +12,9 @@ export function MatchExitButton({ onExit }: MatchExitButtonProps) {
       className="absolute z-50"
       style={{
         right: `${baseWidth - visibleRect.right + 32}px`,
-        top: `${visibleRect.top + 32}px`
+        top: `${visibleRect.top + 32}px`,
+        transform: 'scale(var(--hud-stage-scale, 1))',
+        transformOrigin: 'top right'
       }}
     >
       <button 

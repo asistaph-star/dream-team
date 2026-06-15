@@ -109,8 +109,12 @@ export function MatchScoreboard({
 
   return (
     <div 
-      className="absolute left-1/2 -translate-x-1/2 flex items-start gap-10 z-50"
-      style={{ top: `${visibleRect.top + 32}px` }}
+      className="absolute left-1/2 flex items-start gap-10 z-50"
+      style={{ 
+        top: `${visibleRect.top + 32}px`,
+        transform: 'translateX(-50%) scale(var(--hud-stage-scale, 1))',
+        transformOrigin: 'top center'
+      }}
     >
       <div className="flex flex-col gap-2 items-center">
         {isPreviewMode && (

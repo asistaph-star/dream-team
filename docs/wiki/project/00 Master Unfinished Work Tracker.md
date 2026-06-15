@@ -374,6 +374,7 @@ All core special skill family implementations are complete:
 - Phase SkillSystemCanonicalCloseout: Completed. Final canonical ownership table for all 15 families recorded in 00 Current Canonical System State.md. Banned legacy mechanics list documented. All mechanic IDs corrected to match FAMILY_TO_MECHANIC_MAP. Tilted ownership corrected to Poster Spark/Paint Magnet.
 - Phase UI-PlayerCardUpgradePolish: Completed and verified. Polished player profile modal, fixed clipping on star-up preview, reorganized attribute panels into clear readable groups (Core, Shooting, Playmaking, Defense, Physical / Effort).
 - Phase GameViewportCoverSafeRectRefactor: Completed and verified. Configured unified GameViewport and GameStage cover-scaling viewport system using a 1536x864 canonical size. Anchored key HUDs, panels, Chat, and BottomNav inside visibleRect safe boundaries. Secured drag and drop coordinate calculations under transformed scale parent coordinates.
+- Phase GameViewportScaleCalibration: Completed and verified. Calibrated worldScale (cover fit) and uiScale (clamped from 0.72 to 1.0) viewport layouts for Stadium and Match pages. Scaled cards, HUDs, and panels stage-relatively using visual scale CSS variables and anchored edge transforms. Checked breakpoints at 1440, 1280, 1024, 900, 768, and 640.
 
 Next phases:
 None planned at the moment. All major phases are completed.

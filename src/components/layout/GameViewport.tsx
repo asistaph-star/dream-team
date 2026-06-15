@@ -6,7 +6,10 @@ const BASE_WIDTH = 1536;
 const BASE_HEIGHT = 864;
 
 export interface GameViewportContextType {
-  scale: number;
+  scale: number; // For backward compatibility, maps to worldScale
+  worldScale: number;
+  uiScale: number;
+  actualScale: number;
   baseWidth: number;
   baseHeight: number;
   viewportWidth: number;
@@ -29,6 +32,9 @@ export const useGameViewport = () => {
   if (!context) {
     return {
       scale: 1,
+      worldScale: 1,
+      uiScale: 1,
+      actualScale: 1,
       baseWidth: BASE_WIDTH,
       baseHeight: BASE_HEIGHT,
       viewportWidth: BASE_WIDTH,
@@ -59,6 +65,7 @@ export function useGameViewportScale(options?: {
     const fallbackBaseH = options?.baseHeight ?? BASE_HEIGHT;
     return {
       scale: 1,
+      worldScale: 1,
       uiScale: 1,
       actualScale: 1,
       visibleRect: {
@@ -81,9 +88,10 @@ export function useGameViewportScale(options?: {
 
   if (baseW === context.baseWidth && baseH === context.baseHeight) {
     return {
-      scale: context.isInsideStage ? 1 : context.scale,
-      uiScale: context.isInsideStage ? 1 : context.scale,
-      actualScale: context.scale,
+      scale: context.isInsideStage ? 1 : context.worldScale,
+      worldScale: context.isInsideStage ? 1 : context.worldScale,
+      uiScale: context.isInsideStage ? 1 : context.uiScale,
+      actualScale: context.actualScale,
       visibleRect: context.visibleRect,
       viewportWidth: context.viewportWidth,
       viewportHeight: context.viewportHeight,
@@ -92,16 +100,18 @@ export function useGameViewportScale(options?: {
     };
   }
 
-  const scale = Math.max(context.viewportWidth / baseW, context.viewportHeight / baseH);
-  const visibleWidth = context.viewportWidth / scale;
-  const visibleHeight = context.viewportHeight / scale;
+  const worldScale = Math.max(context.viewportWidth / baseW, context.viewportHeight / baseH);
+  const uiScaleVal = Math.max(0.72, Math.min(1.0, Math.min(context.viewportWidth / baseW, context.viewportHeight / baseH)));
+  const visibleWidth = context.viewportWidth / worldScale;
+  const visibleHeight = context.viewportHeight / worldScale;
   const visibleLeft = (baseW - visibleWidth) / 2;
   const visibleTop = (baseH - visibleHeight) / 2;
 
   return {
-    scale: context.isInsideStage ? 1 : scale,
-    uiScale: context.isInsideStage ? 1 : scale,
-    actualScale: scale,
+    scale: context.isInsideStage ? 1 : worldScale,
+    worldScale: context.isInsideStage ? 1 : worldScale,
+    uiScale: context.isInsideStage ? 1 : uiScaleVal,
+    actualScale: worldScale,
     visibleRect: {
       left: visibleLeft,
       top: visibleTop,
@@ -145,9 +155,10 @@ export const GameViewport = ({
     return () => window.removeEventListener('resize', calc);
   }, []);
 
-  const scale = Math.max(vp.width / BASE_WIDTH, vp.height / BASE_HEIGHT);
-  const visibleWidth = vp.width / scale;
-  const visibleHeight = vp.height / scale;
+  const worldScale = Math.max(vp.width / BASE_WIDTH, vp.height / BASE_HEIGHT);
+  const uiScale = Math.max(0.72, Math.min(1.0, Math.min(vp.width / BASE_WIDTH, vp.height / BASE_HEIGHT)));
+  const visibleWidth = vp.width / worldScale;
+  const visibleHeight = vp.height / worldScale;
 
   const visibleLeft = (BASE_WIDTH - visibleWidth) / 2;
   const visibleTop = (BASE_HEIGHT - visibleHeight) / 2;
@@ -155,7 +166,10 @@ export const GameViewport = ({
   const visibleBottom = visibleTop + visibleHeight;
 
   const contextValue: GameViewportContextType = {
-    scale,
+    scale: worldScale,
+    worldScale,
+    uiScale,
+    actualScale: worldScale,
     baseWidth: BASE_WIDTH,
     baseHeight: BASE_HEIGHT,
     viewportWidth: vp.width,
@@ -209,6 +223,20 @@ export const GameStage = ({
     isInsideStage: true,
   };
 
+  // Starting visual scale targets
+  const stadiumCardVisualScale = Math.max(0.68, Math.min(0.88, context.uiScale * 0.95));
+  const matchCardVisualScale = Math.max(0.62, Math.min(0.82, context.uiScale * 0.90));
+  const hudVisualScale = Math.max(0.72, Math.min(0.92, context.uiScale * 0.95));
+  const panelVisualScale = Math.max(0.72, Math.min(0.92, context.uiScale * 0.95));
+  const bottomNavVisualScale = Math.max(0.72, Math.min(0.90, context.uiScale * 0.95));
+
+  // Stage relative scales
+  const stadiumCardStageScale = stadiumCardVisualScale / context.worldScale;
+  const matchCardStageScale = matchCardVisualScale / context.worldScale;
+  const hudStageScale = hudVisualScale / context.worldScale;
+  const panelStageScale = panelVisualScale / context.worldScale;
+  const bottomNavStageScale = bottomNavVisualScale / context.worldScale;
+
   return (
     <GameViewportContext.Provider value={stageContextValue}>
       <div
@@ -219,12 +247,26 @@ export const GameStage = ({
           height: `${BASE_HEIGHT}px`,
           left: '50%',
           top: '50%',
-          transform: `translate(-50%, -50%) scale(${context.scale})`,
+          transform: `translate(-50%, -50%) scale(${context.worldScale})`,
           transformOrigin: 'center center',
           backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center center',
           backgroundSize: 'cover',
+          ...({
+            '--world-scale': context.worldScale,
+            '--ui-scale': context.uiScale,
+            '--stadium-card-visual-scale': stadiumCardVisualScale,
+            '--stadium-card-stage-scale': stadiumCardStageScale,
+            '--match-card-visual-scale': matchCardVisualScale,
+            '--match-card-stage-scale': matchCardStageScale,
+            '--hud-visual-scale': hudVisualScale,
+            '--hud-stage-scale': hudStageScale,
+            '--panel-visual-scale': panelVisualScale,
+            '--panel-stage-scale': panelStageScale,
+            '--bottom-nav-visual-scale': bottomNavVisualScale,
+            '--bottom-nav-stage-scale': bottomNavStageScale,
+          } as React.CSSProperties),
           ...style,
         }}
       >

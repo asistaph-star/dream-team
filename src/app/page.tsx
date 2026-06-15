@@ -55,7 +55,7 @@ function AuthenticLobbyContent() {
   const [isAscending, setIsAscending] = useState(false);
 
   const stageRef = useRef<HTMLDivElement>(null);
-  const { visibleRect, baseWidth, baseHeight, actualScale } = useGameViewportScale();
+  const { visibleRect, baseWidth, baseHeight, worldScale } = useGameViewportScale();
   const [time, setTime] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [showCoachModal, setShowCoachModal] = useState(false);
@@ -96,8 +96,8 @@ function AuthenticLobbyContent() {
       let stageY = 0;
       if (stageRef.current) {
         const rect = stageRef.current.getBoundingClientRect();
-        stageX = (e.clientX - rect.left) / actualScale;
-        stageY = (e.clientY - rect.top) / actualScale;
+        stageX = (e.clientX - rect.left) / worldScale;
+        stageY = (e.clientY - rect.top) / worldScale;
       }
 
       setPointerPos({ x: e.clientX, y: e.clientY });
@@ -156,7 +156,7 @@ function AuthenticLobbyContent() {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos, actualScale, roster]);
+  }, [draggingPlayerId, dragHoverSlot, setLineupSlot, potentialDragPlayerId, dragStartPos, worldScale, roster]);
 
   // NBA 2K Free Agents Market States
   const [showAgentModal, setShowAgentModal] = useState(false);
@@ -332,8 +332,14 @@ function AuthenticLobbyContent() {
             setSelectedGlobalPlayer(player);
           }
         }}
-        className={`absolute pointer-events-auto transition-transform ${isHovered ? 'scale-110 z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ top: `${coords.top}px`, left: `${coords.left}px`, opacity: draggingPlayerId === player?.id ? 0.5 : 1 }}
+        className={`absolute pointer-events-auto transition-all ${isHovered ? 'z-50' : 'z-20 hover:z-50'} ${!draggingPlayerId && player ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        style={{ 
+          top: `${coords.top}px`, 
+          left: `${coords.left}px`, 
+          opacity: draggingPlayerId === player?.id ? 0.5 : 1,
+          transform: `scale(calc(var(--stadium-card-stage-scale, 1) * ${isHovered ? 1.05 : 1.0}))`,
+          transformOrigin: 'center center'
+        }}
       >
         <div className="flex flex-col items-center relative">
           
@@ -490,7 +496,12 @@ function AuthenticLobbyContent() {
         {/* --- Online Counter --- */}
         <div 
           className="absolute w-[210px] h-[36px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-[4px] shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-between px-3 z-30 overflow-hidden"
-          style={{ right: `${baseWidth - visibleRect.right + 24}px`, bottom: `${baseHeight - visibleRect.bottom + 92}px` }}
+          style={{ 
+            right: `${baseWidth - visibleRect.right + 24}px`, 
+            bottom: `${baseHeight - visibleRect.bottom + 92}px`,
+            transform: 'scale(var(--panel-stage-scale, 1))',
+            transformOrigin: 'bottom right'
+          }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.2)_1px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
           <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
@@ -545,7 +556,12 @@ function AuthenticLobbyContent() {
         {/* --- AUTO LINEUP BUTTON --- */}
         <div 
           className="absolute z-30 w-[210px] h-[38px]"
-          style={{ right: `${baseWidth - visibleRect.right + 24}px`, bottom: `${baseHeight - visibleRect.bottom + 136}px` }}
+          style={{ 
+            right: `${baseWidth - visibleRect.right + 24}px`, 
+            bottom: `${baseHeight - visibleRect.bottom + 136}px`,
+            transform: 'scale(var(--panel-stage-scale, 1))',
+            transformOrigin: 'bottom right'
+          }}
         >
           <button onClick={autoLineup} className="w-full h-full relative group overflow-hidden rounded-[4px] border border-white/20 bg-[#121215]/90 backdrop-blur-md shadow-[0_4px_15px_rgba(0,0,0,0.6)] flex items-center justify-center transition-all duration-300 active:scale-[0.98] hover:border-white hover:shadow-[0_0_15px_rgba(255,255,255,0.3)]">
             {/* Glass sheen */}
@@ -571,7 +587,13 @@ function AuthenticLobbyContent() {
         {/* --- BENCH PLAYERS (PREMIUM 2K BINDER CARD STORAGE) --- */}
         <div 
           className="absolute w-[210px] bg-[#121215]/90 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.9)] z-20 flex flex-col overflow-visible"
-          style={{ right: `${baseWidth - visibleRect.right + 24}px`, top: `${visibleRect.top + 140}px`, height: `${Math.max(260, visibleRect.height - 340)}px` }}
+          style={{ 
+            right: `${baseWidth - visibleRect.right + 24}px`, 
+            top: `${visibleRect.top + 140}px`, 
+            height: `${Math.max(260, visibleRect.height - 340)}px`,
+            transform: 'scale(var(--panel-stage-scale, 1))',
+            transformOrigin: 'top right'
+          }}
         >
           {/* Low Poly / Glass Facets Texture for the entire panel */}
           <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">

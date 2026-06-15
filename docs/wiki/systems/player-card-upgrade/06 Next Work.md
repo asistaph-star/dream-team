@@ -42,6 +42,7 @@ All 15 learned special skill families are now fully active, rollable, mapped to 
 | UI-PlayerCardUpgradePolish | Done (Polished modal, fixed clipping on star-up preview, reorganized attribute panels) |
 | ResponsiveAppLayoutSystem | Done (global tokens, CSS BottomNav, dual-mode SidebarTabs, stadium drawers, cover-fit viewport, viewport-safe modals) |
 | GameViewportCoverSafeRectRefactor | Done (1536x864 canonical stage, cover scaling, visibleRect safe-anchored HUDs/panels, stage pointer coordinate translation, compact BottomNav) |
+| GameViewportScaleCalibration | Done (worldScale cover calculations, clamped uiScale layout layers, stage-relative CSS variables, anchored visual edge transforms, compact BottomNav padding/gaps) |
 | Validation Suite Status | Done (all 51 tests passing) |
 
 ---

@@ -34,7 +34,9 @@ export function LobbyProfileHUD({
         className="absolute z-50 group"
         style={{
           left: `${visibleRect.left + 24}px`,
-          top: `${visibleRect.top + 20}px`
+          top: `${visibleRect.top + 20}px`,
+          transform: 'scale(var(--hud-stage-scale, 1))',
+          transformOrigin: 'top left'
         }}
       >
         {/* Main Container (No parent skew, completely sharp content) */}
@@ -176,7 +178,9 @@ export function LobbyProfileHUD({
         className="absolute z-50 group"
         style={{
           right: `${baseWidth - visibleRect.right + 24}px`,
-          top: `${visibleRect.top + 20}px`
+          top: `${visibleRect.top + 20}px`,
+          transform: 'scale(var(--hud-stage-scale, 1))',
+          transformOrigin: 'top right'
         }}
       >
         {/* Main Container (No parent skew, completely sharp content) */}

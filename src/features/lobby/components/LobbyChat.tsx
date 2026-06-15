@@ -29,7 +29,9 @@ export function LobbyChat({ messages, chatInput, setChatInput, onSendMessage }: 
       className="absolute w-[350px] z-30 group p-3"
       style={{
         left: `${visibleRect.left + 24}px`,
-        bottom: `${baseHeight - visibleRect.bottom + 100}px`
+        bottom: `${baseHeight - visibleRect.bottom + 100}px`,
+        transform: 'scale(var(--panel-stage-scale, 1))',
+        transformOrigin: 'bottom left'
       }}
     >
       {/* Slanted Glassmorphic Backdrop Card (Skewed separately so scrollbars and text remain ultra-sharp and HD) */}

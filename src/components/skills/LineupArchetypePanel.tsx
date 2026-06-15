@@ -58,7 +58,9 @@ export function LineupArchetypePanel({ startingLineup }: LineupArchetypePanelPro
       className="absolute w-[240px] z-30 group p-3 pointer-events-auto"
       style={{
         left: `${visibleRect.left + 24}px`,
-        top: `${visibleRect.top + 210}px`
+        top: `${visibleRect.top + 210}px`,
+        transform: 'scale(var(--panel-stage-scale, 1))',
+        transformOrigin: 'top left'
       }}
     >
       {/* Slanted Glassmorphic Backdrop Card (matching LobbyChat style) */}

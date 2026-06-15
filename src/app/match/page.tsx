@@ -56,7 +56,7 @@ export default function MatchPage() {
 function MatchPageContent() {
   const router = useRouter();
   const stageRef = useRef<HTMLDivElement>(null);
-  const { visibleRect, baseWidth, baseHeight, actualScale } = useGameViewportScale();
+  const { visibleRect, baseWidth, baseHeight, worldScale } = useGameViewportScale();
   const { finishMatch, activeLineup, activeReserves, roster, teamOffense, teamDefense, strategyLevels } = useGameState();
   const matchRoster = useMemo(() => [...activeLineup, ...activeReserves], [activeLineup, activeReserves]);
   const injuredStarters = activeLineup.filter(p => p.isInjured);
@@ -148,8 +148,8 @@ function MatchPageContent() {
       let stageY = 0;
       if (stageRef.current) {
         const rect = stageRef.current.getBoundingClientRect();
-        stageX = (e.clientX - rect.left) / actualScale;
-        stageY = (e.clientY - rect.top) / actualScale;
+        stageX = (e.clientX - rect.left) / worldScale;
+        stageY = (e.clientY - rect.top) / worldScale;
       }
 
       pointerPosRef.current = { x: e.clientX, y: e.clientY };
@@ -231,7 +231,7 @@ function MatchPageContent() {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
     };
-  }, [draggingPlayerId, dragHoverSlotId, potentialDragPlayerId, dragStartPos, liveLineup, activeLineup, matchRoster, matchState, subCooldownEnd, cooldownNow, actualScale]);
+  }, [draggingPlayerId, dragHoverSlotId, potentialDragPlayerId, dragStartPos, liveLineup, activeLineup, matchRoster, matchState, subCooldownEnd, cooldownNow, worldScale]);
 
   // Smooth clock animation states
   const [displayClock, setDisplayClock] = useState<number>(720);
@@ -942,7 +942,11 @@ function MatchPageContent() {
         player={p}
         dataSlotId={!isAi ? p.id : undefined}
         className={`player-unit ${posClass} ${dragClass} ${!isAi && !draggingPlayerId ? 'cursor-grab active:cursor-grabbing' : ''}`}
-        style={{ transform: (isActive || hasShotMeter) ? 'scale(1.15)' : 'scale(1)', transformOrigin: 'bottom center', ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) }}
+        style={{ 
+          transform: `scale(calc(var(--match-card-stage-scale, 1) * ${(isActive || hasShotMeter) ? 1.08 : 1.0}))`, 
+          transformOrigin: 'bottom center', 
+          ...(hasShotMeter ? { zIndex: 150 } : hasFT ? { zIndex: 60 } : hasPopup ? { zIndex: 30 } : {}) 
+        }}
         onPointerDown={(e) => {
           if (!isAi && !showSubModal) {
             e.preventDefault();
@@ -1024,7 +1028,7 @@ function MatchPageContent() {
             matchRoster={matchRoster}
             roster={roster}
             pointerPos={pointerPos}
-            matchScale={actualScale}
+            matchScale={worldScale}
             showSubModal={showSubModal}
             playerStamina={matchState.playerStamina}
           />
@@ -1087,11 +1091,13 @@ function MatchPageContent() {
 
             {/* BOTTOM HUD CONTAINER (Groups Chat, Logs, and Actions tightly) */}
             <div 
-              className="absolute z-50 flex gap-3 items-end xl:justify-center"
+              className="absolute left-1/2 z-50 flex gap-3 items-end justify-center"
               style={{
                 bottom: `${baseHeight - visibleRect.bottom + 24}px`,
-                left: `${visibleRect.left + 24}px`,
-                right: `${baseWidth - visibleRect.right + 24}px`
+                transform: 'translateX(-50%) scale(var(--panel-stage-scale, 1))',
+                transformOrigin: 'bottom center',
+                width: '100%',
+                maxWidth: `min(1488px, calc(${visibleRect.width}px - 48px))`
               }}
             >
                 
