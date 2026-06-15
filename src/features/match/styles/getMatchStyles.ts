@@ -1,8 +1,6 @@
 export const getMatchStyles = (matchScale: number): string => `
         .stadium {
-            width: 1420px; height: 800px; min-width: 1420px; flex-shrink: 0;
-            background-image: url('https://www.dreamteamph.com/bg/match_stadium-v2.webp');
-            background-size: 100% 100%; position: relative;
+            width: 100%; height: 100%; position: relative;
         }
         .player-unit { position: absolute; width: 106px; height: 110px; z-index: 10; transition: transform 0.3s; background: transparent; }
         .player-unit:hover { z-index: 100; }
@@ -32,10 +30,17 @@ export const getMatchStyles = (matchScale: number): string => `
         .tt-hot { text-align: center; font-size: 10px; color: #f59e0b; padding: 4px; background: rgba(245,158,11,0.1); font-weight: bold; }
         .tt-rarity { text-align: center; font-size: 10px; font-weight: 900; padding: 4px 0 6px; }
 
-        .h-sf, .h-c, .h-pf, .h-sg, .h-pg,
-        .a-sf, .a-c, .a-pf, .a-sg, .a-pg {
-            /* Positioned dynamically in React component style props */
-        }
+        .h-sf { top: 486px; left: 216px; }
+        .h-c  { top: 313px; left: 173px; }
+        .h-pf { top: 216px; left: 367px; }
+        .h-sg { top: 464px; left: 454px; }
+        .h-pg { top: 302px; left: 540px; }
+
+        .a-sf { top: 486px; right: 195px; }
+        .a-c  { top: 313px; right: 151px; }
+        .a-pf { top: 216px; right: 346px; }
+        .a-sg { top: 464px; right: 432px; }
+        .a-pg { top: 302px; right: 518px; }
 
         @keyframes float-up {
             0% { transform: translateY(0); opacity: 1; }

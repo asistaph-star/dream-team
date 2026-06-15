@@ -2,50 +2,231 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
+const BASE_WIDTH = 1536;
+const BASE_HEIGHT = 864;
+
 export interface GameViewportContextType {
   scale: number;
   baseWidth: number;
   baseHeight: number;
-  isViewscaled: boolean;
+  viewportWidth: number;
+  viewportHeight: number;
+  visibleRect: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+    width: number;
+    height: number;
+  };
+  isInsideStage: boolean;
 }
 
-export const GameViewportContext = createContext<GameViewportContextType>({
-  scale: 1,
-  baseWidth: 1536,
-  baseHeight: 864,
-  isViewscaled: false,
-});
+export const GameViewportContext = createContext<GameViewportContextType | null>(null);
 
-export const useGameViewport = () => useContext(GameViewportContext);
+export const useGameViewport = () => {
+  const context = useContext(GameViewportContext);
+  if (!context) {
+    return {
+      scale: 1,
+      baseWidth: BASE_WIDTH,
+      baseHeight: BASE_HEIGHT,
+      viewportWidth: BASE_WIDTH,
+      viewportHeight: BASE_HEIGHT,
+      visibleRect: {
+        left: 0,
+        top: 0,
+        right: BASE_WIDTH,
+        bottom: BASE_HEIGHT,
+        width: BASE_WIDTH,
+        height: BASE_HEIGHT,
+      },
+      isInsideStage: false,
+    };
+  }
+  return context;
+};
+
+export function useGameViewportScale(options?: {
+  baseWidth?: number;
+  baseHeight?: number;
+  mode?: "cover";
+}) {
+  const context = useContext(GameViewportContext);
+  
+  if (!context) {
+    const fallbackBaseW = options?.baseWidth ?? BASE_WIDTH;
+    const fallbackBaseH = options?.baseHeight ?? BASE_HEIGHT;
+    return {
+      scale: 1,
+      uiScale: 1,
+      actualScale: 1,
+      visibleRect: {
+        left: 0,
+        top: 0,
+        right: fallbackBaseW,
+        bottom: fallbackBaseH,
+        width: fallbackBaseW,
+        height: fallbackBaseH,
+      },
+      viewportWidth: fallbackBaseW,
+      viewportHeight: fallbackBaseH,
+      baseWidth: fallbackBaseW,
+      baseHeight: fallbackBaseH,
+    };
+  }
+
+  const baseW = options?.baseWidth ?? context.baseWidth;
+  const baseH = options?.baseHeight ?? context.baseHeight;
+
+  if (baseW === context.baseWidth && baseH === context.baseHeight) {
+    return {
+      scale: context.isInsideStage ? 1 : context.scale,
+      uiScale: context.isInsideStage ? 1 : context.scale,
+      actualScale: context.scale,
+      visibleRect: context.visibleRect,
+      viewportWidth: context.viewportWidth,
+      viewportHeight: context.viewportHeight,
+      baseWidth: context.baseWidth,
+      baseHeight: context.baseHeight,
+    };
+  }
+
+  const scale = Math.max(context.viewportWidth / baseW, context.viewportHeight / baseH);
+  const visibleWidth = context.viewportWidth / scale;
+  const visibleHeight = context.viewportHeight / scale;
+  const visibleLeft = (baseW - visibleWidth) / 2;
+  const visibleTop = (baseH - visibleHeight) / 2;
+
+  return {
+    scale: context.isInsideStage ? 1 : scale,
+    uiScale: context.isInsideStage ? 1 : scale,
+    actualScale: scale,
+    visibleRect: {
+      left: visibleLeft,
+      top: visibleTop,
+      right: visibleLeft + visibleWidth,
+      bottom: visibleTop + visibleHeight,
+      width: visibleWidth,
+      height: visibleHeight,
+    },
+    viewportWidth: context.viewportWidth,
+    viewportHeight: context.viewportHeight,
+    baseWidth: baseW,
+    baseHeight: baseH,
+  };
+}
 
 export const GameViewport = ({
   children,
-  baseWidth = 1536,
-  baseHeight = 864,
+  backgroundImage,
+  className = '',
+  style = {},
 }: {
   children: ReactNode;
-  baseWidth?: number;
-  baseHeight?: number;
+  backgroundImage?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }) => {
-  const [scale, setScale] = useState(1);
+  const [vp, setVp] = useState({
+    width: BASE_WIDTH,
+    height: BASE_HEIGHT,
+  });
 
   useEffect(() => {
-    const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const s = Math.min(w / baseWidth, h / baseHeight);
-      setScale(s);
+    const calc = () => {
+      setVp({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
     };
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [baseWidth, baseHeight]);
+  const scale = Math.max(vp.width / BASE_WIDTH, vp.height / BASE_HEIGHT);
+  const visibleWidth = vp.width / scale;
+  const visibleHeight = vp.height / scale;
+
+  const visibleLeft = (BASE_WIDTH - visibleWidth) / 2;
+  const visibleTop = (BASE_HEIGHT - visibleHeight) / 2;
+  const visibleRight = visibleLeft + visibleWidth;
+  const visibleBottom = visibleTop + visibleHeight;
+
+  const contextValue: GameViewportContextType = {
+    scale,
+    baseWidth: BASE_WIDTH,
+    baseHeight: BASE_HEIGHT,
+    viewportWidth: vp.width,
+    viewportHeight: vp.height,
+    visibleRect: {
+      left: visibleLeft,
+      top: visibleTop,
+      right: visibleRight,
+      bottom: visibleBottom,
+      width: visibleWidth,
+      height: visibleHeight,
+    },
+    isInsideStage: false,
+  };
 
   return (
-    <GameViewportContext.Provider value={{ scale, baseWidth, baseHeight, isViewscaled: true }}>
-      <div 
-        className="fixed inset-0 w-screen h-screen overflow-hidden bg-black select-none z-0 flex items-center justify-center"
+    <GameViewportContext.Provider value={contextValue}>
+      <div
+        className={`relative overflow-hidden w-screen h-[100dvh] bg-black ${className}`}
+        style={{
+          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center center',
+          backgroundSize: 'cover',
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    </GameViewportContext.Provider>
+  );
+};
+
+export const GameStage = ({
+  children,
+  className = '',
+  backgroundImage,
+  style = {},
+  stageRef,
+}: {
+  children: ReactNode;
+  className?: string;
+  backgroundImage?: string;
+  style?: React.CSSProperties;
+  stageRef?: React.RefObject<HTMLDivElement | null>;
+}) => {
+  const context = useGameViewport();
+  
+  const stageContextValue: GameViewportContextType = {
+    ...context,
+    isInsideStage: true,
+  };
+
+  return (
+    <GameViewportContext.Provider value={stageContextValue}>
+      <div
+        ref={stageRef}
+        className={`absolute overflow-hidden bg-black select-none ${className}`}
+        style={{
+          width: `${BASE_WIDTH}px`,
+          height: `${BASE_HEIGHT}px`,
+          left: '50%',
+          top: '50%',
+          transform: `translate(-50%, -50%) scale(${context.scale})`,
+          transformOrigin: 'center center',
+          backgroundImage: backgroundImage ? `url("${backgroundImage}")` : undefined,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center center',
+          backgroundSize: 'cover',
+          ...style,
+        }}
       >
         {children}
       </div>

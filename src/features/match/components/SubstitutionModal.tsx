@@ -69,7 +69,7 @@ export const SubstitutionModal: React.FC<SubstitutionModalProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 z-[300] bg-[#1c1d21] flex flex-col font-sans select-none overflow-hidden">
+    <div className="fixed inset-0 z-[300] bg-[#1c1d21] flex flex-col font-sans select-none overflow-hidden">
       {/* Global Stone Wall Texture Overlay */}
       <div 
         className="absolute inset-0 z-0 pointer-events-none opacity-[0.25] mix-blend-overlay"

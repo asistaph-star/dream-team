@@ -1,8 +1,7 @@
-import React, { RefObject, useState, useEffect } from "react";
+import React, { RefObject } from "react";
 import { Player } from "@/lib/types/player";
 import { MatchState, MatchEvent, PlayerMatchStats, getPlayerMaxStamina, getStaminaPercent } from "@/lib/utils/matchEngine";
 import { calculateTS } from "@/features/match/utils/calculateTS";
-import { MessageSquare, X } from "lucide-react";
 
 interface MatchBottomHUDProps {
   activeLogTab: 'pbp' | 'stats';
@@ -35,54 +34,21 @@ export function MatchBottomHUD({
   logEndRef,
   roster
 }: MatchBottomHUDProps) {
-  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setIsChatCollapsed(true);
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
     <>
       {/* BOTTOM HUD - CHAT */}
-      {isChatCollapsed ? (
-        <button 
-          onClick={() => setIsChatCollapsed(false)}
-          className="w-12 h-[130px] md:h-[166px] bg-slate-800/95 rounded-lg border border-gray-600 shadow-xl flex flex-col items-center justify-center text-white hover:bg-slate-700 hover:border-white/40 transition-all cursor-pointer shrink-0 pointer-events-auto"
-          title="Open Chat"
-        >
-          <MessageSquare size={18} className="text-cyan-400 animate-pulse" />
-          <span className="text-[9px] font-black tracking-widest uppercase mt-2 select-none rotate-90 origin-center whitespace-nowrap">CHAT</span>
-        </button>
-      ) : (
-        <div className="w-[280px] bg-slate-800/95 rounded-lg p-2 text-white border border-gray-600 shadow-xl shrink-0 flex flex-col h-[130px] md:h-[166px] relative pointer-events-auto">
-          <div className="flex justify-between items-center mb-2 shrink-0">
-            <div className="flex gap-1.5">
-              <button className="bg-gray-700 px-2 py-0.5 text-[9px] rounded font-bold uppercase select-none">Global</button>
-              <button className="bg-blue-600 px-2 py-0.5 text-[9px] rounded font-bold uppercase select-none">Match</button>
-            </div>
-            <button 
-              onClick={() => setIsChatCollapsed(true)}
-              className="text-gray-400 hover:text-white p-0.5 transition-colors cursor-pointer"
-              title="Minimize Chat"
-            >
-              <X size={14} />
-            </button>
+      <div className="w-[280px] bg-slate-800/95 rounded p-2 text-white border border-gray-600 shadow-xl shrink-0">
+          <div className="flex gap-2 mb-2">
+              <button className="bg-gray-700 px-3 py-1 text-[10px] rounded font-bold uppercase">Global</button>
+              <button className="bg-blue-600 px-3 py-1 text-[10px] rounded font-bold uppercase">Match</button>
           </div>
-          <div className="flex-grow bg-black/40 p-2 text-[11px] overflow-y-auto rounded no-scrollbar min-h-0">
-            <p><span className="text-blue-400">System:</span> Match started!</p>
+          <div className="h-28 bg-black/40 p-2 text-[11px] overflow-y-auto ">
+              <p><span className="text-blue-400">System:</span> Match started!</p>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* BOTTOM HUD - LOGS + STATISTICS */}
-      <div className="flex-1 max-w-[740px] bg-slate-900/98 rounded-lg overflow-hidden border border-gray-700/80 shadow-2xl flex flex-col h-[130px] md:h-[166px]" style={{backdropFilter:'blur(8px)'}}>
+      <div className="flex-1 max-w-[740px] bg-slate-900/98 rounded-lg overflow-hidden border border-gray-700/80 shadow-2xl flex flex-col h-[166px]" style={{backdropFilter:'blur(8px)'}}>
           {/* Tab bar */}
           <div className="flex items-center bg-[#0d1520] border-b border-gray-700/60 text-[11px] font-bold">
               <button onClick={() => setActiveLogTab('pbp')} className={`px-5 py-2 transition-all border-r border-gray-700/60 ${activeLogTab === 'pbp' ? 'bg-green-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer'}`}>▶ Play by Play</button>

@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "node",
-    "baseUrl": ".",
     "outDir": ".ts-node-cjs-out"
   },
   "ts-node": {

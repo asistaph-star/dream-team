@@ -131,7 +131,7 @@ export const PostGameScreen: React.FC<PostGameScreenProps> = ({
   const qs = matchState.quarterScores;
 
   return (
-    <div className="absolute inset-0 z-[200] bg-black/95 flex items-center justify-center font-sans overflow-hidden">
+    <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center font-sans overflow-hidden">
       {/* Background court image dimmed */}
       <div className="absolute inset-0 bg-[url('/court_bg.png')] bg-cover bg-center opacity-[0.08]" />
 
@@ -363,7 +363,7 @@ export const PostGameScreen: React.FC<PostGameScreenProps> = ({
 
       {/* Statistics Sub-Modal (toggled by button) */}
       {showPostStats && (
-        <div className="absolute inset-0 z-[300] bg-black/90 flex items-center justify-center overflow-y-auto p-6">
+        <div className="fixed inset-0 z-[300] bg-black/90 flex items-center justify-center overflow-y-auto p-6">
           <div className="w-full max-w-3xl bg-[#121c29]/95 border-2 border-cyan-500/40 rounded-2xl p-6 shadow-[0_0_50px_rgba(6,182,212,0.3)]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-black text-white tracking-widest">MATCH STATISTICS</h3>

@@ -109,7 +109,7 @@ export const SeasonMap: React.FC<SeasonMapProps> = ({ onStartMatch, onBack }) =>
   const teamInfo = currentStageInfo ? mockAiTeams[currentStageInfo.difficulty] : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#070b13] flex flex-col font-sans overflow-hidden">
+    <div className="absolute inset-0 w-full h-full z-50 bg-[#070b13] flex flex-col font-sans overflow-hidden">
       {/* Space & Earth Background */}
       <div className="absolute inset-0 z-0 bg-[#02040a] overflow-hidden">
         {/* Starfield with slow rotation for universe movement */}

@@ -2,7 +2,7 @@ import React from "react";
 import { Player } from "@/lib/types/player";
 import { MatchState, computeEffective } from "@/lib/utils/matchEngine";
 import { SLOT_POSITIONS } from "@/features/match/constants/matchConfig";
-import { useGameViewportScale } from "@/lib/hooks/useGameViewportScale";
+import { useGameViewportScale } from "@/components/layout/GameViewport";
 
 interface MatchScoreboardProps {
   matchState: MatchState;
@@ -47,6 +47,7 @@ export function MatchScoreboard({
   uiRallyMode,
   userMomPct
 }: MatchScoreboardProps) {
+  const { visibleRect } = useGameViewportScale();
   const simCourtLineup = (() => {
     if (draggingPlayerId && dragHoverSlotId && draggingPlayerId !== dragHoverSlotId) {
       const idx1 = currentLineup.findIndex(p => p.id === draggingPlayerId);
@@ -106,15 +107,10 @@ export function MatchScoreboard({
     return 'to-amber-950/40';
   };
 
-  const { uiScale } = useGameViewportScale();
-
   return (
     <div 
-      className="absolute top-8 left-1/2 flex items-start gap-10 z-50 transition-transform duration-300"
-      style={{
-        transform: `translateX(-50%) scale(${uiScale})`,
-        transformOrigin: "top center"
-      }}
+      className="absolute left-1/2 -translate-x-1/2 flex items-start gap-10 z-50"
+      style={{ top: `${visibleRect.top + 32}px` }}
     >
       <div className="flex flex-col gap-2 items-center">
         {isPreviewMode && (

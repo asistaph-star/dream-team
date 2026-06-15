@@ -20,11 +20,6 @@
 :root {
   --background: #020617;
   --foreground: #F8FAFC;
-  --bottom-nav-height: 64px;
-  --bottom-safe-gap: 24px;
-  --top-safe-gap: 24px;
-  --side-safe-gap: 24px;
-  --drawer-max-width: 280px;
 }
 
 body {

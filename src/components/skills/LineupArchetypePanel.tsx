@@ -3,6 +3,7 @@ import { Player } from "@/lib/types/player";
 import { resolveLineupArchetypes } from "@/lib/lineup/lineupArchetypeResolver";
 import { ArchetypeResult } from "@/lib/lineup/types";
 import { Trophy, ChevronDown, ChevronUp, ShieldAlert, Sparkles } from "lucide-react";
+import { useGameViewportScale } from "@/components/layout/GameViewport";
 
 interface LineupArchetypePanelProps {
   startingLineup: Player[];
@@ -10,19 +11,8 @@ interface LineupArchetypePanelProps {
 
 export function LineupArchetypePanel({ startingLineup }: LineupArchetypePanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024 || window.innerHeight < 750) {
-        setIsExpanded(false);
-      }
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   const summary = resolveLineupArchetypes(startingLineup);
+  const { visibleRect } = useGameViewportScale();
 
   const { primary, secondary } = summary;
 
@@ -64,7 +54,13 @@ export function LineupArchetypePanel({ startingLineup }: LineupArchetypePanelPro
   };
 
   return (
-    <div className="relative w-full z-30 group p-3 pointer-events-auto">
+    <div 
+      className="absolute w-[240px] z-30 group p-3 pointer-events-auto"
+      style={{
+        left: `${visibleRect.left + 24}px`,
+        top: `${visibleRect.top + 210}px`
+      }}
+    >
       {/* Slanted Glassmorphic Backdrop Card (matching LobbyChat style) */}
       <div className="absolute inset-0 bg-[#0c0d12]/95 backdrop-blur-[12px] border border-white/10 rounded-2xl shadow-[0_15px_35px_rgba(0,0,0,0.8)] skew-x-[-3deg] group-hover:border-white/30 transition-all duration-300 z-0 pointer-events-none"></div>
 

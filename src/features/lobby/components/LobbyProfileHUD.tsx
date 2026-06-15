@@ -1,5 +1,6 @@
 import React from "react";
 import { Plus } from "lucide-react";
+import { useGameViewportScale } from "@/components/layout/GameViewport";
 
 export interface LobbyProfileHUDProps {
   accountLevel: number;
@@ -11,7 +12,6 @@ export interface LobbyProfileHUDProps {
   salaryCap: number;
   onAddCash: (amount: number) => void;
   onAddTk: (amount: number) => void;
-  uiScale?: number;
 }
 
 export function LobbyProfileHUD({
@@ -23,15 +23,19 @@ export function LobbyProfileHUD({
   currentSalary,
   salaryCap,
   onAddCash,
-  onAddTk,
-  uiScale = 1
+  onAddTk
 }: LobbyProfileHUDProps) {
+  const { visibleRect, baseWidth } = useGameViewportScale();
+
   return (
     <>
       {/* --- Top Left Profile (Authentic NBA 2K Street Neon Design - SHARP HD FIX) --- */}
       <div 
-        className="absolute top-[20px] left-[20px] z-50 group transition-transform duration-300"
-        style={{ transform: `scale(${uiScale})`, transformOrigin: "top left" }}
+        className="absolute z-50 group"
+        style={{
+          left: `${visibleRect.left + 24}px`,
+          top: `${visibleRect.top + 20}px`
+        }}
       >
         {/* Main Container (No parent skew, completely sharp content) */}
         <div className="relative flex items-center h-[96px] w-[370px] z-10">
@@ -169,8 +173,11 @@ export function LobbyProfileHUD({
 
       {/* --- Top Right Profile (Salary & TF - SHARP HD FIX) --- */}
       <div 
-        className="absolute top-[20px] right-[20px] z-50 group transition-transform duration-300"
-        style={{ transform: `scale(${uiScale})`, transformOrigin: "top right" }}
+        className="absolute z-50 group"
+        style={{
+          right: `${baseWidth - visibleRect.right + 24}px`,
+          top: `${visibleRect.top + 20}px`
+        }}
       >
         {/* Main Container (No parent skew, completely sharp content) */}
         <div className="relative flex items-center h-[64px] shadow-2xl">
