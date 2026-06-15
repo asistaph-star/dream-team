@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
-import { BottomNav } from "@/components/layout/BottomNav";
 import { GameStateProvider } from "@/lib/context/GameStateContext";
 import { MainContainer } from "@/components/layout/MainContainer";
 
@@ -53,7 +52,6 @@ export default function RootLayout({
             <MainContainer>
               {children}
             </MainContainer>
-            <BottomNav />
           </div>
         </GameStateProvider>
       </body>

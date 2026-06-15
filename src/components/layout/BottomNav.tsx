@@ -39,14 +39,14 @@ export function BottomNav() {
   return (
     <nav 
       id="global-bottom-nav"
-      className="fixed z-40 bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
+      className="absolute z-40 bg-[#121316] border border-white/5 rounded-xl flex items-center shadow-[0_15px_40px_rgba(0,0,0,0.8)] overflow-hidden transition-all"
       style={{
         left: "50%",
-        transform: `translateX(-50%) scale(${uiScale})`,
+        transform: `translateX(-50%)`,
         transformOrigin: "bottom center",
-        bottom: "var(--bottom-safe-gap)",
+        bottom: "0px",
         height: "var(--bottom-nav-height)",
-        width: "min(100vw - 24px, 900px)"
+        width: "min(100% - 24px, 900px)"
       }}
     >
       {/* Low Poly / Glass Facets Background Pattern */}

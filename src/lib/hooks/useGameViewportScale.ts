@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
+import { GameViewportContext } from "@/components/layout/GameViewport";
 
 export interface GameViewportScale {
   scale: number;
@@ -14,6 +15,8 @@ export interface GameViewportScale {
 }
 
 export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
+  const gameVp = useContext(GameViewportContext);
+
   const [dimensions, setDimensions] = useState<GameViewportScale>({
     scale: 1,
     viewportWidth: baseWidth,
@@ -28,13 +31,28 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
   });
 
   useEffect(() => {
+    if (gameVp && gameVp.isViewscaled) {
+      setDimensions({
+        scale: gameVp.scale,
+        viewportWidth: gameVp.baseWidth,
+        viewportHeight: gameVp.baseHeight,
+        virtualXMin: 0,
+        virtualXMax: gameVp.baseWidth,
+        virtualYMin: 0,
+        virtualYMax: gameVp.baseHeight,
+        visibleVirtualWidth: gameVp.baseWidth,
+        visibleVirtualHeight: gameVp.baseHeight,
+        uiScale: 1,
+      });
+      return;
+    }
+
     let rAFId: number;
 
     const handleResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       
-      // Cover-style scaling formula
       const scale = Math.max(w / baseWidth, h / baseHeight);
       
       const visibleVirtualWidth = w / scale;
@@ -46,7 +64,6 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
       const virtualYMin = (baseHeight - visibleVirtualHeight) / 2;
       const virtualYMax = (baseHeight + visibleVirtualHeight) / 2;
       
-      // UI Scale calculation for responsive shrinking without bars
       const wScale = w / 1280;
       const hScale = h / 760;
       const uiScale = Math.max(0.55, Math.min(1, Math.min(wScale, hScale)));
@@ -78,7 +95,7 @@ export function useGameViewportScale(baseWidth = 1420, baseHeight = 800) {
       window.removeEventListener("resize", handleResizeThrottled);
       cancelAnimationFrame(rAFId);
     };
-  }, [baseWidth, baseHeight]);
+  }, [baseWidth, baseHeight, gameVp]);
 
   return dimensions;
 }
